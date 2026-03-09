@@ -372,10 +372,13 @@ export default class CollectionScene extends Phaser.Scene {
     const zone = this.add.zone(x, y, btnW, btnH)
       .setInteractive({ useHandCursor: true });
 
-    zone.on('pointerdown', () => { text.setAlpha(0.6); });
+    let pressed = false;
+    zone.on('pointerdown', () => { pressed = true; text.setAlpha(0.6); });
     zone.on('pointerup', () => {
       text.setAlpha(1);
-      if (callback) callback();
+      if (pressed && callback) callback();
+      pressed = false;
     });
+    zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
   }
 }
