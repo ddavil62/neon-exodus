@@ -6,7 +6,7 @@
  * 관통 횟수에 따라 비활성화된다.
  */
 
-import { COLORS, WORLD_WIDTH, WORLD_HEIGHT } from '../config.js';
+import { WORLD_WIDTH, WORLD_HEIGHT } from '../config.js';
 
 // ── Projectile 클래스 ──
 
@@ -17,16 +17,7 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
    * @param {number} y - 초기 Y 좌표
    */
   constructor(scene, x, y) {
-    // 텍스처 키 생성 (한번만 생성)
-    if (!scene.textures.exists('projectile_temp')) {
-      const gfx = scene.add.graphics();
-      gfx.fillStyle(COLORS.NEON_GREEN, 1);
-      gfx.fillCircle(4, 4, 4);
-      gfx.generateTexture('projectile_temp', 8, 8);
-      gfx.destroy();
-    }
-
-    super(scene, x, y, 'projectile_temp');
+    super(scene, x, y, 'projectile');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -55,8 +46,8 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
     /** 생존 시간 누적 (ms) */
     this.aliveTime = 0;
 
-    // 충돌체 설정: 작은 원형 (반경 4px)
-    this.body.setCircle(4);
+    // 충돌체 설정: 작은 원형 (반경 3px, 6x6 텍스처 기준)
+    this.body.setCircle(3);
 
     // 초기 비활성 상태
     this.setActive(false);

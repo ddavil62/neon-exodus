@@ -1,7 +1,8 @@
 /**
  * @fileoverview 에셋 로드 및 게임 초기화 씬.
  *
- * Phase 1에서는 실제 스프라이트 에셋이 없으므로 Graphics로 모든 임시 텍스처를 생성한다.
+ * Phase 1 스프라이트 에셋(player, projectile, 잡몹 10종, XP 보석 3종)을 preload한다.
+ * 에셋 파일이 없는 경우 Graphics 플레이스홀더 텍스처로 폴백한다.
  * 로딩 바를 표시하고, 완료 후 MenuScene으로 전환한다.
  */
 
@@ -23,7 +24,8 @@ export default class BootScene extends Phaser.Scene {
 
   /**
    * 에셋을 미리 로드한다.
-   * Phase 1에서는 외부 에셋이 없으므로 플레이스홀더 텍스처만 생성한다.
+   * Phase 1 스프라이트 에셋(player, projectile, 잡몹 10종, XP 보석 3종)을 로드한다.
+   * 에셋 파일이 없는 경우 create()에서 플레이스홀더 텍스처가 자동 생성된다.
    */
   preload() {
     // ── 로딩 바 표시 ──
@@ -52,6 +54,40 @@ export default class BootScene extends Phaser.Scene {
         this._loadingText.destroy();
       }
     });
+
+    // ── Phase 1 스프라이트 에셋 로드 ──
+
+    // 플레이어 스프라이트시트 (48x24, 2프레임 가로배치)
+    this.load.spritesheet('player', 'assets/sprites/player.png', {
+      frameWidth: 24, frameHeight: 24,
+    });
+
+    // 투사체 정적 이미지 (6x6)
+    this.load.image('projectile', 'assets/sprites/projectile.png');
+
+    // 잡몹 10종 스프라이트시트 (2프레임 가로배치)
+    const enemyAssets = [
+      { key: 'enemy_nano_drone', file: 'enemies/nano_drone.png', fw: 16, fh: 16 },
+      { key: 'enemy_scout_bot', file: 'enemies/scout_bot.png', fw: 20, fh: 20 },
+      { key: 'enemy_spark_drone', file: 'enemies/spark_drone.png', fw: 16, fh: 16 },
+      { key: 'enemy_battle_robot', file: 'enemies/battle_robot.png', fw: 28, fh: 28 },
+      { key: 'enemy_shield_drone', file: 'enemies/shield_drone.png', fw: 20, fh: 20 },
+      { key: 'enemy_rush_bot', file: 'enemies/rush_bot.png', fw: 24, fh: 24 },
+      { key: 'enemy_repair_bot', file: 'enemies/repair_bot.png', fw: 20, fh: 20 },
+      { key: 'enemy_heavy_bot', file: 'enemies/heavy_bot.png', fw: 32, fh: 32 },
+      { key: 'enemy_teleport_drone', file: 'enemies/teleport_drone.png', fw: 20, fh: 20 },
+      { key: 'enemy_suicide_bot', file: 'enemies/suicide_bot.png', fw: 24, fh: 24 },
+    ];
+    for (const e of enemyAssets) {
+      this.load.spritesheet(e.key, 'assets/sprites/' + e.file, {
+        frameWidth: e.fw, frameHeight: e.fh,
+      });
+    }
+
+    // XP 보석 3종 정적 이미지
+    this.load.image('xp_gem_s', 'assets/sprites/items/xp_gem_s.png');
+    this.load.image('xp_gem_m', 'assets/sprites/items/xp_gem_m.png');
+    this.load.image('xp_gem_l', 'assets/sprites/items/xp_gem_l.png');
   }
 
   /**
@@ -72,6 +108,9 @@ export default class BootScene extends Phaser.Scene {
 
     // 배경 타일 텍스처 생성
     this._generateBackgroundTile();
+
+    // 스프라이트 애니메이션 등록
+    this._createAnimations();
 
     // ── SoundSystem 초기화 ──
     SoundSystem.init(SaveManager.getSettings());
@@ -157,6 +196,41 @@ export default class BootScene extends Phaser.Scene {
   }
 
   // ── 내부 메서드 ──
+
+  /**
+   * 스프라이트 애니메이션을 등록한다.
+   * 스프라이트시트가 실제로 로드된 경우에만 생성한다 (textures.exists 가드).
+   * @private
+   */
+  _createAnimations() {
+    // 플레이어 아이들: 2프레임, 4fps, 반복
+    if (this.textures.exists('player') && !this.anims.exists('player_idle')) {
+      this.anims.create({
+        key: 'player_idle',
+        frames: this.anims.generateFrameNumbers('player', { start: 0, end: 1 }),
+        frameRate: 4,
+        repeat: -1,
+      });
+    }
+    // 잡몹 10종 아이들: 2프레임, 3fps, 반복
+    const enemyKeys = [
+      'enemy_nano_drone', 'enemy_scout_bot', 'enemy_spark_drone',
+      'enemy_battle_robot', 'enemy_shield_drone', 'enemy_rush_bot',
+      'enemy_repair_bot', 'enemy_heavy_bot', 'enemy_teleport_drone',
+      'enemy_suicide_bot',
+    ];
+    for (const key of enemyKeys) {
+      const animKey = key + '_idle';
+      if (this.textures.exists(key) && !this.anims.exists(animKey)) {
+        this.anims.create({
+          key: animKey,
+          frames: this.anims.generateFrameNumbers(key, { start: 0, end: 1 }),
+          frameRate: 3,
+          repeat: -1,
+        });
+      }
+    }
+  }
 
   /**
    * 로딩 바 UI를 생성한다.

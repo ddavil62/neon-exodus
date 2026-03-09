@@ -7,27 +7,11 @@
  */
 
 import {
-  COLORS,
   XP_GEM_VALUES,
   XP_GEM_LIFETIME,
   XP_GEM_BLINK_DURATION,
   XP_MAGNET_RADIUS,
 } from '../config.js';
-
-// ── 보석 타입별 색상 매핑 ──
-
-const GEM_COLORS = {
-  small: COLORS.NEON_GREEN,   // 녹색 1XP
-  medium: COLORS.NEON_CYAN,   // 파란색(시안) 3XP
-  large: COLORS.NEON_MAGENTA, // 보라(마젠타) 10XP
-};
-
-/** 보석 타입별 표시 크기 (다이아몬드 반경) */
-const GEM_SIZES = {
-  small: 3,
-  medium: 5,
-  large: 7,
-};
 
 /** 자석 흡수 시 가속 속도 (px/s) */
 const MAGNET_SPEED = 350;
@@ -41,22 +25,7 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
    * @param {number} y - 초기 Y 좌표
    */
   constructor(scene, x, y) {
-    // 기본 텍스처 생성 (최초 1회)
-    if (!scene.textures.exists('xpgem_temp')) {
-      const gfx = scene.add.graphics();
-      gfx.fillStyle(0xFFFFFF, 1);
-      // 다이아몬드 형태
-      gfx.fillPoints([
-        { x: 8, y: 0 },
-        { x: 16, y: 8 },
-        { x: 8, y: 16 },
-        { x: 0, y: 8 },
-      ], true);
-      gfx.generateTexture('xpgem_temp', 16, 16);
-      gfx.destroy();
-    }
-
-    super(scene, x, y, 'xpgem_temp');
+    super(scene, x, y, 'xp_gem_s');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -82,8 +51,8 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
     /** 보석 타입 */
     this.gemType = 'small';
 
-    // 충돌체: 작은 원 (반경 4px)
-    this.body.setCircle(4, 4, 4);
+    // 충돌체: 작은 원 (반경 3px, 6x6 텍스처 기준)
+    this.body.setCircle(3, 0, 0);
 
     // 초기 비활성 상태
     this.setActive(false);
@@ -116,10 +85,14 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
     this.body.enable = true;
     this.body.setVelocity(0, 0);
 
-    // 타입에 따른 크기/색상 설정
-    const gemSize = GEM_SIZES[type] || 3;
-    this.setScale(gemSize / 8); // 텍스처 기본이 16px, 반경 8기준
-    this.setTint(GEM_COLORS[type] || COLORS.NEON_GREEN);
+    // 텍스처 키 직접 전환 + 충돌체 크기 타입별 조정
+    const texMap = { small: 'xp_gem_s', medium: 'xp_gem_m', large: 'xp_gem_l' };
+    this.setTexture(texMap[type] || 'xp_gem_s');
+    this.setScale(1);
+    this.clearTint();
+    const radii = { small: 3, medium: 5, large: 7 };
+    const r = radii[type] || 3;
+    this.body.setCircle(r, 0, 0);
   }
 
   /**

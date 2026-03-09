@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-09 (자동 사냥 기능 추가)
+> 최종 업데이트: 2026-03-09 (Phase 1 아트 에셋 전환)
 
 ## 프로젝트 개요
 
@@ -53,7 +53,7 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드, 플레이스홀더 텍스처 생성, particle 텍스처, SoundSystem 초기화
+│   │   ├── BootScene.js           # 에셋 로드(Phase 1 스프라이트 15종), 플레이스홀더 폴백, 애니메이션 등록, SoundSystem 초기화
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot)
@@ -89,18 +89,40 @@ neon-exodus/
 │       ├── upgrades.js            # 영구 업그레이드 22종
 │       ├── characters.js          # 캐릭터 6종
 │       └── achievements.js        # 도전과제 13종
+├── assets/
+│   └── sprites/                   # Phase 1 스프라이트 에셋 (DALL-E 3 생성)
+│       ├── player.png             # 플레이어 스프라이트시트 (48x24, 2F)
+│       ├── projectile.png         # 투사체 정적 이미지 (6x6)
+│       ├── enemies/               # 잡몹 10종 스프라이트시트 (각 2F 가로배치)
+│       │   ├── nano_drone.png     # 32x16
+│       │   ├── scout_bot.png      # 40x20
+│       │   ├── spark_drone.png    # 32x16
+│       │   ├── battle_robot.png   # 56x28
+│       │   ├── shield_drone.png   # 40x20
+│       │   ├── rush_bot.png       # 48x24
+│       │   ├── repair_bot.png     # 40x20
+│       │   ├── heavy_bot.png      # 64x32
+│       │   ├── teleport_drone.png # 40x20
+│       │   └── suicide_bot.png    # 48x24
+│       └── items/                 # XP 보석 3종 정적 이미지
+│           ├── xp_gem_s.png       # 6x6
+│           ├── xp_gem_m.png       # 10x10
+│           └── xp_gem_l.png       # 14x14
 ├── scripts/
-│   └── build.js                   # www/ 디렉토리 빌드 스크립트
+│   ├── build.js                   # www/ 디렉토리 빌드 스크립트
+│   └── generate-sprites.js        # DALL-E 3 API 스프라이트 생성 스크립트
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
 │   ├── phase3.spec.js             # Phase 3 QA 테스트 (12개)
 │   ├── phase3-crit.spec.js        # Phase 3 치명타 시스템 전용 테스트 (7개)
 │   ├── phase4.spec.js             # Phase 4 QA 테스트 (27개)
-│   └── auto-hunt.spec.js          # 자동 사냥 QA 테스트 (29개)
+│   ├── auto-hunt.spec.js          # 자동 사냥 QA 테스트 (29개)
+│   └── phase1-art-qa.spec.js     # Phase 1 아트 QA 테스트 (22개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
-    └── CHANGELOG.md               # 변경 이력
+    ├── CHANGELOG.md               # 변경 이력
+    └── ART_CONCEPT.md             # 아트 컨셉/에셋 목록/Phase 계획
 ```
 
 ### 씬 흐름
@@ -623,7 +645,7 @@ Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 
 
 1. **폰트 파일 누락**: `assets/fonts/Galmuri11.woff2` 미존재. monospace 폴백 사용 중. 폰트 파일 추가 또는 @font-face 선언 제거 필요.
 2. **Player._passives 미초기화**: constructor에 `this._passives` 미선언. LevelUpScene에서 lazy init으로 안전하게 처리됨.
-3. **BootScene 미사용 텍스처**: Entity 내부 `*_temp` 텍스처와 중복. 향후 정리 필요.
+3. **BootScene 플레이스홀더 텍스처**: Phase 1에서 player/projectile/잡몹 10종/XP 보석 3종은 정식 PNG로 전환 완료. 미니보스/보스/UI 등은 여전히 플레이스홀더 텍스처 사용. `_temp` 텍스처 코드는 전부 제거됨.
 4. **체인 무기 초기 타겟 탐색 범위 하드코딩**: `WeaponSystem.js` findClosestEnemy에 300px 하드코딩. chainRange(120~200px)는 체인 연결 거리이고 초기 타겟 탐색은 별도 범위. 기능 문제 없으나 상수화 권장.
 5. **부활 시 HP 직접 대입**: 스펙은 `player.heal(maxHp * 0.5)`이나, 실제 구현은 `player.currentHp = Math.floor(maxHp * 0.5)` 직접 대입. 동작에 문제 없으나 스펙과 불일치.
 6. **CollectionScene ENEMY_IDS 하드코딩**: 적 ID 15개가 하드코딩. 신규 적 추가 시 수동 업데이트 필요.
@@ -701,3 +723,15 @@ Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 
 - [x] 구매 복원 (BootScene에서 restorePurchases, 기기 변경 시 재구매 방지)
 - [x] SaveManager v3->v4 마이그레이션 (autoHuntUnlocked, autoHuntEnabled 필드 추가)
 - [x] i18n 확장 (autoHunt.* 10키 ko/en, 총 348키)
+
+### 아트 Phase 1: 스프라이트 에셋 전환 -- 완료 (2026-03-09)
+- [x] DALL-E 3 API 에셋 생성 스크립트 (`scripts/generate-sprites.js`)
+- [x] 스프라이트 에셋 15종 생성 및 `assets/sprites/` 배치 (player, projectile, 잡몹 10종, XP 보석 3종)
+- [x] BootScene.preload()에 스프라이트/이미지 로드 추가
+- [x] BootScene._createAnimations() 신규 추가 (player_idle 4fps, 잡몹 10종 idle 3fps, 각 2프레임)
+- [x] Player.js: player_temp 제거, 'player' 키 + player_idle 애니메이션 재생
+- [x] Projectile.js: projectile_temp 제거, 'projectile' 키 사용, COLORS import 정리
+- [x] XPGem.js: xpgem_temp/GEM_COLORS/GEM_SIZES 제거, spawn()에서 setTexture 전환 방식
+- [x] Enemy.js: enemy_temp 제거, init()에서 textures.exists 체크 후 setTexture/애니메이션, 폴백 분기 유지
+- [x] 에셋 미존재 시 플레이스홀더 폴백 동작 유지 (textures.exists 가드)
+- [x] package.json devDependencies 추가 (dotenv, openai, sharp)

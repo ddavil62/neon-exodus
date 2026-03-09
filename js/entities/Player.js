@@ -28,22 +28,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
    * @param {number} y - 초기 Y 좌표
    */
   constructor(scene, x, y) {
-    // 플레이어 임시 텍스처 생성 (네온 시안 원형)
-    if (!scene.textures.exists('player_temp')) {
-      const gfx = scene.add.graphics();
-      gfx.fillStyle(COLORS.NEON_CYAN, 1);
-      gfx.fillCircle(16, 16, 12);
-      // 방향 표시 (삼각형)
-      gfx.fillStyle(COLORS.NEON_CYAN, 0.7);
-      gfx.fillTriangle(28, 16, 22, 10, 22, 22);
-      gfx.generateTexture('player_temp', 32, 32);
-      gfx.destroy();
-    }
-
-    super(scene, x, y, 'player_temp');
+    super(scene, x, y, 'player');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
+
+    // 아이들 애니메이션 재생 (스프라이트시트 로드된 경우에만)
+    if (scene.anims.exists('player_idle')) {
+      this.play('player_idle');
+    }
 
     // ── 기본 스탯 ──
 
@@ -148,8 +141,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // ── 물리 설정 ──
 
-    // 원형 충돌체 (반경 12px)
-    this.body.setCircle(12, 4, 4);
+    // 원형 충돌체 (반경 10px, 24x24 텍스처 기준)
+    this.body.setCircle(10, 2, 2);
     this.body.setCollideWorldBounds(true);
 
     // depth 설정 (적 위에 표시)

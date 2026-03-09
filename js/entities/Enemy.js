@@ -42,16 +42,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
    * @param {number} y - 초기 Y 좌표
    */
   constructor(scene, x, y) {
-    // 기본 텍스처 생성 (최초 1회)
-    if (!scene.textures.exists('enemy_temp')) {
-      const gfx = scene.add.graphics();
-      gfx.fillStyle(0xFFFFFF, 1);
-      gfx.fillCircle(12, 12, 12);
-      gfx.generateTexture('enemy_temp', 24, 24);
-      gfx.destroy();
-    }
-
-    super(scene, x, y, 'enemy_temp');
+    super(scene, x, y, 'enemy_nano_drone');
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -160,12 +151,26 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       tintColor = COLORS.NEON_MAGENTA;
     }
 
-    this.setScale(radius / 12); // 텍스처 기본 반경 12 기준
-    this.setTint(tintColor);
+    // 정식 텍스처가 로드된 경우 사용, 없으면 placeholder로 폴백
+    const texKey = 'enemy_' + typeId;
+    if (this.scene.textures.exists(texKey)) {
+      this.setTexture(texKey);
+      this.setScale(1);
+      this.clearTint();
+      const animKey = texKey + '_idle';
+      if (this.scene.anims.exists(animKey)) {
+        this.play(animKey);
+      }
+    } else {
+      // 폴백: BootScene placeholder 텍스처 (단색 원) - 크기/색상 보정
+      this.setScale(radius / 12);
+      this.setTint(tintColor);
+    }
 
-    // 충돌체 크기 재설정
+    // 충돌체 크기 재설정 (offset 음수 방지)
     const bodyRadius = radius;
-    this.body.setCircle(bodyRadius, 12 - bodyRadius, 12 - bodyRadius);
+    const bodyOffset = Math.max(0, 12 - bodyRadius);
+    this.body.setCircle(bodyRadius, bodyOffset, bodyOffset);
 
     // 활성화
     this.setActive(true);

@@ -62,26 +62,26 @@
 
 | # | 텍스처 키 | 현재 | 목표 | Phase |
 |---|-----------|------|------|-------|
-| 1 | `player` | 시안 원+삼각 24x24 | 사이버 전사 정면/이동 24x24 | Phase 1 |
-| 2 | `projectile` | 그린 원 6x6 | 에너지탄 도트 6x6 | Phase 1 |
-| 3 | `enemy_nano_drone` | 빨강 원 16x16 | 작은 비행 드론 16x16 | Phase 1 |
-| 4 | `enemy_scout_bot` | 주황 원 20x20 | 정찰 로봇 20x20 | Phase 1 |
-| 5 | `enemy_spark_drone` | 노랑 원 16x16 | 전기 드론 16x16 | Phase 1 |
-| 6 | `enemy_battle_robot` | 암적 원 28x28 | 전투 로봇 28x28 | Phase 1 |
-| 7 | `enemy_shield_drone` | 파랑 원 20x20 | 방패 드론 20x20 | Phase 1 |
-| 8 | `enemy_rush_bot` | 주황 원 24x24 | 돌격봇 24x24 | Phase 1 |
-| 9 | `enemy_repair_bot` | 초록 원 20x20 | 수리 로봇 20x20 | Phase 1 |
-| 10 | `enemy_heavy_bot` | 회색 원 32x32 | 중장갑봇 32x32 | Phase 1 |
-| 11 | `enemy_teleport_drone` | 보라 원 20x20 | 순간이동 드론 20x20 | Phase 1 |
-| 12 | `enemy_suicide_bot` | 빨강 원 24x24 | 자폭봇 (깜빡임) 24x24 | Phase 1 |
+| 1 | `player` | DALL-E 3 스프라이트 48x24 (2F) | 사이버 전사 정면/이동 24x24 | Phase 1 (완료) |
+| 2 | `projectile` | DALL-E 3 정적 6x6 | 에너지탄 도트 6x6 | Phase 1 (완료) |
+| 3 | `enemy_nano_drone` | DALL-E 3 스프라이트 32x16 (2F) | 작은 비행 드론 16x16 | Phase 1 (완료) |
+| 4 | `enemy_scout_bot` | DALL-E 3 스프라이트 40x20 (2F) | 정찰 로봇 20x20 | Phase 1 (완료) |
+| 5 | `enemy_spark_drone` | DALL-E 3 스프라이트 32x16 (2F) | 전기 드론 16x16 | Phase 1 (완료) |
+| 6 | `enemy_battle_robot` | DALL-E 3 스프라이트 56x28 (2F) | 전투 로봇 28x28 | Phase 1 (완료) |
+| 7 | `enemy_shield_drone` | DALL-E 3 스프라이트 40x20 (2F) | 방패 드론 20x20 | Phase 1 (완료) |
+| 8 | `enemy_rush_bot` | DALL-E 3 스프라이트 48x24 (2F) | 돌격봇 24x24 | Phase 1 (완료) |
+| 9 | `enemy_repair_bot` | DALL-E 3 스프라이트 40x20 (2F) | 수리 로봇 20x20 | Phase 1 (완료) |
+| 10 | `enemy_heavy_bot` | DALL-E 3 스프라이트 64x32 (2F) | 중장갑봇 32x32 | Phase 1 (완료) |
+| 11 | `enemy_teleport_drone` | DALL-E 3 스프라이트 40x20 (2F) | 순간이동 드론 20x20 | Phase 1 (완료) |
+| 12 | `enemy_suicide_bot` | DALL-E 3 스프라이트 48x24 (2F) | 자폭봇 (깜빡임) 24x24 | Phase 1 (완료) |
 | 13 | `enemy_guardian_drone` | 오렌지 원 40x40 | 가디언 미니보스 40x40 | Phase 2 |
 | 14 | `enemy_assault_mech` | 오렌지 원 40x40 | 어썰트 메카 40x40 | Phase 2 |
 | 15 | `enemy_commander_drone` | 마젠타 원 64x64 | 커맨더 보스 64x64 | Phase 2 |
 | 16 | `enemy_siege_titan` | 오렌지 원 64x64 | 시즈 타이탄 보스 64x64 | Phase 2 |
 | 17 | `enemy_core_processor` | 마젠타 원 64x64 | 코어 프로세서 최종보스 64x64 | Phase 2 |
-| 18 | `xp_gem_s` | 그린 다이아 6x6 | 데이터 파편 (소) 6x6 | Phase 1 |
-| 19 | `xp_gem_m` | 시안 다이아 10x10 | 데이터 파편 (중) 10x10 | Phase 1 |
-| 20 | `xp_gem_l` | 마젠타 다이아 14x14 | 데이터 파편 (대) 14x14 | Phase 1 |
+| 18 | `xp_gem_s` | DALL-E 3 정적 6x6 | 데이터 파편 (소) 6x6 | Phase 1 (완료) |
+| 19 | `xp_gem_m` | DALL-E 3 정적 10x10 | 데이터 파편 (중) 10x10 | Phase 1 (완료) |
+| 20 | `xp_gem_l` | DALL-E 3 정적 14x14 | 데이터 파편 (대) 14x14 | Phase 1 (완료) |
 | 21 | `bg_tile` | 그리드+리벳 64x64 | 사이버 바닥 타일 64x64 | Phase 3 |
 | 22 | `particle` | 흰색 사각 4x4 | 유지 (색상은 코드에서 제어) | - |
 | 23 | `joystick_base` | 반투명 원 64x64 | 홀로그램 원 UI 64x64 | Phase 3 |
@@ -114,17 +114,18 @@
 
 ## 제작 Phase
 
-### Phase 1: 플레이어 + 잡몹 + 수집물 (핵심 게임플레이)
+### Phase 1: 플레이어 + 잡몹 + 수집물 (핵심 게임플레이) -- 완료 (2026-03-09)
 > **우선순위 최고** — 가장 많이 보이는 요소
 
-- [ ] 플레이어 스프라이트 (24x24, 아이들 2F + 이동 2F)
-- [ ] 잡몹 10종 스프라이트 (각 크기별, 아이들 2F)
-- [ ] 투사체 스프라이트 (6x6)
-- [ ] XP 보석 3종 (데이터 파편)
-- [ ] BootScene 텍스처 생성 → 이미지 로드 방식 전환
+- [x] 플레이어 스프라이트 (24x24, 아이들 2F) *(DALL-E 3 API로 생성, 스프라이트시트 48x24)*
+- [x] 잡몹 10종 스프라이트 (각 크기별, 아이들 2F) *(16x16 ~ 64x32 스프라이트시트)*
+- [x] 투사체 스프라이트 (6x6) *(정적 이미지)*
+- [x] XP 보석 3종 (데이터 파편) *(소 6x6, 중 10x10, 대 14x14 정적 이미지)*
+- [x] BootScene 텍스처 생성 -> 이미지 로드 방식 전환 *(preload()에서 PNG 로드, 에셋 미존재 시 플레이스홀더 폴백 유지)*
 
-**산출물**: `assets/sprites/` 디렉토리, BootScene의 preload() 수정
-**예상 에셋 수**: 16종
+**산출물**: `assets/sprites/` 디렉토리 (15종 PNG), BootScene preload() + _createAnimations() 수정
+**실제 에셋 수**: 15종 (player 1 + projectile 1 + enemy 10 + xp_gem 3)
+**생성 방식**: DALL-E 3 API + sharp 후처리 (`scripts/generate-sprites.js`)
 
 ### Phase 2: 보스 + 미니보스 (위협감 연출)
 > 보스전의 임팩트를 높이는 단계
@@ -169,15 +170,17 @@
 
 ## 기술 통합 계획
 
-### 현재 (프로시저럴)
-```
-BootScene.create() → Graphics API → generateTexture('player', 24, 24)
-```
-
-### 목표 (에셋 로드)
+### Phase 1 적용 완료 (에셋 로드)
 ```
 BootScene.preload() → this.load.spritesheet('player', 'assets/sprites/player.png', { frameWidth: 24, frameHeight: 24 })
-BootScene.create() → this.anims.create({ key: 'player_idle', ... })
+BootScene.create() → this._createAnimations() → this.anims.create({ key: 'player_idle', ... })
+```
+> Phase 1에서 player, projectile, 잡몹 10종, XP 보석 3종이 PNG 에셋으로 전환되었다.
+> 에셋 미존재 시 `_generatePlaceholderTextures()`의 `textures.exists()` 가드로 폴백 동작.
+
+### 미전환 (프로시저럴 유지)
+```
+BootScene.create() → Graphics API → generateTexture() (미니보스, 보스, UI, 배경 등)
 ```
 
 ### 전환 전략
@@ -241,7 +244,7 @@ assets/
 
 | Phase | 에셋 수 | 예상 소요 | 누적 |
 |-------|---------|----------|------|
-| Phase 1 | 16종 | 제작 방식에 따라 상이 | - |
+| Phase 1 | 15종 | 완료 (2026-03-09, DALL-E 3 API) | - |
 | Phase 2 | 5종 | - | - |
 | Phase 3 | ~25종 | - | - |
 | Phase 4 | ~10종 | - | - |

@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-09 -- 아트 Phase 1: 스프라이트 에셋 전환
+
+### 추가
+- 에셋 생성 스크립트 (`scripts/generate-sprites.js`): DALL-E 3 API 호출, sharp로 배경 제거(밝기 임계값 40 이하 투명화) + nearest-neighbor 리사이즈, 스프라이트시트 2프레임 가로 합성, PNG 저장. dotenv로 루트 `.env` API 키 로드
+- 스프라이트 에셋 15종 (`assets/sprites/`): player.png(48x24), projectile.png(6x6), 잡몹 10종(32x16~64x32), xp_gem_s/m/l(6x6, 10x10, 14x14)
+- BootScene._createAnimations() 신규 메서드 (`js/scenes/BootScene.js`): player_idle(2F, 4fps, 반복) + 잡몹 10종 idle(2F, 3fps, 반복) 애니메이션 등록. textures.exists/anims.exists 가드로 중복 방지
+- Phase 1 아트 QA 테스트 (`tests/phase1-art-qa.spec.js`): 22개 테스트
+
+### 변경
+- BootScene.preload() (`js/scenes/BootScene.js`): player 스프라이트시트(frameWidth:24, frameHeight:24), projectile 이미지, 잡몹 10종 스프라이트시트, XP 보석 3종 이미지 로드 추가. @fileoverview 주석 갱신
+- BootScene.create() (`js/scenes/BootScene.js`): _generateBackgroundTile() 이후 _createAnimations() 호출 추가
+- Player.js (`js/entities/Player.js`): player_temp 생성 블록 제거, super에 'player' 키 사용, player_idle 애니메이션 재생, 충돌체 setCircle(10, 2, 2)
+- Projectile.js (`js/entities/Projectile.js`): projectile_temp 생성 블록 제거, super에 'projectile' 키 사용, COLORS import 제거, 충돌체 setCircle(3)
+- XPGem.js (`js/entities/XPGem.js`): xpgem_temp 생성 블록 + GEM_COLORS + GEM_SIZES 상수 제거, COLORS import 제거, super에 'xp_gem_s' 키 사용, spawn()에서 setTexture(texMap[type]) + setScale(1) + clearTint() + 타입별 충돌체 조정(small:3, medium:5, large:7)
+- Enemy.js (`js/entities/Enemy.js`): enemy_temp 생성 블록 제거, super에 'enemy_nano_drone' 키 사용, init()에서 textures.exists(texKey) 체크 후 setTexture/play(idle) 전환 + 폴백(setScale/setTint) 유지, 충돌체 offset 음수 방지(Math.max(0, ...))
+- package.json: devDependencies에 dotenv ^17.3.1, openai ^6.27.0, sharp ^0.34.5 추가
+
+### 참고
+- 스펙: `.claude/specs/2026-03-09-phase1-art.md`
+- 구현 리포트: `.claude/specs/2026-03-09-phase1-art-report.md`
+- QA: `.claude/specs/2026-03-09-phase1-art-qa.md`
+- QA 결과: 수용기준 7개 전체 PASS, 예외 시나리오 10개 PASS, Playwright 21/22 (실패 1건은 모바일 뷰포트 테스트 인프라 이슈로 코드 결함 아님). 에셋 크기 15종 전수 검증 PASS
+- 스펙 본문에 "16종"으로 기재되었으나 실제 에셋 목록은 15종 (player 1 + projectile 1 + enemy 10 + xp_gem 3). 스펙 수치 오류
+- 스프라이트시트 frame2는 frame1과 동일 (단순화 처리). 추후 수작업 교체 가능
+- Enemy.js takeDamage() 피격 플래시에서 정식 텍스처에도 setTint(HP_RED) 적용되는 부작용 있음. 스펙 범위 외로 미수정. 향후 별도 이슈 권장
+
 ## 2026-03-09 -- 자동 사냥 (Auto Hunt) 유료 기능
 
 ### 추가
