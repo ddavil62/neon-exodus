@@ -66,6 +66,9 @@ const TRANSLATIONS = {
     'result.continue': '계속',
     'result.retry': '재도전',
     'result.toMenu': '메인 메뉴',
+    'result.weaponReport': '무기별 리포트',
+    'result.weaponKills': '{0}킬',
+    'result.weaponDps': 'DPS {0}',
 
     // ── 업그레이드 화면 ──
     'upgrade.title': '영구 업그레이드',
@@ -483,6 +486,9 @@ const TRANSLATIONS = {
     'result.continue': 'Continue',
     'result.retry': 'Retry',
     'result.toMenu': 'Main Menu',
+    'result.weaponReport': 'Weapon Report',
+    'result.weaponKills': '{0} Kills',
+    'result.weaponDps': 'DPS {0}',
 
     // ── Upgrade Screen ──
     'upgrade.title': 'Permanent Upgrades',

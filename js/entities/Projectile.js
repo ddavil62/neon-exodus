@@ -28,6 +28,9 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
     /** 치명타 여부 (WeaponSystem에서 발사 시점에 결정) */
     this.isCrit = false;
 
+    /** 발사한 무기 ID (통계 추적용) */
+    this.weaponId = null;
+
     /** 투사체 이동 속도 (px/s) */
     this.speed = 0;
 
@@ -78,6 +81,7 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.pierce = pierce;
     this.piercedCount = 0;
     this.isCrit = false;
+    this.weaponId = null;
     this.direction.x = dirX;
     this.direction.y = dirY;
     this.aliveTime = 0;

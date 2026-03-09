@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-09 (Phase 1 아트 에셋 전환)
+> 최종 업데이트: 2026-03-09 (무기별 결과 리포트)
 
 ## 프로젝트 개요
 
@@ -118,7 +118,9 @@ neon-exodus/
 │   ├── phase3-crit.spec.js        # Phase 3 치명타 시스템 전용 테스트 (7개)
 │   ├── phase4.spec.js             # Phase 4 QA 테스트 (27개)
 │   ├── auto-hunt.spec.js          # 자동 사냥 QA 테스트 (29개)
-│   └── phase1-art-qa.spec.js     # Phase 1 아트 QA 테스트 (22개)
+│   ├── phase1-art-qa.spec.js     # Phase 1 아트 QA 테스트 (22개)
+│   ├── weapon-report.spec.js     # 무기별 결과 리포트 테스트 (28개)
+│   └── weapon-report-layout.spec.js # 무기 리포트 레이아웃 테스트 (11개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -140,7 +142,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수 일괄 관리 |
-| 다국어 | `js/i18n.js` | ko/en 348키, `t()` 함수로 참조 |
+| 다국어 | `js/i18n.js` | ko/en 351키, `t()` 함수로 참조 |
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 일시정지 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, HP/XP/레벨업, 메타 업그레이드 반영 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴 |
@@ -628,9 +630,34 @@ Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 
 - 승리/패배/엔들리스 분기, 생존 시간/처치 수/도달 레벨, 보상 표시
 - 엔들리스 모드: "ENDLESS OVER!" + 경과 분 표시
 - 재도전/메인 메뉴 버튼, 등장 애니메이션
+- 무기별 결과 리포트 (아래 참조)
+- 하단 버튼 동적 Y좌표 계산 (콘텐츠 끝 위치 기준, GAME_HEIGHT 640px 이내 보장)
 
 - 관련 파일: `js/scenes/GameScene.js`, `js/scenes/LevelUpScene.js`, `js/scenes/ResultScene.js`
 - 구현 일자: 2026-03-08
+
+#### 무기별 결과 리포트
+게임 종료(사망/승리/포기) 시 ResultScene에서 런 동안 장착한 무기별 통계를 표시한다.
+
+- **데이터 수집**: WeaponSystem.weaponStats Map에 무기별 { kills, damage } 추적
+  - `recordDamage(weaponId, amount)`: 7개 데미지 경로(projectile, beam, orbital, chain, homing, summon, aoe)에서 호출
+  - `recordKill(weaponId)`: Enemy 처치 시 `GameScene.onEnemyKilled()`에서 호출
+  - addWeapon() 시 weaponStats에 { kills: 0, damage: 0 } 자동 초기화
+- **리포트 빌드**: GameScene._buildWeaponReport()
+  - DPS = Math.round(damage / Math.max(1, runTimeSec)), 0 나누기 방지
+  - 진화 무기는 `_evolvedNameKey` 사용
+  - 데미지 높은 순 정렬
+- **UI 렌더링**: ResultScene._renderWeaponReport()
+  - 최대 6개 무기 표시 (`slice(0, 6)`)
+  - 각 무기: 이름 (11px), 킬 수 + DPS (9px), 데미지 비율 바 (높이 6px, NEON_CYAN), 데미지 수치
+  - 행 높이: 28px
+  - 등장 애니메이션 (알파 페이드, 딜레이 100ms씩)
+- **전달 경로**: _goToResult(), 일시정지 포기 (일반/엔들리스 모두) 3곳에서 weaponReport 전달
+- **폴백**: weaponReport가 undefined이면 빈 배열, 길이 0이면 섹션 미렌더링
+- i18n 키: `result.weaponReport`(무기별 리포트), `result.weaponKills`({0}킬), `result.weaponDps`(DPS {0}) ko/en
+- 관련 파일: `js/systems/WeaponSystem.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`, `js/i18n.js`
+- 구현 일자: 2026-03-09
+- 스펙 문서: `.claude/specs/2026-03-09-weapon-report.md`
 
 ### 세이브/매니저 시스템
 
@@ -723,6 +750,17 @@ Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 
 - [x] 구매 복원 (BootScene에서 restorePurchases, 기기 변경 시 재구매 방지)
 - [x] SaveManager v3->v4 마이그레이션 (autoHuntUnlocked, autoHuntEnabled 필드 추가)
 - [x] i18n 확장 (autoHunt.* 10키 ko/en, 총 348키)
+
+### 무기별 결과 리포트 -- 완료 (2026-03-09)
+- [x] WeaponSystem.weaponStats Map으로 무기별 킬/데미지 추적
+- [x] recordDamage() / recordKill() 메서드 구현
+- [x] 7개 데미지 경로(projectile/beam/orbital/chain/homing/summon/aoe)에서 weaponId 전달 및 recordDamage 호출
+- [x] Projectile.weaponId / Enemy._lastHitWeaponId 필드 추가
+- [x] GameScene._buildWeaponReport() 구현 (DPS 계산, 진화 무기 nameKey, 데미지 순 정렬)
+- [x] ResultScene._renderWeaponReport() 구현 (무기명, 킬 수, DPS, 데미지 비율 바, 최대 6개)
+- [x] 하단 버튼 동적 Y좌표 계산 (레이아웃 겹침 수정)
+- [x] _goToResult(), 일시정지 포기 (일반/엔들리스) 3개 경로에서 weaponReport 전달
+- [x] i18n 3키 추가 (result.weaponReport/weaponKills/weaponDps, ko/en 총 351키)
 
 ### 아트 Phase 1: 스프라이트 에셋 전환 -- 완료 (2026-03-09)
 - [x] DALL-E 3 API 에셋 생성 스크립트 (`scripts/generate-sprites.js`)

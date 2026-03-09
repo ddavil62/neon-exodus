@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-03-09 -- 무기별 결과 리포트
+
+### 추가
+- WeaponSystem.weaponStats Map (`js/systems/WeaponSystem.js`): 무기 장착 시 { kills: 0, damage: 0 } 초기화, 런 동안 무기별 킬 수 및 총 데미지 추적
+- WeaponSystem.recordDamage(weaponId, amount) (`js/systems/WeaponSystem.js` L260-265): 7개 데미지 경로에서 호출. 미등록 weaponId 시 무시
+- WeaponSystem.recordKill(weaponId) (`js/systems/WeaponSystem.js` L271-276): GameScene.onEnemyKilled()에서 호출. 미등록 weaponId 시 무시
+- Projectile.weaponId 필드 (`js/entities/Projectile.js` L32): 투사체에 발사 무기 ID 저장. fire() 시 null 리셋, 풀 재사용 안전
+- Enemy._lastHitWeaponId 필드 (`js/entities/Enemy.js` L239): takeDamage 4번째 인자로 weaponId 수신. _resetBehaviorState()에서 null 초기화
+- GameScene._buildWeaponReport() (`js/scenes/GameScene.js` L340-365): 무기별 통계 스냅샷 생성. DPS = damage / Math.max(1, runTimeSec). 진화 무기 _evolvedNameKey 사용. 데미지 높은 순 정렬
+- ResultScene._renderWeaponReport() (`js/scenes/ResultScene.js` L366-459): 무기별 리포트 UI 렌더링. 최대 6개 표시(slice(0, maxDisplay)). 무기명(11px), 킬/DPS(9px), 데미지 비율 바(높이 6px, NEON_CYAN), 데미지 수치(9px). 행 높이 28px. 등장 애니메이션 포함
+- i18n 3키 (`js/i18n.js`): `result.weaponReport`(ko: '무기별 리포트', en: 'Weapon Report'), `result.weaponKills`(ko: '{0}킬', en: '{0} Kills'), `result.weaponDps`(ko: 'DPS {0}', en: 'DPS {0}')
+- Playwright 테스트 (`tests/weapon-report.spec.js`): 28개 테스트 (26 PASS / 2 테스트 인프라 FAIL)
+- Playwright 레이아웃 테스트 (`tests/weapon-report-layout.spec.js`): 11개 테스트 전체 PASS
+
+### 변경
+- GameScene._onProjectileHitEnemy() (`js/scenes/GameScene.js` L778-779): recordDamage(weaponId, dmg) 호출 추가
+- GameScene.onEnemyKilled() (`js/scenes/GameScene.js` L410-412): weaponId 인자 추가, recordKill(weaponId) 호출
+- GameScene._goToResult() (`js/scenes/GameScene.js` L381-394): _buildWeaponReport() 호출 후 weaponReport를 ResultScene에 전달
+- GameScene 일시정지 포기 (`js/scenes/GameScene.js` L1139-1167): 일반/엔들리스 모드 모두 weaponReport 전달
+- WeaponSystem 7개 데미지 경로: beam(L475-476), orbital(L660-661), chain(L735-736), homing(L970-971), summon(L1139 proj.weaponId), aoe(L1189-1190)에 weaponId 전달 및 recordDamage 호출 추가
+- ResultScene.init() (`js/scenes/ResultScene.js` L59): weaponReport 수신 (|| [] 폴백)
+- ResultScene 레이아웃 압축: 타이틀 Y 100->80, 통계 시작 Y 200->160, 통계 행 높이 30->26px, 보상 폰트 16->14px
+- ResultScene 하단 버튼 동적 Y좌표 (`js/scenes/ResultScene.js` L223-232): contentEndY 기준 계산, maxAdBtnY 상한으로 GAME_HEIGHT(640) 초과 방지. 버튼 간격 60->44px
+
+### 참고
+- 스펙: `.claude/specs/2026-03-09-weapon-report.md`
+- 구현 리포트: `.claude/specs/2026-03-09-weapon-report-layout-fix-report.md`
+- QA: `.claude/specs/2026-03-09-weapon-report-qa.md`
+- QA 결과: 수용기준 15개 전체 PASS, 예외 시나리오 15개 PASS, Playwright 기존 26/28 + 레이아웃 11/11. 시각적 검증 스크린샷 9건 확인. 최초 PARTIAL(레이아웃 겹침) -> 수정 후 PASS
+- 승리+엔들리스+무기6개 최악 케이스에서 메뉴 버튼 하단이 GAME_HEIGHT(640)과 정확히 일치. 시각적으로 문제 없으나 간격이 매우 좁음(LOW 위험)
+
 ## 2026-03-09 -- 아트 Phase 1: 스프라이트 에셋 전환
 
 ### 추가

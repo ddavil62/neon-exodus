@@ -234,8 +234,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
    * @param {number} amount - 데미지 양
    * @param {boolean} [knockback=true] - 넉백 적용 여부
    * @param {Phaser.Physics.Arcade.Sprite} [projectile=null] - 데미지를 준 투사체 (실드 드론 판정용)
+   * @param {string|null} [weaponId=null] - 데미지를 준 무기 ID (통계 추적용)
    */
-  takeDamage(amount, knockback = true, projectile = null) {
+  takeDamage(amount, knockback = true, projectile = null, weaponId = null) {
     if (!this.active) return;
 
     let finalDamage = amount;
@@ -247,6 +248,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.currentHp -= finalDamage;
+
+    // 마지막으로 데미지를 준 무기 ID 저장 (킬 귀속용)
+    if (weaponId) {
+      this._lastHitWeaponId = weaponId;
+    }
 
     // 피격 플래시 (흰색 틴트 100ms)
     this.setTint(0xFFFFFF);
@@ -310,7 +316,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.scene.player.kills++;
     }
     if (this.scene.onEnemyKilled) {
-      this.scene.onEnemyKilled(this);
+      this.scene.onEnemyKilled(this, this._lastHitWeaponId || null);
     }
 
     // 비활성화 (풀로 반환)
@@ -378,6 +384,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this._bombTimer = 0;
     this._empTimer = 0;
     this._bossState = null;
+    this._lastHitWeaponId = null;
   }
 
   /**

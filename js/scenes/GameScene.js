@@ -331,6 +331,40 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
+   * 무기별 통계 리포트를 생성한다.
+   * WeaponSystem의 weaponStats와 weapons 배열을 결합하여
+   * 각 무기의 이름, 킬 수, 데미지, DPS를 배열로 반환한다.
+   * @returns {Array<{ id: string, nameKey: string, kills: number, damage: number, dps: number }>}
+   * @private
+   */
+  _buildWeaponReport() {
+    const report = [];
+    if (!this.weaponSystem) return report;
+
+    const runTimeSec = Math.max(1, this.runTime);
+
+    for (const weapon of this.weaponSystem.weapons) {
+      const wId = weapon.id;
+      const stats = this.weaponSystem.weaponStats.get(wId) || { kills: 0, damage: 0 };
+      const nameKey = weapon._evolvedNameKey || `weapon.${wId}.name`;
+      const dps = Math.round(stats.damage / runTimeSec);
+
+      report.push({
+        id: wId,
+        nameKey: nameKey,
+        kills: stats.kills,
+        damage: stats.damage,
+        dps: dps,
+      });
+    }
+
+    // 데미지 높은 순으로 정렬
+    report.sort((a, b) => b.damage - a.damage);
+
+    return report;
+  }
+
+  /**
    * 결과 화면으로 전환한다.
    * @param {boolean} victory - 승리 여부
    * @private
@@ -343,6 +377,9 @@ export default class GameScene extends Phaser.Scene {
 
     // 약간의 딜레이 후 결과 화면
     this.time.delayedCall(500, () => {
+      // 무기별 통계 스냅샷 (씬 전환 전 복사)
+      const weaponReport = this._buildWeaponReport();
+
       this._cleanup();
       this.scene.start('ResultScene', {
         victory: victory,
@@ -354,6 +391,7 @@ export default class GameScene extends Phaser.Scene {
         level: this.player.level,
         weaponSlotsFilled: this.weaponSystem.weapons.length,
         weaponEvolutions: this.weaponEvolutions,
+        weaponReport: weaponReport,
       });
     });
   }
@@ -363,9 +401,15 @@ export default class GameScene extends Phaser.Scene {
    * 킬 카운트 증가 및 보스 처치 판정만 처리한다.
    * (크레딧 드랍은 Enemy.die()에서 addCredits()를 직접 호출)
    * @param {import('../entities/Enemy.js').default} enemy - 처치된 적
+   * @param {string|null} [weaponId=null] - 처치한 무기 ID (통계 추적용)
    */
-  onEnemyKilled(enemy) {
+  onEnemyKilled(enemy, weaponId = null) {
     this.killCount++;
+
+    // 무기별 킬 통계 기록
+    if (weaponId && this.weaponSystem) {
+      this.weaponSystem.recordKill(weaponId);
+    }
 
     // 적 사망 VFX
     VFXSystem.enemyDie(this, enemy.x, enemy.y);
@@ -727,7 +771,13 @@ export default class GameScene extends Phaser.Scene {
     if (!projectile.active || !enemy.active) return;
 
     const dmg = projectile.damage;
-    enemy.takeDamage(dmg, true, projectile);
+    const weaponId = projectile.weaponId || null;
+    enemy.takeDamage(dmg, true, projectile, weaponId);
+
+    // 무기별 데미지 통계 기록
+    if (weaponId && this.weaponSystem) {
+      this.weaponSystem.recordDamage(weaponId, dmg);
+    }
 
     // 적 피격 VFX/SFX
     VFXSystem.hitSpark(this, enemy.x, enemy.y);
@@ -1085,6 +1135,9 @@ export default class GameScene extends Phaser.Scene {
       // BGM 정지 (결과/메뉴 화면에서 게임 BGM이 계속 재생되는 것을 방지)
       SoundSystem.stopBgm();
 
+      // 무기별 통계 스냅샷 (씬 전환 전 복사)
+      const weaponReport = this._buildWeaponReport();
+
       if (this.isEndlessMode) {
         // 엔들리스 모드에서 포기하면 결과 화면으로
         this._cleanup();
@@ -1098,6 +1151,7 @@ export default class GameScene extends Phaser.Scene {
           level: this.player.level,
           weaponSlotsFilled: this.weaponSystem.weapons.length,
           weaponEvolutions: this.weaponEvolutions,
+          weaponReport: weaponReport,
         });
       } else {
         // 일반 모드 포기 — 결과 화면으로 이동하여 크레딧 정산
@@ -1110,6 +1164,7 @@ export default class GameScene extends Phaser.Scene {
           level: this.player.level,
           weaponSlotsFilled: this.weaponSystem.weapons.length,
           weaponEvolutions: this.weaponEvolutions,
+          weaponReport: weaponReport,
         });
       }
     });

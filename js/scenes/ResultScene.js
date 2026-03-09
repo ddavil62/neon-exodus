@@ -50,6 +50,13 @@ export default class ResultScene extends Phaser.Scene {
 
     /** 엔들리스 경과 분 */
     this.endlessMinutes = data.endlessMinutes || 0;
+
+    /**
+     * 무기별 통계 리포트 배열.
+     * 각 항목: { id, nameKey, kills, damage, dps }
+     * @type {Array<{ id: string, nameKey: string, kills: number, damage: number, dps: number }>}
+     */
+    this.weaponReport = data.weaponReport || [];
   }
 
   /**
@@ -104,7 +111,7 @@ export default class ResultScene extends Phaser.Scene {
     if (this.isEndless) titleKey = 'result.endlessOver';
     const titleColor = this.victory ? UI_COLORS.neonGreen : UI_COLORS.hpRed;
 
-    const title = this.add.text(centerX, 100, t(titleKey), {
+    const title = this.add.text(centerX, 80, t(titleKey), {
       fontSize: '32px',
       fontFamily: 'Galmuri11, monospace',
       color: titleColor,
@@ -116,14 +123,14 @@ export default class ResultScene extends Phaser.Scene {
     this.tweens.add({
       targets: title,
       alpha: 1,
-      y: { from: 70, to: 100 },
+      y: { from: 50, to: 80 },
       duration: 600,
       ease: 'Back.easeOut',
     });
 
     // ── 통계 섹션 ──
-    const statsY = 200;
-    const lineHeight = 30;
+    const statsY = 160;
+    const lineHeight = 26;
 
     // 생존 시간
     const min = Math.floor(this.runTime / 60);
@@ -160,20 +167,24 @@ export default class ResultScene extends Phaser.Scene {
       });
     });
 
+    // ── 무기별 리포트 섹션 ──
+    const weaponReportStartY = statsY + stats.length * lineHeight + 10;
+    const weaponReportEndY = this._renderWeaponReport(centerX, weaponReportStartY, stats.length);
+
     // ── 보상 섹션 ──
-    const rewardY = statsY + stats.length * lineHeight + 30;
+    const rewardY = weaponReportEndY + 6;
 
     // 구분선
     const divider = this.add.graphics();
     divider.lineStyle(1, COLORS.UI_BORDER, 0.5);
-    divider.lineBetween(centerX - 100, rewardY - 10, centerX + 100, rewardY - 10);
+    divider.lineBetween(centerX - 100, rewardY - 4, centerX + 100, rewardY - 4);
 
     // 획득 크레딧
     this._creditText = this.add.text(
-      centerX, rewardY + 10,
+      centerX, rewardY + 8,
       t('result.creditsEarned', this.creditsEarned),
       {
-        fontSize: '16px',
+        fontSize: '14px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonOrange,
       }
@@ -186,13 +197,15 @@ export default class ResultScene extends Phaser.Scene {
       delay: 800,
     });
 
-    // 클리어 보너스 (승리 시)
+    // 클리어 보너스 (승리 시) -- 크레딧 옆에 인라인 표시
+    /** 보상 섹션 끝 Y 좌표 */
+    let rewardEndY = rewardY + 24;
     if (this.victory) {
       const bonusText = this.add.text(
-        centerX, rewardY + 40,
+        centerX, rewardY + 28,
         t('result.bonusCredit', 100),
         {
-          fontSize: '14px',
+          fontSize: '12px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.neonMagenta,
         }
@@ -204,21 +217,31 @@ export default class ResultScene extends Phaser.Scene {
         duration: 500,
         delay: 1000,
       });
+      rewardEndY = rewardY + 44;
     }
 
+    // ── 하단 버튼 Y좌표 동적 계산 ──
+    // 콘텐츠 끝 위치 기준으로 버튼 배치하되, 기존 고정 위치보다 위로 올라가지 않도록 보장
+    // 메뉴 버튼 하단이 GAME_HEIGHT 이내에 들어오도록 상한 적용
+    const contentEndY = rewardEndY + 6;
+    const btnGap = 44;
+    // 메뉴 버튼 중심 = adBtnY + btnGap*2, 하단 = +20 → adBtnY <= GAME_HEIGHT - btnGap*2 - 20
+    const maxAdBtnY = GAME_HEIGHT - btnGap * 2 - 20;
+    const adBtnY = Math.min(Math.max(contentEndY, GAME_HEIGHT - 200), maxAdBtnY);
+    const retryBtnY = adBtnY + btnGap;
+    const menuBtnY = retryBtnY + btnGap;
+
     // ── 광고 보고 2배 버튼 ──
-    this._createAdDoubleButton(centerX, GAME_HEIGHT - 200, 1000);
+    this._createAdDoubleButton(centerX, adBtnY, 1000);
 
     // ── 버튼 ──
-    const btnY = GAME_HEIGHT - 140;
-
     // 다시 도전 버튼
-    this._createButton(centerX, btnY, t('result.retry'), UI_COLORS.btnPrimary, () => {
+    this._createButton(centerX, retryBtnY, t('result.retry'), UI_COLORS.btnPrimary, () => {
       this.scene.start('GameScene');
     }, 1200);
 
     // 메인 메뉴 버튼
-    this._createButton(centerX, btnY + 60, t('result.toMenu'), UI_COLORS.btnSecondary, () => {
+    this._createButton(centerX, menuBtnY, t('result.toMenu'), UI_COLORS.btnSecondary, () => {
       this.scene.start('MenuScene');
     }, 1400);
 
@@ -327,6 +350,128 @@ export default class ResultScene extends Phaser.Scene {
       pressed = false;
       if (!this._adUsed) this._adBtnText.setAlpha(1);
     });
+  }
+
+  // ── 무기별 리포트 렌더링 ──
+
+  /**
+   * 무기별 통계 리포트를 렌더링한다.
+   * 각 무기의 킬 수, 총 데미지, DPS, 데미지 비율 바를 표시한다.
+   * @param {number} centerX - 중심 X 좌표
+   * @param {number} startY - 시작 Y 좌표
+   * @param {number} statsCount - 상단 통계 항목 수 (애니메이션 딜레이 계산용)
+   * @returns {number} 렌더링 후 다음 Y 좌표
+   * @private
+   */
+  _renderWeaponReport(centerX, startY, statsCount) {
+    if (!this.weaponReport || this.weaponReport.length === 0) {
+      return startY;
+    }
+
+    // 구분선
+    const divGfx = this.add.graphics();
+    divGfx.lineStyle(1, COLORS.UI_BORDER, 0.4);
+    divGfx.lineBetween(centerX - 100, startY, centerX + 100, startY);
+
+    // 섹션 타이틀
+    const titleY = startY + 12;
+    const sectionTitle = this.add.text(centerX, titleY, t('result.weaponReport'), {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setOrigin(0.5).setAlpha(0);
+
+    const baseDelay = 300 + statsCount * 150;
+    this.tweens.add({
+      targets: sectionTitle,
+      alpha: 1,
+      duration: 300,
+      delay: baseDelay,
+    });
+
+    // 총 데미지 합산 (비율 바 계산용)
+    const maxDamage = Math.max(1, ...this.weaponReport.map(w => w.damage));
+
+    // 최대 6개까지만 표시 (화면 공간 제한)
+    const maxDisplay = 6;
+    const displayWeapons = this.weaponReport.slice(0, maxDisplay);
+
+    let curY = titleY + 18;
+    const rowHeight = 28;
+    const barWidth = 160;
+    const barHeight = 6;
+    const leftX = centerX - 110;
+
+    displayWeapons.forEach((weapon, idx) => {
+      const rowDelay = baseDelay + 100 + idx * 100;
+      const rowY = curY + idx * rowHeight;
+
+      // 무기 이름
+      const nameText = this.add.text(leftX, rowY, t(weapon.nameKey), {
+        fontSize: '11px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.textPrimary,
+      }).setOrigin(0, 0).setAlpha(0);
+
+      // 킬 수 / DPS 텍스트 (오른쪽)
+      const infoStr = t('result.weaponKills', weapon.kills) + '  ' + t('result.weaponDps', weapon.dps);
+      const infoText = this.add.text(centerX + 110, rowY, infoStr, {
+        fontSize: '9px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.textSecondary,
+      }).setOrigin(1, 0).setAlpha(0);
+
+      // 데미지 비율 바 배경
+      const barY = rowY + 14;
+      const barBg = this.add.graphics();
+      barBg.fillStyle(0x333333, 0.6);
+      barBg.fillRect(leftX, barY, barWidth, barHeight);
+      barBg.setAlpha(0);
+
+      // 데미지 비율 바 (채움)
+      const damageRatio = weapon.damage / maxDamage;
+      const barFill = this.add.graphics();
+      barFill.fillStyle(COLORS.NEON_CYAN, 0.8);
+      barFill.fillRect(leftX, barY, barWidth * damageRatio, barHeight);
+      barFill.setAlpha(0);
+
+      // 데미지 수치 텍스트 (바 오른쪽)
+      const dmgText = this.add.text(
+        leftX + barWidth + 6, barY - 1,
+        this._formatNumber(weapon.damage),
+        {
+          fontSize: '9px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.neonOrange,
+        }
+      ).setOrigin(0, 0).setAlpha(0);
+
+      // 등장 애니메이션
+      this.tweens.add({
+        targets: [nameText, infoText, barBg, barFill, dmgText],
+        alpha: 1,
+        duration: 300,
+        delay: rowDelay,
+      });
+    });
+
+    return curY + displayWeapons.length * rowHeight + 4;
+  }
+
+  /**
+   * 숫자를 읽기 쉬운 형식으로 변환한다 (1000 이상이면 K 단위).
+   * @param {number} num - 숫자
+   * @returns {string} 포맷된 문자열
+   * @private
+   */
+  _formatNumber(num) {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return String(num);
   }
 
   // ── 내부 메서드 ──

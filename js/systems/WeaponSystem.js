@@ -63,6 +63,13 @@ export default class WeaponSystem {
 
     /** 드론 호버링 각도 오프셋 */
     this._droneHoverAngle = 0;
+
+    /**
+     * 무기별 통계 맵 (weaponId → { kills, damage }).
+     * 런 동안 각 무기의 킬 수와 총 데미지를 추적한다.
+     * @type {Map<string, { kills: number, damage: number }>}
+     */
+    this.weaponStats = new Map();
   }
 
   // ── 공개 메서드 ──
@@ -92,6 +99,11 @@ export default class WeaponSystem {
       cooldownTimer: 0,
       data: baseData,
     });
+
+    // 무기별 통계 초기화
+    if (!this.weaponStats.has(weaponId)) {
+      this.weaponStats.set(weaponId, { kills: 0, damage: 0 });
+    }
 
     // 도감에 무기 등록
     SaveManager.addToCollection('weaponsSeen', weaponId);
@@ -241,6 +253,29 @@ export default class WeaponSystem {
   }
 
   /**
+   * 무기별 데미지를 기록한다.
+   * @param {string} weaponId - 무기 ID
+   * @param {number} amount - 데미지 양
+   */
+  recordDamage(weaponId, amount) {
+    const stats = this.weaponStats.get(weaponId);
+    if (stats) {
+      stats.damage += amount;
+    }
+  }
+
+  /**
+   * 무기별 킬을 기록한다.
+   * @param {string} weaponId - 무기 ID
+   */
+  recordKill(weaponId) {
+    const stats = this.weaponStats.get(weaponId);
+    if (stats) {
+      stats.kills += 1;
+    }
+  }
+
+  /**
    * 매 프레임 호출. 각 무기의 쿨다운과 발사를 처리한다.
    * 무기 타입(projectile/beam/orbital)에 따라 별도 로직을 실행한다.
    * @param {number} time - 전체 경과 시간 (ms)
@@ -365,7 +400,7 @@ export default class WeaponSystem {
       // 데미지 적용 (duration 동안 1회)
       if (!state.damaged) {
         state.damaged = true;
-        this._applyBeamDamage(stats, state);
+        this._applyBeamDamage(stats, state, weapon.id);
       }
 
       // duration 종료 시 비활성으로 전환
@@ -406,9 +441,10 @@ export default class WeaponSystem {
    * 빔 사거리 내 모든 적에게 데미지를 입힌다.
    * @param {Object} stats - 빔 무기 스탯
    * @param {Object} state - 빔 상태
+   * @param {string} weaponId - 무기 ID (통계 추적용)
    * @private
    */
-  _applyBeamDamage(stats, state) {
+  _applyBeamDamage(stats, state, weaponId) {
     const atkMult = this.player.getEffectiveAttackMultiplier ? this.player.getEffectiveAttackMultiplier() : (this.player.attackMultiplier || 1);
     const baseDamage = Math.floor(stats.tickDamage * atkMult);
 
@@ -436,7 +472,8 @@ export default class WeaponSystem {
         enemy.x, enemy.y, px, py, beamEndX, beamEndY
       );
       if (dist < 20) {
-        enemy.takeDamage(finalDamage, true);
+        enemy.takeDamage(finalDamage, true, null, weaponId);
+        this.recordDamage(weaponId, finalDamage);
         if (isCrit) this._showCritEffect(enemy.x, enemy.y);
       }
     });
@@ -620,7 +657,8 @@ export default class WeaponSystem {
         if (dist <= stats.orbRadius) {
           // 오브 틱마다 적별로 치명타 판정
           const { damage: finalDamage, isCrit } = this._rollCrit(baseDamage);
-          enemy.takeDamage(finalDamage, true);
+          enemy.takeDamage(finalDamage, true, null, weapon.id);
+          this.recordDamage(weapon.id, finalDamage);
           if (isCrit) this._showCritEffect(enemy.x, enemy.y);
         }
       });
@@ -648,7 +686,7 @@ export default class WeaponSystem {
       const target = this.findClosestEnemy(this.player.x, this.player.y, 300);
 
       if (target) {
-        this._fireChain(stats, target);
+        this._fireChain(stats, target, weapon.id);
         weapon.cooldownTimer = effectiveCooldown;
       } else {
         weapon.cooldownTimer = 0;
@@ -674,9 +712,10 @@ export default class WeaponSystem {
    * 체인 번개를 발사한다. 초기 대상에서 연쇄 공격.
    * @param {Object} stats - 체인 무기 스탯
    * @param {Object} firstTarget - 첫 번째 타겟
+   * @param {string} weaponId - 무기 ID (통계 추적용)
    * @private
    */
-  _fireChain(stats, firstTarget) {
+  _fireChain(stats, firstTarget, weaponId) {
     const atkMult = this.player.getEffectiveAttackMultiplier ? this.player.getEffectiveAttackMultiplier() : (this.player.attackMultiplier || 1);
     let currentDamage = Math.floor(stats.damage * atkMult);
 
@@ -693,7 +732,8 @@ export default class WeaponSystem {
 
       // 체인 히트마다 치명타 판정
       const { damage: finalDamage, isCrit } = this._rollCrit(currentDamage);
-      currentTarget.takeDamage(finalDamage, true);
+      currentTarget.takeDamage(finalDamage, true, null, weaponId);
+      this.recordDamage(weaponId, finalDamage);
       if (isCrit) this._showCritEffect(currentTarget.x, currentTarget.y);
       hitEnemies.add(currentTarget);
       chainPoints.push({ x: currentTarget.x, y: currentTarget.y });
@@ -781,7 +821,7 @@ export default class WeaponSystem {
       const target = this.findClosestEnemy(this.player.x, this.player.y, stats.range);
 
       if (target) {
-        this._fireMissile(stats, target);
+        this._fireMissile(stats, target, weapon.id);
         weapon.cooldownTimer = effectiveCooldown;
       } else {
         weapon.cooldownTimer = 0;
@@ -793,9 +833,10 @@ export default class WeaponSystem {
    * 미사일을 발사한다.
    * @param {Object} stats - 미사일 무기 스탯
    * @param {Object} target - 초기 타겟
+   * @param {string} weaponId - 무기 ID (통계 추적용)
    * @private
    */
-  _fireMissile(stats, target) {
+  _fireMissile(stats, target, weaponId) {
     // 미사일 최대 30개 제한
     if (this._missiles.length >= 30) return;
 
@@ -827,6 +868,7 @@ export default class WeaponSystem {
       range: stats.range,
       distanceTraveled: 0,
       target,
+      weaponId,
     });
   }
 
@@ -925,7 +967,8 @@ export default class WeaponSystem {
         if (!enemy.active) return;
         const dist = Phaser.Math.Distance.Between(missile.x, missile.y, enemy.x, enemy.y);
         if (dist <= missile.explosionRadius) {
-          enemy.takeDamage(finalDamage, true);
+          enemy.takeDamage(finalDamage, true, null, missile.weaponId);
+          this.recordDamage(missile.weaponId, finalDamage);
           if (isCrit) this._showCritEffect(enemy.x, enemy.y);
         }
       });
@@ -1093,6 +1136,7 @@ export default class WeaponSystem {
     if (proj) {
       proj.fire(gfx.x, gfx.y, dirX, dirY, finalDamage, 350, 1);
       proj.isCrit = isCrit;
+      proj.weaponId = weapon.id;
     }
 
     SoundSystem.play('shoot');
@@ -1142,7 +1186,8 @@ export default class WeaponSystem {
       const dist = Phaser.Math.Distance.Between(px, py, enemy.x, enemy.y);
       if (dist <= stats.radius) {
         // 데미지 적용
-        enemy.takeDamage(baseDamage, false);
+        enemy.takeDamage(baseDamage, false, null, weaponId);
+        this.recordDamage(weaponId, baseDamage);
 
         // 둔화 적용: 원래 속도를 저장 후 감속
         if (enemy._originalSpeed === undefined) {
@@ -1298,6 +1343,9 @@ export default class WeaponSystem {
 
     // 투사체에 치명타 여부 저장 (적중 시 시각 효과 표시용)
     proj.isCrit = isCrit;
+
+    // 투사체에 무기 ID 저장 (통계 추적용)
+    proj.weaponId = weapon.id;
 
     // 발사 SFX
     SoundSystem.play('shoot');
