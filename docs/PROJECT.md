@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-09 (스프라이트 2x 스케일 적용)
+> 최종 업데이트: 2026-03-09 (인게임 인벤토리 HUD)
 
 ## 프로젝트 개요
 
@@ -144,7 +144,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 351키, `t()` 함수로 참조 |
-| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 일시정지 |
+| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, HP/XP/레벨업, 메타 업그레이드 반영 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위), 치명타 판정, 무기 진화, 드론 AI |
@@ -640,6 +640,25 @@ Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 
 #### 하단 HUD
 - 크레딧, 킬 수
 
+#### 인벤토리 HUD (Vampire Survivors 스타일)
+HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 이벤트 기반 갱신으로 매 프레임 비용 없음.
+
+| 행 | 중심 Y | 슬롯 크기 | stride | 최대 수 | 레벨 색상 |
+|---|---|---|---|---|---|
+| 무기 행 | 560 (GAME_HEIGHT-80) | 32x32, 반경 5 | 60px | 6 | xpYellow (#FFDD00) |
+| 패시브 행 | 594 (GAME_HEIGHT-46) | 28x28, 반경 4 | 36px | 10 | neonCyan (#00FFFF) |
+
+- 각 슬롯: 반투명 검정 둥근 사각형 배경(무기 55%, 패시브 50%) + 이모지 아이콘 + 우하단 레벨 숫자
+- 무기 아이콘: WEAPON_ICON_MAP 상수로 매핑 (10종 + fallback), 진화 무기는 `w._evolvedId`로 진화 아이콘 자동 교체
+- 패시브 아이콘: `getPassiveById(pid).icon` 필드 활용
+- depth: bg=105, icon=106, level=107 (기존 HUD 100~102 위)
+- setScrollFactor(0)으로 카메라 고정
+- 갱신 시점: `_createHUD()` 초기화 시 1회 + `levelupDone` 이벤트 핸들러에서 `_tryEvolutionCheck()` 이후
+- 빈 슬롯 표시 없음 (보유 아이템만 순회)
+- 관련 파일: `js/scenes/GameScene.js`
+- 구현 일자: 2026-03-09
+- 스펙 문서: `.claude/specs/2026-03-09-ingame-inventory-ui.md`
+
 #### 일시정지 오버레이
 - 반투명 배경, 계속/포기 버튼
 
@@ -804,3 +823,15 @@ Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 
 - [x] Enemy.js body offset을 displayW 기준으로 동적 재계산
 - [x] Projectile.js에 setScale(SPRITE_SCALE) 적용 및 body offset 재조정 (circle 4, offset 2)
 - [x] XPGem.js constructor/spawn() 모두 setScale(SPRITE_SCALE) 적용 및 타입별 body offset 재계산
+
+### 인게임 인벤토리 HUD -- 완료 (2026-03-09)
+- [x] WEAPON_ICON_MAP 상수 추가 (10종 무기 ID -> 이모지 매핑 + WEAPON_ICON_FALLBACK)
+- [x] getPassiveById import 추가
+- [x] _createHUD() 내 _inventoryHUD 초기화 및 _refreshInventoryHUD() 초기 호출
+- [x] onLevelUp() levelupDone 핸들러에 _refreshInventoryHUD() 호출 추가 (_tryEvolutionCheck 이후)
+- [x] _refreshInventoryHUD() 신규 메서드 구현 (무기 행 Y=560 + 패시브 행 Y=594, destroy-rebuild 방식)
+- [x] 무기 슬롯: 32x32, stride 60px, 최대 6개, 레벨 색상 xpYellow
+- [x] 패시브 슬롯: 28x28, stride 36px, 최대 10개, 레벨 색상 neonCyan
+- [x] 진화 무기 아이콘 자동 교체 (w._evolvedId 기반)
+- [x] setScrollFactor(0) + depth 105~107로 카메라 고정
+- [x] 이벤트 기반 갱신 (매 프레임 갱신 없음)

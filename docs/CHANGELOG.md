@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-09 -- 인게임 인벤토리 HUD
+
+### 추가
+- WEAPON_ICON_MAP 상수 (`js/scenes/GameScene.js` L48-59): 무기 ID -> 이모지 매핑 10종 (blaster, laser_gun, plasma_orb, electric_chain, missile, drone, emp_blast, precision_cannon, plasma_storm, nuke_missile). WEAPON_ICON_FALLBACK(L62) = 매핑 없는 무기 폴백 아이콘
+- getPassiveById import (`js/scenes/GameScene.js` L40): passives.js에서 패시브 아이콘 조회용
+- _inventoryHUD 초기화 (`js/scenes/GameScene.js` L1036): `{ weapons: [], passives: [] }` 컨테이너. _createHUD() 내에서 초기화 후 _refreshInventoryHUD() 호출
+- _refreshInventoryHUD() 메서드 (`js/scenes/GameScene.js` L1105-1208): 무기 행(Y=560, 32x32, stride 60px, 폰트 18px/9px) + 패시브 행(Y=594, 28x28, stride 36px, 폰트 15px/8px) 렌더링. destroy-rebuild 방식. null guard(inv, weaponSystem, player) 포함
+- Playwright 테스트 (`tests/inventory-hud.spec.js`): 25개 테스트
+
+### 변경
+- onLevelUp() levelupDone 핸들러 (`js/scenes/GameScene.js` L315): _tryEvolutionCheck() 이후 _refreshInventoryHUD() 호출 추가. 레벨업/진화 후 인벤토리 HUD 즉시 갱신
+
+### 참고
+- 스펙: `.claude/specs/2026-03-09-ingame-inventory-ui.md`
+- 구현 리포트: `.claude/specs/2026-03-09-ingame-inventory-ui-report.md`
+- QA: `.claude/specs/2026-03-09-ingame-inventory-ui-qa.md`
+- QA 결과: 수용기준 10/10 PASS, 예외 시나리오 7/7 PASS, Playwright 25/25 전체 통과. 시각적 검증 스크린샷 7건 확인
+- LOW 소견: _cleanup()에서 _inventoryHUD 요소 명시적 destroy 미구현. Phaser scene 생명주기 자동 정리로 실질적 문제 없음
+
 ## 2026-03-09 -- 스프라이트 2x 스케일 적용
 
 ### 추가

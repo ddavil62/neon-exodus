@@ -37,10 +37,29 @@ import VFXSystem from '../systems/VFXSystem.js';
 import { AdManager } from '../managers/AdManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
 import AutoPilotSystem from '../systems/AutoPilotSystem.js';
+import { getPassiveById } from '../data/passives.js';
 
 // ── 접촉 데미지 쿨다운 (ms) ──
 /** 같은 적이 연속으로 접촉 데미지를 주지 않도록 하는 최소 간격 */
 const CONTACT_DAMAGE_COOLDOWN = 500;
+
+// ── 무기 아이콘 맵 ──
+/** @type {Object.<string, string>} 무기 ID -> 표시 이모지 */
+const WEAPON_ICON_MAP = {
+  blaster:          '\u{1F52B}',
+  laser_gun:        '\u26A1',
+  plasma_orb:       '\u{1F49C}',
+  electric_chain:   '\u{1F329}\uFE0F',
+  missile:          '\u{1F680}',
+  drone:            '\u{1F916}',
+  emp_blast:        '\u{1F4A5}',
+  precision_cannon: '\u{1F3AF}',
+  plasma_storm:     '\u{1F300}',
+  nuke_missile:     '\u2622\uFE0F',
+};
+
+/** 무기 아이콘 맵에 없는 무기의 fallback 아이콘 */
+const WEAPON_ICON_FALLBACK = '\u2694\uFE0F';
 
 // ── GameScene 클래스 ──
 
@@ -292,6 +311,8 @@ export default class GameScene extends Phaser.Scene {
       }
       // 무기/패시브 변경 후 진화 조건 체크
       this._tryEvolutionCheck();
+      // 인벤토리 HUD 갱신 (레벨업, 진화 반영)
+      this._refreshInventoryHUD();
     });
   }
 
@@ -1011,7 +1032,13 @@ export default class GameScene extends Phaser.Scene {
       color: UI_COLORS.textPrimary,
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
 
+    // 인벤토리 HUD 컨테이너 초기화
+    this._inventoryHUD = { weapons: [], passives: [] };
+
     this._hud = hud;
+
+    // 초기 렌더링 (씬 시작 시 보유 무기 표시)
+    this._refreshInventoryHUD();
   }
 
   /**
@@ -1067,6 +1094,117 @@ export default class GameScene extends Phaser.Scene {
 
     // 킬수
     hud.killText.setText(t('hud.kills', this.killCount));
+  }
+
+  /**
+   * 인벤토리 HUD(무기 행 + 패시브 행)를 갱신한다.
+   * 기존 슬롯을 모두 destroy 후 현재 보유 아이템 기반으로 재생성한다.
+   * 이벤트 기반 호출이므로 매 프레임 갱신하지 않는다.
+   * @private
+   */
+  _refreshInventoryHUD() {
+    const inv = this._inventoryHUD;
+    if (!inv) return;
+
+    // ── 기존 슬롯 정리 ──
+    inv.weapons.forEach((slot) => {
+      if (slot.bg && slot.bg.destroy) slot.bg.destroy();
+      if (slot.icon && slot.icon.destroy) slot.icon.destroy();
+      if (slot.level && slot.level.destroy) slot.level.destroy();
+    });
+    inv.passives.forEach((slot) => {
+      if (slot.bg && slot.bg.destroy) slot.bg.destroy();
+      if (slot.icon && slot.icon.destroy) slot.icon.destroy();
+      if (slot.level && slot.level.destroy) slot.level.destroy();
+    });
+    inv.weapons = [];
+    inv.passives = [];
+
+    // ── 무기 행 (Y = GAME_HEIGHT - 80 = 560) ──
+    const weaponY = GAME_HEIGHT - 80;   // 중심 Y
+    const weaponSize = 32;              // 슬롯 크기 (px)
+    const weaponRadius = 5;             // 둥근 모서리 반경
+    const weaponStride = 60;            // 슬롯 간격 (px)
+    const weaponStartX = 30;            // 첫 슬롯 중심 X
+
+    const weapons = this.weaponSystem ? this.weaponSystem.weapons : [];
+    weapons.forEach((w, idx) => {
+      const cx = weaponStartX + idx * weaponStride;
+
+      // 배경: 반투명 검정 둥근 사각형
+      const bg = this.add.graphics().setScrollFactor(0).setDepth(105);
+      bg.fillStyle(0x000000, 0.55);
+      bg.fillRoundedRect(
+        cx - weaponSize / 2, weaponY - weaponSize / 2,
+        weaponSize, weaponSize,
+        weaponRadius
+      );
+
+      // 아이콘: 진화된 무기면 진화 ID로 조회
+      const iconKey = w._evolvedId || w.id;
+      const emoji = WEAPON_ICON_MAP[iconKey] || WEAPON_ICON_FALLBACK;
+      const icon = this.add.text(cx, weaponY, emoji, {
+        fontSize: '18px',
+        fontFamily: 'Galmuri11, monospace',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(106);
+
+      // 레벨 숫자: 우하단 정렬
+      const level = this.add.text(
+        cx + weaponSize / 2 - 2,         // 우측 기준 2px 안쪽
+        weaponY + weaponSize / 2 - 1,    // 하단 기준 1px 안쪽
+        `${w.level}`,
+        {
+          fontSize: '9px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.xpYellow,
+        }
+      ).setOrigin(1, 1).setScrollFactor(0).setDepth(107);
+
+      inv.weapons.push({ bg, icon, level });
+    });
+
+    // ── 패시브 행 (Y = GAME_HEIGHT - 46 = 594) ──
+    const passiveY = GAME_HEIGHT - 46;  // 중심 Y
+    const passiveSize = 28;             // 슬롯 크기 (px)
+    const passiveRadius = 4;            // 둥근 모서리 반경
+    const passiveStride = 36;           // 슬롯 간격 (px)
+    const passiveStartX = 18;           // 첫 슬롯 중심 X
+
+    const passives = this.player ? (this.player._passives || {}) : {};
+    Object.entries(passives).forEach(([pid, plevel], idx) => {
+      const cx = passiveStartX + idx * passiveStride;
+
+      // 배경: 반투명 검정 둥근 사각형
+      const bg = this.add.graphics().setScrollFactor(0).setDepth(105);
+      bg.fillStyle(0x000000, 0.50);
+      bg.fillRoundedRect(
+        cx - passiveSize / 2, passiveY - passiveSize / 2,
+        passiveSize, passiveSize,
+        passiveRadius
+      );
+
+      // 아이콘: passives.js 데이터에서 icon 필드 조회
+      const passiveData = getPassiveById(pid);
+      const emoji = passiveData?.icon ?? '?';
+      const icon = this.add.text(cx, passiveY, emoji, {
+        fontSize: '15px',
+        fontFamily: 'Galmuri11, monospace',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(106);
+
+      // 레벨 숫자: 우하단 정렬
+      const level = this.add.text(
+        cx + passiveSize / 2 - 2,         // 우측 기준 2px 안쪽
+        passiveY + passiveSize / 2 - 1,   // 하단 기준 1px 안쪽
+        `${plevel}`,
+        {
+          fontSize: '8px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.neonCyan,
+        }
+      ).setOrigin(1, 1).setScrollFactor(0).setDepth(107);
+
+      inv.passives.push({ bg, icon, level });
+    });
   }
 
   // ── 일시정지 ──
