@@ -274,9 +274,9 @@ export default class UpgradeScene extends Phaser.Scene {
 
     // 효과 설명
     const descText = this.add.text(x, y + 2, t(upgrade.descKey), {
-      fontSize: '8px',
+      fontSize: '9px',
       fontFamily: 'Galmuri11, monospace',
-      color: UI_COLORS.textSecondary,
+      color: '#BBBBBB',
       wordWrap: { width: w - 16 },
       align: 'center',
     }).setOrigin(0.5);
@@ -321,7 +321,7 @@ export default class UpgradeScene extends Phaser.Scene {
 
       // [+] 구매 버튼 배경
       const costStr = t('upgrade.cost', upgrade.nextCost);
-      const costColor = canBuy ? UI_COLORS.neonOrange : UI_COLORS.textSecondary;
+      const costColor = canBuy ? '#FFFFFF' : UI_COLORS.textSecondary;
 
       const btnBg = this.add.graphics();
       const btnBgColor = canBuy ? 0x00AAAA : 0x333344;
