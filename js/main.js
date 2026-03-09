@@ -41,8 +41,8 @@ const config = {
     activePointers: 1,
   },
   render: {
-    pixelArt: true,
-    antialias: false,
+    pixelArt: false,
+    antialias: true,
   },
 };
 

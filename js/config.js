@@ -21,8 +21,8 @@ export const WORLD_HEIGHT = 2000;
 
 // ── 스프라이트 설정 ──
 
-/** 스프라이트 렌더링 배율 (pixelArt: true이므로 선명 유지) */
-export const SPRITE_SCALE = 2;
+/** 스프라이트 렌더링 배율 (벡터 에셋은 표시 크기로 직접 생성하므로 1 사용) */
+export const SPRITE_SCALE = 1;
 
 // ── 플레이어 설정 ──
 

@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-09 (Phase 2 아트웍 - 보스/미니보스 스프라이트)
+> 최종 업데이트: 2026-03-10 (글로우 벡터 아트 Phase 1 - 20종 벡터 스프라이트 전면 교체)
 
 ## 프로젝트 개요
 
@@ -53,7 +53,7 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(Phase 1 스프라이트 15종 + Phase 2 보스/미니보스 5종), 플레이스홀더 폴백, 애니메이션 등록, SoundSystem 초기화
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image 로드), 플레이스홀더 폴백, SoundSystem 초기화
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출)
@@ -90,34 +90,35 @@ neon-exodus/
 │       ├── characters.js          # 캐릭터 6종
 │       └── achievements.js        # 도전과제 13종
 ├── assets/
-│   └── sprites/                   # 스프라이트 에셋 (DALL-E 3 생성)
-│       ├── player.png             # 플레이어 스프라이트시트 (48x24, 2F)
-│       ├── projectile.png         # 투사체 정적 이미지 (6x6)
-│       ├── enemies/               # 잡몹 10종 스프라이트시트 (각 2F 가로배치)
-│       │   ├── nano_drone.png     # 32x16
-│       │   ├── scout_bot.png      # 40x20
-│       │   ├── spark_drone.png    # 32x16
-│       │   ├── battle_robot.png   # 56x28
-│       │   ├── shield_drone.png   # 40x20
-│       │   ├── rush_bot.png       # 48x24
-│       │   ├── repair_bot.png     # 40x20
-│       │   ├── heavy_bot.png      # 64x32
-│       │   ├── teleport_drone.png # 40x20
-│       │   └── suicide_bot.png    # 48x24
-│       ├── bosses/                # Phase 2 보스/미니보스 스프라이트시트
-│       │   ├── guardian_drone.png # 80x40  (미니보스, 2F idle)
-│       │   ├── assault_mech.png   # 80x40  (미니보스, 2F idle)
-│       │   ├── commander_drone.png# 256x64 (보스, 4F: idle 2F + special 2F)
-│       │   ├── siege_titan.png    # 256x64 (보스, 4F: idle 2F + special 2F)
-│       │   └── core_processor.png # 256x64 (보스, 4F: idle 2F + special 2F)
+│   └── sprites/                   # 벡터 PNG 에셋 (SVG 코드 생성 → sharp PNG 변환)
+│       ├── player.png             # 플레이어 정적 이미지 (48x48)
+│       ├── projectile.png         # 투사체 정적 이미지 (12x12)
+│       ├── enemies/               # 잡몹 10종 정적 이미지
+│       │   ├── nano_drone.png     # 32x32
+│       │   ├── scout_bot.png      # 32x32
+│       │   ├── spark_drone.png    # 32x32
+│       │   ├── battle_robot.png   # 48x48
+│       │   ├── shield_drone.png   # 32x32
+│       │   ├── rush_bot.png       # 40x40
+│       │   ├── repair_bot.png     # 32x32
+│       │   ├── heavy_bot.png      # 48x48
+│       │   ├── teleport_drone.png # 32x32
+│       │   └── suicide_bot.png    # 40x40
+│       ├── bosses/                # 미니보스 2종 + 보스 3종 정적 이미지
+│       │   ├── guardian_drone.png # 80x80  (미니보스)
+│       │   ├── assault_mech.png   # 80x80  (미니보스)
+│       │   ├── commander_drone.png# 128x128 (보스)
+│       │   ├── siege_titan.png    # 128x128 (보스)
+│       │   └── core_processor.png # 128x128 (보스)
 │       └── items/                 # XP 보석 3종 정적 이미지
-│           ├── xp_gem_s.png       # 6x6
-│           ├── xp_gem_m.png       # 10x10
-│           └── xp_gem_l.png       # 14x14
+│           ├── xp_gem_s.png       # 12x12
+│           ├── xp_gem_m.png       # 20x20
+│           └── xp_gem_l.png       # 28x28
 ├── scripts/
 │   ├── build.js                   # www/ 디렉토리 빌드 스크립트
-│   ├── generate-sprites.js        # Phase 1 DALL-E 3 스프라이트 생성 스크립트
-│   └── generate-sprites-phase2.js # Phase 2 보스/미니보스 스프라이트 생성 스크립트
+│   ├── generate-sprites.js        # (레거시) Phase 1 DALL-E 3 스프라이트 생성 스크립트
+│   ├── generate-sprites-phase2.js # (레거시) Phase 2 보스/미니보스 스프라이트 생성 스크립트
+│   └── generate-vector-sprites.js # 20종 SVG 벡터 PNG 생성 스크립트 (현행)
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
@@ -149,7 +150,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 | 모듈 | 파일 | 역할 |
 |---|---|---|
-| 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE 일괄 관리 |
+| 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 351키, `t()` 함수로 참조 |
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, HP/XP/레벨업, 메타 업그레이드 반영 |
@@ -168,27 +169,36 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 ## 기능 명세
 
-### 스프라이트 스케일
+### 아트 스타일 및 스프라이트 스케일
 
-모든 게임 엔티티에 `SPRITE_SCALE = 2` 배율을 적용하여 16~32px 에셋을 2배 크기로 렌더링한다. Phaser `pixelArt: true` 설정으로 nearest-neighbor 보간되어 픽셀이 선명하게 유지된다.
+**아트 스타일**: SVG 벡터 + 네온 글로우(Glow) + 사이버펑크 그라데이션. Node.js SVG 코드 생성 -> sharp PNG 변환 방식. 에셋을 최종 표시 크기로 직접 생성하므로 스케일 배율 불필요 (`SPRITE_SCALE = 1`).
 
-| 엔티티 | 원본 크기 | 디스플레이 크기 | 충돌체 |
+**Phaser 렌더 설정**: `pixelArt: false`, `antialias: true` -- 벡터 에셋의 매끄러운 외곽선 렌더링.
+
+**에셋 로드 방식**: `this.load.image()` 정적 이미지 로드 (spritesheet 미사용). 프레임 애니메이션 제거, Phaser tween으로 아이들 맥동 애니메이션 구현.
+
+| 엔티티 | 에셋 크기 | 충돌체 | 아이들 tween |
 |---|---|---|---|
-| Player | 24x24 | 48x48 | circle(12, 12, 12) |
-| Enemy (잡몹) | 16~32px | 32~64px | 동적 계산 (displayW 기준) |
-| Enemy (미니보스) | 40x40 | 80x80 | circle(18), 동적 offset |
-| Enemy (보스) | 64x64 | 128x128 | circle(26), 동적 offset |
-| Enemy (플레이스홀더) | - | SPRITE_SCALE * radius / 12 | 동적 계산 |
-| Projectile | 6x6 | 12x12 | circle(4, 2, 2) |
-| XP Gem (small) | 6x6 | 12x12 | circle(3, 3, 3) |
-| XP Gem (medium) | 10x10 | 20x20 | circle(5, 5, 5) |
-| XP Gem (large) | 14x14 | 28x28 | circle(7, 7, 7) |
+| Player | 48x48 | circle(12, offset=12) | 800ms, scaleXY +-5% |
+| Enemy (잡몹 소형 32px) | 32x32 | circle(10, offset=6) | 900ms |
+| Enemy (잡몹 중형 40px) | 40x40 | circle(12, offset=8) | 900ms |
+| Enemy (잡몹 대형 48px) | 48x48 | circle(14, offset=10) | 900ms |
+| Enemy (미니보스) | 80x80 | circle(18, offset=22) | 700ms |
+| Enemy (보스) | 128x128 | circle(26, offset=38) | 600ms |
+| Projectile | 12x12 | circle(4, offset=2) | - |
+| XP Gem (small) | 12x12 | circle(3, offset=3) | - |
+| XP Gem (medium) | 20x20 | circle(5, offset=5) | - |
+| XP Gem (large) | 28x28 | circle(7, offset=7) | - |
 
-- 충돌체 오프셋 공식: `bodyOffset = (frameWidth * SPRITE_SCALE) / 2 - bodyRadius`
-- 오브젝트 풀 재사용 시 스케일 유지: constructor/init/spawn에서 setScale 적용
-- 관련 파일: `js/config.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`
-- 구현 일자: 2026-03-09
-- 스펙 문서: `.claude/specs/2026-03-09-sprite-scale.md`
+- 충돌체 오프셋 공식: `bodyOffset = frameW / 2 - bodyRadius` (SPRITE_SCALE=1이므로 scale 나눗셈 없음)
+- tween 공통: `yoyo: true, repeat: -1, ease: 'Sine.easeInOut'`
+- 오브젝트 풀 재사용: Enemy.init()에서 `killTweensOf(this)` 선행 호출 후 새 tween 부여. `_deactivate()`에서도 `killTweensOf(this)` 호출
+- 에셋 미존재 시 Graphics 플레이스홀더 폴백 유지 (`textures.exists()` 가드)
+- 에셋 생성: `node scripts/generate-vector-sprites.js` (20종 PNG, ~200ms)
+- 아트 컨셉: `docs/ART_CONCEPT.md`
+- 관련 파일: `js/config.js`, `js/main.js`, `js/scenes/BootScene.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`, `scripts/generate-vector-sprites.js`
+- 구현 일자: 2026-03-10 (글로우 벡터 전환), 이전: 2026-03-09 (픽셀아트 SPRITE_SCALE=2)
+- 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`
 
 ### 조작 시스템
 
@@ -738,7 +748,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 
 1. **폰트 파일 누락**: `assets/fonts/Galmuri11.woff2` 미존재. monospace 폴백 사용 중. 폰트 파일 추가 또는 @font-face 선언 제거 필요.
 2. **Player._passives 미초기화**: constructor에 `this._passives` 미선언. LevelUpScene에서 lazy init으로 안전하게 처리됨.
-3. **BootScene 플레이스홀더 텍스처**: Phase 1에서 player/projectile/잡몹 10종/XP 보석 3종, Phase 2에서 미니보스 2종/보스 3종 모두 정식 PNG로 전환 완료. UI/배경/조이스틱 등은 여전히 플레이스홀더 텍스처 사용. `_temp` 텍스처 코드는 전부 제거됨.
+3. **BootScene 플레이스홀더 텍스처**: 20종 캐릭터/적/수집물 스프라이트는 글로우 벡터 PNG로 전면 교체 완료. UI/배경/조이스틱 등은 여전히 플레이스홀더 텍스처 사용. `_temp` 텍스처 코드 및 `_createAnimations()` 메서드는 전부 제거됨.
 4. **체인 무기 초기 타겟 탐색 범위 하드코딩**: `WeaponSystem.js` findClosestEnemy에 300px 하드코딩. chainRange(120~200px)는 체인 연결 거리이고 초기 타겟 탐색은 별도 범위. 기능 문제 없으나 상수화 권장.
 5. **부활 시 HP 직접 대입**: 스펙은 `player.heal(maxHp * 0.5)`이나, 실제 구현은 `player.currentHp = Math.floor(maxHp * 0.5)` 직접 대입. 동작에 문제 없으나 스펙과 불일치.
 6. **CollectionScene ENEMY_IDS 하드코딩**: 적 ID 15개가 하드코딩. 신규 적 추가 시 수동 업데이트 필요.
@@ -828,25 +838,11 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] _goToResult(), 일시정지 포기 (일반/엔들리스) 3개 경로에서 weaponReport 전달
 - [x] i18n 3키 추가 (result.weaponReport/weaponKills/weaponDps, ko/en 총 351키)
 
-### 아트 Phase 1: 스프라이트 에셋 전환 -- 완료 (2026-03-09)
-- [x] DALL-E 3 API 에셋 생성 스크립트 (`scripts/generate-sprites.js`)
-- [x] 스프라이트 에셋 15종 생성 및 `assets/sprites/` 배치 (player, projectile, 잡몹 10종, XP 보석 3종)
-- [x] BootScene.preload()에 스프라이트/이미지 로드 추가
-- [x] BootScene._createAnimations() 신규 추가 (player_idle 4fps, 잡몹 10종 idle 3fps, 각 2프레임)
-- [x] Player.js: player_temp 제거, 'player' 키 + player_idle 애니메이션 재생
-- [x] Projectile.js: projectile_temp 제거, 'projectile' 키 사용, COLORS import 정리
-- [x] XPGem.js: xpgem_temp/GEM_COLORS/GEM_SIZES 제거, spawn()에서 setTexture 전환 방식
-- [x] Enemy.js: enemy_temp 제거, init()에서 textures.exists 체크 후 setTexture/애니메이션, 폴백 분기 유지
-- [x] 에셋 미존재 시 플레이스홀더 폴백 동작 유지 (textures.exists 가드)
-- [x] package.json devDependencies 추가 (dotenv, openai, sharp)
+### 아트 Phase 1 (DALL-E 픽셀아트) -- 대체됨 (2026-03-10 글로우 벡터로 전면 교체)
+- [x] *(대체됨)* DALL-E 3 픽셀아트 15종 -> 글로우 벡터 20종으로 전면 교체
 
-### 스프라이트 2x 스케일 적용 -- 완료 (2026-03-09)
-- [x] config.js에 SPRITE_SCALE = 2 상수 추가
-- [x] Player.js에 setScale(SPRITE_SCALE) 적용 및 body offset 재조정 (circle 12, offset 12)
-- [x] Enemy.js 실 텍스처에 setScale(SPRITE_SCALE) 적용, 플레이스홀더에 SPRITE_SCALE * radius / 12 적용
-- [x] Enemy.js body offset을 displayW 기준으로 동적 재계산
-- [x] Projectile.js에 setScale(SPRITE_SCALE) 적용 및 body offset 재조정 (circle 4, offset 2)
-- [x] XPGem.js constructor/spawn() 모두 setScale(SPRITE_SCALE) 적용 및 타입별 body offset 재계산
+### 스프라이트 스케일 -- 대체됨 (2026-03-10 SPRITE_SCALE=2 -> 1로 변경)
+- [x] *(대체됨)* SPRITE_SCALE = 2 -> 벡터 에셋 전환으로 SPRITE_SCALE = 1
 
 ### 인게임 인벤토리 HUD -- 완료 (2026-03-09)
 - [x] WEAPON_ICON_MAP 상수 추가 (10종 무기 ID -> 이모지 매핑 + WEAPON_ICON_FALLBACK)
@@ -860,14 +856,19 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] setScrollFactor(0) + depth 105~107로 카메라 고정
 - [x] 이벤트 기반 갱신 (매 프레임 갱신 없음)
 
-### 아트 Phase 2: 보스/미니보스 스프라이트 -- 완료 (2026-03-09)
-- [x] DALL-E 3 API 에셋 생성 스크립트 (`scripts/generate-sprites-phase2.js`, Phase 1 스크립트 독립 유지)
-- [x] 미니보스 2종 스프라이트시트 생성 (guardian_drone 80x40 2F, assault_mech 80x40 2F)
-- [x] 보스 3종 스프라이트시트 생성 (commander_drone/siege_titan/core_processor 각 256x64 4F: idle 2F + special 2F)
-- [x] BootScene.preload()에 미니보스 2종(fw:40, fh:40) + 보스 3종(fw:64, fh:64) spritesheet 로드 추가
-- [x] BootScene._createAnimations()에 미니보스 idle(3fps, 반복) + 보스 idle(2fps, 반복) + 보스 special(8fps, 3회 반복) animation 등록
-- [x] GameScene.onMiniBossSpawn()에 카메라 플래시(오렌지 255,100,0, 300ms) 추가
-- [x] GameScene.onBossSpawn()에 카메라 플래시(마젠타 255,0,255, 500ms) + 카메라 흔들림(500ms, 강도 0.02) 추가
-- [x] Enemy.takeDamage() 피격 플래시 복원 로직: textures.exists() 분기 (스프라이트 시 clearTint, 플레이스홀더 시 setTint)
-- [x] 에셋 미존재 시 기존 플레이스홀더 폴백 동작 유지
-- [x] Phase 1 스크립트(generate-sprites.js) 수정 없음
+### 아트 Phase 2 (DALL-E 보스 픽셀아트) -- 대체됨 (2026-03-10 글로우 벡터로 전면 교체)
+- [x] *(대체됨)* DALL-E 3 보스/미니보스 스프라이트시트 -> 글로우 벡터 정적 이미지로 전면 교체
+
+### 글로우 벡터 아트 Phase 1: 20종 벡터 스프라이트 전면 교체 -- 완료 (2026-03-10)
+- [x] SVG 스프라이트 생성 스크립트 (`scripts/generate-vector-sprites.js`) 신규 작성
+- [x] 20종 엔티티 벡터 PNG 생성: player(48x48), projectile(12x12), 잡몹 10종(32~48px), 미니보스 2종(80x80), 보스 3종(128x128), XP 보석 3종(12/20/28px)
+- [x] Phaser render 설정 변경: `pixelArt: false`, `antialias: true` (`js/main.js`)
+- [x] `SPRITE_SCALE = 1`로 변경 (`js/config.js`)
+- [x] BootScene: spritesheet -> `this.load.image()` 20종 정적 이미지 로드 전환
+- [x] BootScene: `_createAnimations()` 메서드 및 호출 완전 제거
+- [x] Player.js: tween 아이들 맥동(800ms, scaleXY +-5%), body offset 재계산 (circle 12, offset 12)
+- [x] Enemy.js: tween 아이들 맥동(보스 600ms/미니보스 700ms/잡몹 900ms), body offset 재계산, `_deactivate()`에서 killTweensOf
+- [x] Projectile.js: body offset 재계산 (circle 4, offset 2)
+- [x] XPGem.js: texSizes 갱신 (12/20/28px), body offset 재계산
+- [x] 에셋 미존재 시 Graphics 플레이스홀더 폴백 동작 유지
+- [x] ART_CONCEPT.md 색상 팔레트 및 글로우 필터 표준 준수

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-03-10 -- 글로우 벡터 아트 Phase 1: 20종 벡터 스프라이트 전면 교체
+
+### 추가
+- SVG 벡터 스프라이트 생성 스크립트 (`scripts/generate-vector-sprites.js`): 20종 엔티티의 SVG 문자열을 코드로 생성하고 sharp로 PNG 변환. ART_CONCEPT.md 색상 팔레트(시안 아군/레드-오렌지 잡몹/마젠타 보스) 및 글로우 필터(feGaussianBlur stdDeviation: 소형 1.5, 중대형 2, 미니보스 2.5, 보스 3) 표준 준수. ESM 방식, 실행 시간 ~200ms
+- 벡터 PNG 에셋 20종 (`assets/sprites/`): player.png(48x48), projectile.png(12x12), 잡몹 10종(32~48px), 미니보스 2종(80x80), 보스 3종(128x128), XP 보석 3종(12/20/28px). 모든 에셋이 최종 표시 크기로 직접 생성된 정적 이미지
+- Player.js tween 아이들 맥동 (`js/entities/Player.js` L38-46): scaleX 1.0->1.05, scaleY 1.0->0.95, duration 800ms, yoyo, repeat:-1, Sine.easeInOut
+- Enemy.js tween 아이들 맥동 (`js/entities/Enemy.js` L161-172): 보스 600ms, 미니보스 700ms, 잡몹 900ms. init()에서 killTweensOf 선행 후 추가
+- Playwright 테스트 (`tests/vector-art-phase1.spec.js`): 14개 테스트
+
+### 변경
+- Phaser render 설정 (`js/main.js` L43-46): `pixelArt: true, antialias: false` -> `pixelArt: false, antialias: true`. 벡터 에셋의 매끄러운 외곽선 렌더링을 위한 변경
+- SPRITE_SCALE (`js/config.js` L25): `2` -> `1`. 벡터 에셋이 표시 크기로 직접 생성되므로 배율 불필요
+- BootScene.preload() (`js/scenes/BootScene.js` L59-96): spritesheet 로드를 `this.load.image()` 20종 정적 이미지 로드로 전면 전환
+- BootScene (`js/scenes/BootScene.js`): `_createAnimations()` 메서드 및 create()에서의 호출 구문 완전 제거. 프레임 애니메이션에서 tween 애니메이션으로 전환
+- BootScene._generatePlaceholderTextures() (`js/scenes/BootScene.js`): 플레이스홀더 크기를 벡터 에셋 기준으로 갱신 (잡몹 32~48px, 미니보스 80px, 보스 128px, XP 보석 12/20/28px)
+- Player.js body offset (`js/entities/Player.js` L155-157): `48 / 2 - 12 = 12`로 재계산. `setCircle(12, 12, 12)`
+- Enemy.js body offset (`js/entities/Enemy.js` L180-185): `frameW / 2 - bodyRadius` 공식으로 재계산 (scale 나눗셈 없음). 소형(32px): offset=6, 중형(40px): offset=8, 대형(48px): offset=10, 미니보스(80px): offset=22, 보스(128px): offset=38
+- Enemy._deactivate() (`js/entities/Enemy.js` L413-416): `scene.tweens.killTweensOf(this)` 호출 추가. 풀 반환 시 tween 잔존 방지
+- Projectile.js body offset (`js/entities/Projectile.js` L57-58): `12 / 2 - 4 = 2`로 재계산. `setCircle(4, 2, 2)`
+- XPGem.js (`js/entities/XPGem.js` L59-60, L101-103): constructor 초기 offset `12/2 - 3 = 3`, spawn() texSizes를 `{ small: 12, medium: 20, large: 28 }`로 갱신
+
+### 참고
+- 스펙: `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`
+- QA: `.claude/specs/2026-03-10-neon-exodus-art-phase1-qa.md`
+- QA 결과: 수용기준 14/14 PASS, 예외 시나리오 10/10 PASS, Playwright 14/14 전체 통과. 시각적 검증 스크린샷 11건 확인. 20종 PNG 크기/채널(RGBA) 전수 검증 PASS
+- 기존 DALL-E 생성 스크립트(generate-sprites.js, generate-sprites-phase2.js)는 수정하지 않고 레거시로 유지
+- 이번 변경으로 기존 "아트 Phase 1 스프라이트 에셋 전환", "스프라이트 2x 스케일 적용", "아트 Phase 2 보스/미니보스 스프라이트" 3개 항목이 모두 글로우 벡터로 대체됨
+
 ## 2026-03-09 -- 아트 Phase 2: 보스/미니보스 스프라이트
 
 ### 추가

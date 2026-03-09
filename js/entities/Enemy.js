@@ -157,10 +157,19 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setTexture(texKey);
       this.setScale(SPRITE_SCALE);
       this.clearTint();
-      const animKey = texKey + '_idle';
-      if (this.scene.anims.exists(animKey)) {
-        this.play(animKey);
-      }
+
+      // 풀 재사용 시 기존 tween 정리 후 새 맥동 tween 추가
+      this.scene.tweens.killTweensOf(this);
+      const tweenDuration = this.isBoss ? 600 : (this.isMiniBoss ? 700 : 900);
+      this.scene.tweens.add({
+        targets: this,
+        scaleX: { from: SPRITE_SCALE * 1.0, to: SPRITE_SCALE * 1.05 },
+        scaleY: { from: SPRITE_SCALE * 1.0, to: SPRITE_SCALE * 0.95 },
+        duration: tweenDuration,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
     } else {
       // 폴백: 플레이스홀더 텍스처도 SPRITE_SCALE 적용
       this.setScale(SPRITE_SCALE * radius / 12);
@@ -168,13 +177,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     // 충돌체 크기 재설정
-    // Phaser는 offset에 scale을 자동 곱하므로 중심 정렬 공식:
-    // offset = frameW/2 - radius/scale
+    // SPRITE_SCALE=1이면 offset = frameW/2 - bodyRadius (scale 나눗셈 없음)
     const bodyRadius = radius;
     const texFrame = this.texture.get(this.frame?.name || '__BASE');
-    const frameW = texFrame ? texFrame.width : 24;
-    const currentScale = this.scaleX || SPRITE_SCALE;
-    const bodyOffset = Math.max(0, (frameW / 2) - bodyRadius / currentScale);
+    const frameW = texFrame ? texFrame.width : 32;
+    const bodyOffset = Math.max(0, (frameW / 2) - bodyRadius);
     this.body.setCircle(bodyRadius, bodyOffset, bodyOffset);
 
     // 활성화
@@ -403,6 +410,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
    * @private
    */
   _deactivate() {
+    // tween 정리 (풀 재사용 시 비활성 적에 tween이 남지 않도록)
+    if (this.scene && this.scene.tweens) {
+      this.scene.tweens.killTweensOf(this);
+    }
+
     // 레이저 그래픽 정리
     if (this._laserGfx) {
       this._laserGfx.destroy();

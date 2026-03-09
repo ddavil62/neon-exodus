@@ -34,10 +34,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // 아이들 애니메이션 재생 (스프라이트시트 로드된 경우에만)
-    if (scene.anims.exists('player_idle')) {
-      this.play('player_idle');
-    }
+    // 아이들 맥동 tween 애니메이션 (벡터 에셋 전환)
+    scene.tweens.add({
+      targets: this,
+      scaleX: { from: 1.0, to: 1.05 },
+      scaleY: { from: 1.0, to: 0.95 },
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
 
     // ── 기본 스탯 ──
 
@@ -146,9 +152,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setScale(SPRITE_SCALE);
 
     // 원형 충돌체 (반경 12px)
-    // Phaser는 offset에 scale을 자동 곱하므로 중심 정렬 공식:
-    // offset = frameW/2 - radius/scale
-    const bodyOff = Math.max(0, 24 / 2 - 12 / SPRITE_SCALE);
+    // SPRITE_SCALE=1이면 offset = frameW/2 - radius (scale 나눗셈 없음)
+    const bodyOff = Math.max(0, 48 / 2 - 12); // =12
     this.body.setCircle(12, bodyOff, bodyOff);
     this.body.setCollideWorldBounds(true);
 

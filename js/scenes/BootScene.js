@@ -56,33 +56,29 @@ export default class BootScene extends Phaser.Scene {
       }
     });
 
-    // ── Phase 1 스프라이트 에셋 로드 ──
+    // ── 벡터 스프라이트 에셋 로드 (20종 정적 이미지) ──
 
-    // 플레이어 스프라이트시트 (48x24, 2프레임 가로배치)
-    this.load.spritesheet('player', 'assets/sprites/player.png', {
-      frameWidth: 24, frameHeight: 24,
-    });
+    // 플레이어 정적 이미지 (48x48)
+    this.load.image('player', 'assets/sprites/player.png');
 
-    // 투사체 정적 이미지 (6x6)
+    // 투사체 정적 이미지 (12x12)
     this.load.image('projectile', 'assets/sprites/projectile.png');
 
-    // 잡몹 10종 스프라이트시트 (2프레임 가로배치)
+    // 잡몹 10종 정적 이미지
     const enemyAssets = [
-      { key: 'enemy_nano_drone', file: 'enemies/nano_drone.png', fw: 16, fh: 16 },
-      { key: 'enemy_scout_bot', file: 'enemies/scout_bot.png', fw: 20, fh: 20 },
-      { key: 'enemy_spark_drone', file: 'enemies/spark_drone.png', fw: 16, fh: 16 },
-      { key: 'enemy_battle_robot', file: 'enemies/battle_robot.png', fw: 28, fh: 28 },
-      { key: 'enemy_shield_drone', file: 'enemies/shield_drone.png', fw: 20, fh: 20 },
-      { key: 'enemy_rush_bot', file: 'enemies/rush_bot.png', fw: 24, fh: 24 },
-      { key: 'enemy_repair_bot', file: 'enemies/repair_bot.png', fw: 20, fh: 20 },
-      { key: 'enemy_heavy_bot', file: 'enemies/heavy_bot.png', fw: 32, fh: 32 },
-      { key: 'enemy_teleport_drone', file: 'enemies/teleport_drone.png', fw: 20, fh: 20 },
-      { key: 'enemy_suicide_bot', file: 'enemies/suicide_bot.png', fw: 24, fh: 24 },
+      { key: 'enemy_nano_drone',     file: 'enemies/nano_drone.png' },
+      { key: 'enemy_scout_bot',      file: 'enemies/scout_bot.png' },
+      { key: 'enemy_spark_drone',    file: 'enemies/spark_drone.png' },
+      { key: 'enemy_battle_robot',   file: 'enemies/battle_robot.png' },
+      { key: 'enemy_shield_drone',   file: 'enemies/shield_drone.png' },
+      { key: 'enemy_rush_bot',       file: 'enemies/rush_bot.png' },
+      { key: 'enemy_repair_bot',     file: 'enemies/repair_bot.png' },
+      { key: 'enemy_heavy_bot',      file: 'enemies/heavy_bot.png' },
+      { key: 'enemy_teleport_drone', file: 'enemies/teleport_drone.png' },
+      { key: 'enemy_suicide_bot',    file: 'enemies/suicide_bot.png' },
     ];
     for (const e of enemyAssets) {
-      this.load.spritesheet(e.key, 'assets/sprites/' + e.file, {
-        frameWidth: e.fw, frameHeight: e.fh,
-      });
+      this.load.image(e.key, 'assets/sprites/' + e.file);
     }
 
     // XP 보석 3종 정적 이미지
@@ -90,30 +86,14 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('xp_gem_m', 'assets/sprites/items/xp_gem_m.png');
     this.load.image('xp_gem_l', 'assets/sprites/items/xp_gem_l.png');
 
-    // ── Phase 2 보스/미니보스 스프라이트시트 ──
+    // 미니보스 2종 정적 이미지 (80x80)
+    this.load.image('enemy_guardian_drone', 'assets/sprites/bosses/guardian_drone.png');
+    this.load.image('enemy_assault_mech', 'assets/sprites/bosses/assault_mech.png');
 
-    // 미니보스 2종 (40x40, 2프레임 가로배치)
-    const miniBossAssets2 = [
-      { key: 'enemy_guardian_drone', file: 'bosses/guardian_drone.png', fw: 40, fh: 40 },
-      { key: 'enemy_assault_mech',  file: 'bosses/assault_mech.png',  fw: 40, fh: 40 },
-    ];
-    for (const e of miniBossAssets2) {
-      this.load.spritesheet(e.key, 'assets/sprites/' + e.file, {
-        frameWidth: e.fw, frameHeight: e.fh,
-      });
-    }
-
-    // 보스 3종 (64x64, 4프레임: idle 2F + special 2F)
-    const bossAssets = [
-      { key: 'enemy_commander_drone', file: 'bosses/commander_drone.png', fw: 64, fh: 64 },
-      { key: 'enemy_siege_titan',     file: 'bosses/siege_titan.png',     fw: 64, fh: 64 },
-      { key: 'enemy_core_processor',  file: 'bosses/core_processor.png',  fw: 64, fh: 64 },
-    ];
-    for (const e of bossAssets) {
-      this.load.spritesheet(e.key, 'assets/sprites/' + e.file, {
-        frameWidth: e.fw, frameHeight: e.fh,
-      });
-    }
+    // 보스 3종 정적 이미지 (128x128)
+    this.load.image('enemy_commander_drone', 'assets/sprites/bosses/commander_drone.png');
+    this.load.image('enemy_siege_titan', 'assets/sprites/bosses/siege_titan.png');
+    this.load.image('enemy_core_processor', 'assets/sprites/bosses/core_processor.png');
   }
 
   /**
@@ -134,9 +114,6 @@ export default class BootScene extends Phaser.Scene {
 
     // 배경 타일 텍스처 생성
     this._generateBackgroundTile();
-
-    // 스프라이트 애니메이션 등록
-    this._createAnimations();
 
     // ── SoundSystem 초기화 ──
     SoundSystem.init(SaveManager.getSettings());
@@ -224,77 +201,6 @@ export default class BootScene extends Phaser.Scene {
   // ── 내부 메서드 ──
 
   /**
-   * 스프라이트 애니메이션을 등록한다.
-   * 스프라이트시트가 실제로 로드된 경우에만 생성한다 (textures.exists 가드).
-   * @private
-   */
-  _createAnimations() {
-    // 플레이어 아이들: 2프레임, 4fps, 반복
-    if (this.textures.exists('player') && !this.anims.exists('player_idle')) {
-      this.anims.create({
-        key: 'player_idle',
-        frames: this.anims.generateFrameNumbers('player', { start: 0, end: 1 }),
-        frameRate: 4,
-        repeat: -1,
-      });
-    }
-    // 잡몹 10종 아이들: 2프레임, 3fps, 반복
-    const enemyKeys = [
-      'enemy_nano_drone', 'enemy_scout_bot', 'enemy_spark_drone',
-      'enemy_battle_robot', 'enemy_shield_drone', 'enemy_rush_bot',
-      'enemy_repair_bot', 'enemy_heavy_bot', 'enemy_teleport_drone',
-      'enemy_suicide_bot',
-    ];
-    for (const key of enemyKeys) {
-      const animKey = key + '_idle';
-      if (this.textures.exists(key) && !this.anims.exists(animKey)) {
-        this.anims.create({
-          key: animKey,
-          frames: this.anims.generateFrameNumbers(key, { start: 0, end: 1 }),
-          frameRate: 3,
-          repeat: -1,
-        });
-      }
-    }
-
-    // 미니보스 2종: idle 2F, 3fps, 반복
-    const miniBossKeys = ['enemy_guardian_drone', 'enemy_assault_mech'];
-    for (const key of miniBossKeys) {
-      const animKey = key + '_idle';
-      if (this.textures.exists(key) && !this.anims.exists(animKey)) {
-        this.anims.create({
-          key: animKey,
-          frames: this.anims.generateFrameNumbers(key, { start: 0, end: 1 }),
-          frameRate: 3,
-          repeat: -1,
-        });
-      }
-    }
-
-    // 보스 3종: idle 2F (2fps, 반복) + special 2F (8fps, 3회 반복)
-    const bossKeys = ['enemy_commander_drone', 'enemy_siege_titan', 'enemy_core_processor'];
-    for (const key of bossKeys) {
-      if (!this.textures.exists(key)) continue;
-      if (!this.anims.exists(key + '_idle')) {
-        this.anims.create({
-          key: key + '_idle',
-          frames: this.anims.generateFrameNumbers(key, { start: 0, end: 1 }),
-          frameRate: 2,
-          repeat: -1,
-        });
-      }
-      if (!this.anims.exists(key + '_special')) {
-        this.anims.create({
-          key: key + '_special',
-          frames: this.anims.generateFrameNumbers(key, { start: 2, end: 3 }),
-          frameRate: 8,
-          repeat: 3,
-        });
-      }
-    }
-  }
-
-  /**
    * 로딩 바 UI를 생성한다.
    * @private
    */
@@ -348,28 +254,28 @@ export default class BootScene extends Phaser.Scene {
   _generatePlaceholderTextures() {
     const gfx = this.add.graphics();
 
-    // 플레이어: 24x24 네온 시안 원 + 방향 삼각형
+    // 플레이어: 48x48 네온 시안 원 + 방향 삼각형
     if (!this.textures.exists('player')) {
       gfx.clear();
       gfx.fillStyle(COLORS.NEON_CYAN, 1);
-      gfx.fillCircle(12, 12, 12);
+      gfx.fillCircle(24, 24, 20);
       gfx.fillStyle(COLORS.NEON_CYAN, 0.7);
-      gfx.fillTriangle(24, 12, 18, 6, 18, 18);
-      gfx.generateTexture('player', 24, 24);
+      gfx.fillTriangle(46, 24, 36, 14, 36, 34);
+      gfx.generateTexture('player', 48, 48);
     }
 
-    // ── 잡몹 10종 ──
+    // ── 잡몹 10종 (벡터 에셋 크기 기준 플레이스홀더) ──
     const mobColors = {
-      nano_drone:     { color: 0xFF4444, size: 8 },
-      scout_bot:      { color: 0xFF6644, size: 10 },
-      spark_drone:    { color: 0xFFFF00, size: 8 },
-      battle_robot:   { color: 0xBB4444, size: 14 },
-      shield_drone:   { color: 0x4488FF, size: 10 },
-      rush_bot:       { color: 0xFF8800, size: 12 },
-      repair_bot:     { color: 0x44FF44, size: 10 },
-      heavy_bot:      { color: 0x888888, size: 16 },
-      teleport_drone: { color: 0xAA44FF, size: 10 },
-      suicide_bot:    { color: 0xFF0000, size: 12 },
+      nano_drone:     { color: 0xFF4444, dim: 32 },
+      scout_bot:      { color: 0xFF6644, dim: 32 },
+      spark_drone:    { color: 0xFFFF00, dim: 32 },
+      battle_robot:   { color: 0xBB4444, dim: 48 },
+      shield_drone:   { color: 0x4488FF, dim: 32 },
+      rush_bot:       { color: 0xFF8800, dim: 40 },
+      repair_bot:     { color: 0x44FF44, dim: 32 },
+      heavy_bot:      { color: 0x888888, dim: 48 },
+      teleport_drone: { color: 0xAA44FF, dim: 32 },
+      suicide_bot:    { color: 0xFF0000, dim: 40 },
     };
 
     for (const [id, cfg] of Object.entries(mobColors)) {
@@ -377,31 +283,31 @@ export default class BootScene extends Phaser.Scene {
       if (!this.textures.exists(texKey)) {
         gfx.clear();
         gfx.fillStyle(cfg.color, 1);
-        const dim = cfg.size * 2;
-        gfx.fillCircle(cfg.size, cfg.size, cfg.size);
-        gfx.generateTexture(texKey, dim, dim);
+        const half = cfg.dim / 2;
+        gfx.fillCircle(half, half, half - 2);
+        gfx.generateTexture(texKey, cfg.dim, cfg.dim);
       }
     }
 
-    // ── 미니보스 2종: 40x40 ──
+    // ── 미니보스 2종: 80x80 ──
     if (!this.textures.exists('enemy_guardian_drone')) {
       gfx.clear();
       gfx.fillStyle(COLORS.NEON_ORANGE, 1);
-      gfx.fillCircle(20, 20, 18);
+      gfx.fillCircle(40, 40, 36);
       gfx.lineStyle(2, 0xFFFFFF, 0.5);
-      gfx.strokeCircle(20, 20, 18);
-      gfx.generateTexture('enemy_guardian_drone', 40, 40);
+      gfx.strokeCircle(40, 40, 36);
+      gfx.generateTexture('enemy_guardian_drone', 80, 80);
     }
     if (!this.textures.exists('enemy_assault_mech')) {
       gfx.clear();
       gfx.fillStyle(COLORS.NEON_ORANGE, 1);
-      gfx.fillCircle(20, 20, 20);
+      gfx.fillCircle(40, 40, 38);
       gfx.lineStyle(2, 0xFFFFFF, 0.5);
-      gfx.strokeCircle(20, 20, 20);
-      gfx.generateTexture('enemy_assault_mech', 40, 40);
+      gfx.strokeCircle(40, 40, 38);
+      gfx.generateTexture('enemy_assault_mech', 80, 80);
     }
 
-    // ── 보스 3종: 64x64 ──
+    // ── 보스 3종: 128x128 ──
     const bossColors = {
       commander_drone: 0xFF00FF,
       siege_titan:     0xFF6600,
@@ -412,23 +318,23 @@ export default class BootScene extends Phaser.Scene {
       if (!this.textures.exists(texKey)) {
         gfx.clear();
         gfx.fillStyle(color, 1);
-        gfx.fillCircle(32, 32, 28);
+        gfx.fillCircle(64, 64, 56);
         gfx.lineStyle(3, 0xFFFFFF, 0.6);
-        gfx.strokeCircle(32, 32, 28);
-        gfx.generateTexture(texKey, 64, 64);
+        gfx.strokeCircle(64, 64, 56);
+        gfx.generateTexture(texKey, 128, 128);
       }
     }
 
-    // 투사체: 6x6 네온그린 원
+    // 투사체: 12x12 네온그린 원
     if (!this.textures.exists('projectile')) {
       gfx.clear();
       gfx.fillStyle(COLORS.NEON_GREEN, 1);
-      gfx.fillCircle(3, 3, 3);
-      gfx.generateTexture('projectile', 6, 6);
+      gfx.fillCircle(6, 6, 5);
+      gfx.generateTexture('projectile', 12, 12);
     }
 
-    // XP 보석: 크기별 다이아몬드
-    const gemSizes = { xp_gem_s: 6, xp_gem_m: 10, xp_gem_l: 14 };
+    // XP 보석: 크기별 다이아몬드 (벡터 에셋 크기 기준)
+    const gemSizes = { xp_gem_s: 12, xp_gem_m: 20, xp_gem_l: 28 };
     const gemColors = {
       xp_gem_s: COLORS.NEON_GREEN,
       xp_gem_m: COLORS.NEON_CYAN,

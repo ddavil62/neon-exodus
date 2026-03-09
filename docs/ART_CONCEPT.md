@@ -46,9 +46,9 @@
 | 엔티티 | 에셋 크기 | 비고 |
 |--------|----------|------|
 | 플레이어 | 48x48px | 기존 24x24 × SCALE 2 = 48px |
-| 잡몹 (소형) | 32x32px | nano_drone, spark_drone, shield_drone 등 |
-| 잡몹 (중형) | 40x40px | scout_bot, repair_bot, teleport_drone 등 |
-| 잡몹 (대형) | 48~64px | battle_robot, heavy_bot, rush_bot, suicide_bot |
+| 잡몹 (소형) | 32x32px | nano_drone, scout_bot, spark_drone, shield_drone, repair_bot, teleport_drone |
+| 잡몹 (중형) | 40x40px | rush_bot, suicide_bot |
+| 잡몹 (대형) | 48x48px | battle_robot, heavy_bot |
 | 미니보스 | 80x80px | guardian_drone, assault_mech |
 | 보스 | 128x128px | commander, titan, core_processor |
 | 투사체 | 12x12px | 기존 6x6 × SCALE 2 = 12px |
@@ -191,23 +191,23 @@
 
 ## 제작 Phase
 
-### Phase 1: 전체 캐릭터 + 적 + 수집물 (20종 — 벡터 완전 교체)
-> **우선순위 최고** — 기존 DALL-E 픽셀 에셋 20종을 SVG 벡터로 교체
+### Phase 1: 전체 캐릭터 + 적 + 수집물 (20종 — 벡터 완전 교체) -- 완료 (2026-03-10)
+> **완료** — 기존 DALL-E 픽셀 에셋 20종을 SVG 벡터로 전면 교체
 
-- [ ] 플레이어 스프라이트 (48x48, 정적 PNG)
-- [ ] 잡몹 10종 스프라이트 (32~64px, 정적 PNG)
-- [ ] 미니보스 2종 (80x80, 정적 PNG)
-- [ ] 보스 3종 (128x128, 정적 PNG)
-- [ ] 투사체 스프라이트 (12x12, 정적 PNG)
-- [ ] XP 보석 3종 (12/20/28px, 정적 PNG)
-- [ ] Phaser config 변경: `pixelArt: false`, `antialias: true`
-- [ ] SPRITE_SCALE = 1로 변경 + 관련 코드 수정
-- [ ] BootScene 수정: 스프라이트시트 → 정적 이미지 로드 전환
-- [ ] BootScene 수정: 프레임 animation → Phaser tween 애니메이션 전환
-- [ ] Enemy.js, Player.js 등: 스케일/바디 오프셋 재계산
+- [x] 플레이어 스프라이트 (48x48, 정적 PNG)
+- [x] 잡몹 10종 스프라이트 (32~48px, 정적 PNG)
+- [x] 미니보스 2종 (80x80, 정적 PNG)
+- [x] 보스 3종 (128x128, 정적 PNG)
+- [x] 투사체 스프라이트 (12x12, 정적 PNG)
+- [x] XP 보석 3종 (12/20/28px, 정적 PNG)
+- [x] Phaser config 변경: `pixelArt: false`, `antialias: true`
+- [x] SPRITE_SCALE = 1로 변경 + 관련 코드 수정
+- [x] BootScene 수정: 스프라이트시트 -> 정적 이미지 로드 전환
+- [x] BootScene 수정: 프레임 animation -> Phaser tween 애니메이션 전환
+- [x] Enemy.js, Player.js 등: 스케일/바디 오프셋 재계산
 
 **산출물**: `assets/sprites/` 전체 PNG 교체 (20종), `scripts/generate-vector-sprites.js`
-**생성 방식**: Node.js SVG 코드 생성 → sharp/resvg PNG 변환
+**생성 방식**: Node.js SVG 코드 생성 -> sharp PNG 변환
 
 ### Phase 2: UI + 배경 (폴리싱)
 > 전체적인 완성도를 높이는 단계
@@ -381,7 +381,7 @@ assets/
 
 | Phase | 에셋 수 | 상태 | 비고 |
 |-------|---------|------|------|
-| Phase 1 | 20종 | 미착수 | 전체 캐릭터/적/수집물 벡터 교체 |
+| Phase 1 | 20종 | **완료** (2026-03-10) | 전체 캐릭터/적/수집물 벡터 교체 |
 | Phase 2 | ~25종 | 미착수 | UI + 배경 |
 | Phase 3 | ~10종 | 미착수 | 무기 이펙트 |
 | **합계** | **~55종** | - | SVG 코드 생성이므로 빠른 반복 가능 |
