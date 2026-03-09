@@ -5,7 +5,6 @@
  * 로딩 바를 표시하고, 완료 후 MenuScene으로 전환한다.
  */
 
-import { App } from '@capacitor/app';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t, setLocale } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
@@ -95,8 +94,12 @@ export default class BootScene extends Phaser.Scene {
    * @private
    */
   _setupHardwareBackButton() {
+    // Capacitor 네이티브 환경에서만 backButton 리스너 등록
+    const Capacitor = window.Capacitor;
+    if (!Capacitor || !Capacitor.isNativePlatform()) return;
+
     try {
-      App.addListener('backButton', () => {
+      Capacitor.Plugins.App.addListener('backButton', () => {
         const scenes = this.scene.manager.getScenes(true);
         // 가장 위에 있는 활성 씬을 찾아 _onBack 호출
         for (const scene of scenes) {
@@ -107,7 +110,7 @@ export default class BootScene extends Phaser.Scene {
         }
       });
     } catch (e) {
-      // 브라우저 환경에서는 @capacitor/app 미동작 — 무시
+      // 리스너 등록 실패 — 무시
     }
   }
 
