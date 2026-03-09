@@ -91,6 +91,9 @@ export default class BootScene extends Phaser.Scene {
     // ── 하드웨어 뒤로가기 버튼 (Android) 글로벌 핸들러 ──
     this._setupHardwareBackButton();
 
+    // ── 앱 백그라운드/포그라운드 전환 시 BGM 일시정지/재개 ──
+    this._setupAppStateListener();
+
     // 짧은 딜레이 후 메뉴 씬으로 전환
     this.time.delayedCall(300, () => {
       this.scene.start('MenuScene');
@@ -118,6 +121,34 @@ export default class BootScene extends Phaser.Scene {
             scene._onBack();
             return;
           }
+        }
+      });
+    } catch (e) {
+      // 리스너 등록 실패 — 무시
+    }
+  }
+
+  // ── 앱 상태 변화 ──
+
+  /**
+   * 앱이 백그라운드/포그라운드로 전환될 때 AudioContext를 일시정지/재개한다.
+   * 홈 버튼 등으로 앱을 나가면 BGM이 멈추고, 다시 돌아오면 재개된다.
+   * @private
+   */
+  _setupAppStateListener() {
+    const Capacitor = window.Capacitor;
+    if (!Capacitor || !Capacitor.isNativePlatform()) return;
+
+    try {
+      Capacitor.Plugins.App.addListener('appStateChange', ({ isActive }) => {
+        if (!SoundSystem._ctx) return;
+
+        if (isActive) {
+          // 포그라운드 복귀 — AudioContext 재개
+          SoundSystem._ctx.resume().catch(() => {});
+        } else {
+          // 백그라운드 진입 — AudioContext 일시정지 (BGM + SFX 모두 멈춤)
+          SoundSystem._ctx.suspend().catch(() => {});
         }
       });
     } catch (e) {
