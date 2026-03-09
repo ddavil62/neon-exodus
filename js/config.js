@@ -19,6 +19,11 @@ export const WORLD_WIDTH = 2000;
 /** 월드 전체 높이 (px) */
 export const WORLD_HEIGHT = 2000;
 
+// ── 스프라이트 설정 ──
+
+/** 스프라이트 렌더링 배율 (pixelArt: true이므로 선명 유지) */
+export const SPRITE_SCALE = 2;
+
 // ── 플레이어 설정 ──
 
 /** 플레이어 기본 이동 속도 (px/s) */

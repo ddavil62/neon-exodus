@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-03-09 -- 스프라이트 2x 스케일 적용
+
+### 추가
+- SPRITE_SCALE = 2 상수 (`js/config.js:25`): 스프라이트 렌더링 배율. pixelArt: true 설정으로 nearest-neighbor 보간되어 선명 유지
+- Playwright 테스트 (`tests/sprite-scale.spec.js`): 21개 테스트 (수용기준 9 + 예외 6 + 시각적 3 + 모바일 3)
+
+### 변경
+- Player.js (`js/entities/Player.js`): SPRITE_SCALE import 추가, `this.setScale(SPRITE_SCALE)` 적용 (displayWidth 48px), body offset을 `(24 * SPRITE_SCALE) / 2 - 12 = 12`로 계산하여 `setCircle(12, 12, 12)` 설정
+- Enemy.js (`js/entities/Enemy.js`): SPRITE_SCALE import 추가, 실 텍스처 `setScale(SPRITE_SCALE)`, 플레이스홀더 `setScale(SPRITE_SCALE * radius / 12)`, body offset을 `frameW * scaleX` 기준으로 동적 계산
+- Projectile.js (`js/entities/Projectile.js`): SPRITE_SCALE import 추가, `this.setScale(SPRITE_SCALE)` 적용 (displayWidth 12px), body offset을 `Math.max(0, (6 * SPRITE_SCALE) / 2 - 4) = 2`로 계산하여 `setCircle(4, 2, 2)` 설정
+- XPGem.js (`js/entities/XPGem.js`): SPRITE_SCALE import 추가, constructor/spawn() 모두 `this.setScale(SPRITE_SCALE)` 적용, spawn()에서 타입별 텍스처 원본 크기(small:6, medium:10, large:14) x SPRITE_SCALE 기준 body offset 재계산
+
+### 참고
+- 스펙: `.claude/specs/2026-03-09-sprite-scale.md`
+- 구현 리포트: `.claude/specs/2026-03-09-sprite-scale-report.md`
+- QA: `.claude/specs/2026-03-09-sprite-scale-qa.md`
+- QA 결과: 수용기준 6/6 PASS, 예외 시나리오 8/8 PASS, Playwright 21/21 전체 통과. 시각적 검증 스크린샷 5건 확인. 오브젝트 풀 재사용 시 스케일 유지 검증 완료
+
 ## 2026-03-09 -- 레벨업 스킵 버튼 (버그 수정)
 
 ### 수정

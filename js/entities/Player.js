@@ -16,6 +16,7 @@ import {
   XP_FORMULA,
   WORLD_WIDTH,
   WORLD_HEIGHT,
+  SPRITE_SCALE,
 } from '../config.js';
 import { getPassiveById } from '../data/passives.js';
 
@@ -141,8 +142,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // ── 물리 설정 ──
 
-    // 원형 충돌체 (반경 10px, 24x24 텍스처 기준)
-    this.body.setCircle(10, 2, 2);
+    // 스프라이트 스케일 적용 (픽셀아트 선명 유지)
+    this.setScale(SPRITE_SCALE);
+
+    // 원형 충돌체 (반경 12px, 48x48 디스플레이 기준)
+    const bodyOff = (24 * SPRITE_SCALE) / 2 - 12;
+    this.body.setCircle(12, bodyOff, bodyOff);
     this.body.setCollideWorldBounds(true);
 
     // depth 설정 (적 위에 표시)

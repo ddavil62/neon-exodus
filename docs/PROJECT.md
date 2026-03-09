@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-09 (레벨업 스킵 버그 수정)
+> 최종 업데이트: 2026-03-09 (스프라이트 2x 스케일 적용)
 
 ## 프로젝트 개요
 
@@ -49,7 +49,7 @@ neon-exodus/
 ├── package.json                   # 의존성 (Capacitor, Playwright)
 ├── capacitor.config.json          # Android 패키징 설정
 ├── js/
-│   ├── config.js                  # 게임 상수, 밸런스 수치
+│   ├── config.js                  # 게임 상수, 밸런스 수치, SPRITE_SCALE
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
@@ -120,7 +120,8 @@ neon-exodus/
 │   ├── auto-hunt.spec.js          # 자동 사냥 QA 테스트 (29개)
 │   ├── phase1-art-qa.spec.js     # Phase 1 아트 QA 테스트 (22개)
 │   ├── weapon-report.spec.js     # 무기별 결과 리포트 테스트 (28개)
-│   └── weapon-report-layout.spec.js # 무기 리포트 레이아웃 테스트 (11개)
+│   ├── weapon-report-layout.spec.js # 무기 리포트 레이아웃 테스트 (11개)
+│   └── sprite-scale.spec.js       # 스프라이트 2x 스케일 테스트 (21개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -141,7 +142,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 | 모듈 | 파일 | 역할 |
 |---|---|---|
-| 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수 일괄 관리 |
+| 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 351키, `t()` 함수로 참조 |
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 일시정지 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, HP/XP/레벨업, 메타 업그레이드 반영 |
@@ -159,6 +160,26 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | IAP 관리 | `js/managers/IAPManager.js` | Google Play IAP 구매/복원, Mock 모드 |
 
 ## 기능 명세
+
+### 스프라이트 스케일
+
+모든 게임 엔티티에 `SPRITE_SCALE = 2` 배율을 적용하여 16~32px 에셋을 2배 크기로 렌더링한다. Phaser `pixelArt: true` 설정으로 nearest-neighbor 보간되어 픽셀이 선명하게 유지된다.
+
+| 엔티티 | 원본 크기 | 디스플레이 크기 | 충돌체 |
+|---|---|---|---|
+| Player | 24x24 | 48x48 | circle(12, 12, 12) |
+| Enemy (잡몹) | 16~32px | 32~64px | 동적 계산 (displayW 기준) |
+| Enemy (플레이스홀더) | - | SPRITE_SCALE * radius / 12 | 동적 계산 |
+| Projectile | 6x6 | 12x12 | circle(4, 2, 2) |
+| XP Gem (small) | 6x6 | 12x12 | circle(3, 3, 3) |
+| XP Gem (medium) | 10x10 | 20x20 | circle(5, 5, 5) |
+| XP Gem (large) | 14x14 | 28x28 | circle(7, 7, 7) |
+
+- 충돌체 오프셋 공식: `bodyOffset = (frameWidth * SPRITE_SCALE) / 2 - bodyRadius`
+- 오브젝트 풀 재사용 시 스케일 유지: constructor/init/spawn에서 setScale 적용
+- 관련 파일: `js/config.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`
+- 구현 일자: 2026-03-09
+- 스펙 문서: `.claude/specs/2026-03-09-sprite-scale.md`
 
 ### 조작 시스템
 
@@ -775,3 +796,11 @@ Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 
 - [x] Enemy.js: enemy_temp 제거, init()에서 textures.exists 체크 후 setTexture/애니메이션, 폴백 분기 유지
 - [x] 에셋 미존재 시 플레이스홀더 폴백 동작 유지 (textures.exists 가드)
 - [x] package.json devDependencies 추가 (dotenv, openai, sharp)
+
+### 스프라이트 2x 스케일 적용 -- 완료 (2026-03-09)
+- [x] config.js에 SPRITE_SCALE = 2 상수 추가
+- [x] Player.js에 setScale(SPRITE_SCALE) 적용 및 body offset 재조정 (circle 12, offset 12)
+- [x] Enemy.js 실 텍스처에 setScale(SPRITE_SCALE) 적용, 플레이스홀더에 SPRITE_SCALE * radius / 12 적용
+- [x] Enemy.js body offset을 displayW 기준으로 동적 재계산
+- [x] Projectile.js에 setScale(SPRITE_SCALE) 적용 및 body offset 재조정 (circle 4, offset 2)
+- [x] XPGem.js constructor/spawn() 모두 setScale(SPRITE_SCALE) 적용 및 타입별 body offset 재계산

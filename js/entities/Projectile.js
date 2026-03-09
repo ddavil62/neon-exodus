@@ -6,7 +6,7 @@
  * 관통 횟수에 따라 비활성화된다.
  */
 
-import { WORLD_WIDTH, WORLD_HEIGHT } from '../config.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, SPRITE_SCALE } from '../config.js';
 
 // ── Projectile 클래스 ──
 
@@ -49,8 +49,12 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
     /** 생존 시간 누적 (ms) */
     this.aliveTime = 0;
 
-    // 충돌체 설정: 작은 원형 (반경 3px, 6x6 텍스처 기준)
-    this.body.setCircle(3);
+    // 스프라이트 스케일 적용
+    this.setScale(SPRITE_SCALE);
+
+    // 충돌체 설정: 원형 (반경 4px, 12x12 디스플레이 기준)
+    const projBodyOff = Math.max(0, (6 * SPRITE_SCALE) / 2 - 4);
+    this.body.setCircle(4, projBodyOff, projBodyOff);
 
     // 초기 비활성 상태
     this.setActive(false);

@@ -7,7 +7,7 @@
  * 오브젝트 풀에서 관리된다.
  */
 
-import { COLORS, CREDIT_DROP_CHANCE, CREDIT_DROP_AMOUNT } from '../config.js';
+import { COLORS, CREDIT_DROP_CHANCE, CREDIT_DROP_AMOUNT, SPRITE_SCALE } from '../config.js';
 import { ENEMIES, MINI_BOSSES, BOSSES } from '../data/enemies.js';
 import { ENEMY_BEHAVIORS } from './EnemyTypes.js';
 
@@ -155,21 +155,24 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     const texKey = 'enemy_' + typeId;
     if (this.scene.textures.exists(texKey)) {
       this.setTexture(texKey);
-      this.setScale(1);
+      this.setScale(SPRITE_SCALE);
       this.clearTint();
       const animKey = texKey + '_idle';
       if (this.scene.anims.exists(animKey)) {
         this.play(animKey);
       }
     } else {
-      // 폴백: BootScene placeholder 텍스처 (단색 원) - 크기/색상 보정
-      this.setScale(radius / 12);
+      // 폴백: 플레이스홀더 텍스처도 SPRITE_SCALE 적용
+      this.setScale(SPRITE_SCALE * radius / 12);
       this.setTint(tintColor);
     }
 
-    // 충돌체 크기 재설정 (offset 음수 방지)
+    // 충돌체 크기 재설정 — 디스플레이 크기 기준으로 body 오프셋 재계산
     const bodyRadius = radius;
-    const bodyOffset = Math.max(0, 12 - bodyRadius);
+    const texFrame = this.texture.get(this.frame?.name || '__BASE');
+    const frameW = texFrame ? texFrame.width : 24;
+    const displayW = frameW * (this.scaleX || SPRITE_SCALE);
+    const bodyOffset = Math.max(0, (displayW / 2) - bodyRadius);
     this.body.setCircle(bodyRadius, bodyOffset, bodyOffset);
 
     // 활성화

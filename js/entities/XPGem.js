@@ -11,6 +11,7 @@ import {
   XP_GEM_LIFETIME,
   XP_GEM_BLINK_DURATION,
   XP_MAGNET_RADIUS,
+  SPRITE_SCALE,
 } from '../config.js';
 
 /** 자석 흡수 시 가속 속도 (px/s) */
@@ -51,8 +52,12 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
     /** 보석 타입 */
     this.gemType = 'small';
 
-    // 충돌체: 작은 원 (반경 3px, 6x6 텍스처 기준)
-    this.body.setCircle(3, 0, 0);
+    // 스프라이트 스케일 적용
+    this.setScale(SPRITE_SCALE);
+
+    // 충돌체: 원형 (스케일 반영, 12x12 디스플레이 기준)
+    const gemDispW = 6 * SPRITE_SCALE;
+    this.body.setCircle(3, (gemDispW / 2) - 3, (gemDispW / 2) - 3);
 
     // 초기 비활성 상태
     this.setActive(false);
@@ -88,11 +93,15 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
     // 텍스처 키 직접 전환 + 충돌체 크기 타입별 조정
     const texMap = { small: 'xp_gem_s', medium: 'xp_gem_m', large: 'xp_gem_l' };
     this.setTexture(texMap[type] || 'xp_gem_s');
-    this.setScale(1);
+    this.setScale(SPRITE_SCALE);
     this.clearTint();
     const radii = { small: 3, medium: 5, large: 7 };
     const r = radii[type] || 3;
-    this.body.setCircle(r, 0, 0);
+    // 텍스처 원본 크기 × SPRITE_SCALE 기준 body 오프셋 계산
+    const texSizes = { small: 6, medium: 10, large: 14 };
+    const gemDisplayW = (texSizes[type] || 6) * SPRITE_SCALE;
+    const gemBodyOff = Math.max(0, (gemDisplayW / 2) - r);
+    this.body.setCircle(r, gemBodyOff, gemBodyOff);
   }
 
   /**
