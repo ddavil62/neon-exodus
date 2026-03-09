@@ -583,6 +583,9 @@ export default class GameScene extends Phaser.Scene {
         if (!adPressed) return;
         adPressed = false;
 
+        // 광고 재생 중 타임아웃 발동 방지 (광고는 보통 15~30초 소요)
+        if (timeoutEvent) timeoutEvent.remove(false);
+
         const result = await AdManager.showRewarded(ADMOB_UNITS.adRevive);
         if (result.rewarded) {
           AdManager.incrementDailyAdCount('adRevive');
