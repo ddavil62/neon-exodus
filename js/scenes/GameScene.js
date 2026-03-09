@@ -774,14 +774,33 @@ export default class GameScene extends Phaser.Scene {
     ).setScrollFactor(0).setDepth(300).setVisible(false);
 
     // 일시정지 텍스트
-    this._pauseTitle = this.add.text(centerX, centerY - 60, t('hud.pause'), {
+    this._pauseTitle = this.add.text(centerX, centerY - 100, t('hud.pause'), {
       fontSize: '24px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonCyan,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false);
 
+    // ── 런 리포트 (처치 수, 생존 시간, 크레딧) ──
+    const reportStyle = {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+    };
+
+    this._pauseKillsText = this.add.text(centerX, centerY - 60, '', reportStyle)
+      .setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false);
+
+    this._pauseTimeText = this.add.text(centerX, centerY - 40, '', reportStyle)
+      .setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false);
+
+    this._pauseCreditsText = this.add.text(centerX, centerY - 20, '', {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonOrange,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false);
+
     // 계속 버튼
-    this._resumeText = this.add.text(centerX, centerY, t('hud.resume'), {
+    this._resumeText = this.add.text(centerX, centerY + 20, t('hud.resume'), {
       fontSize: '18px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonGreen,
@@ -793,7 +812,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     // 포기 버튼
-    this._quitText = this.add.text(centerX, centerY + 50, t('hud.quit'), {
+    this._quitText = this.add.text(centerX, centerY + 70, t('hud.quit'), {
       fontSize: '16px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.hpRed,
@@ -853,8 +872,21 @@ export default class GameScene extends Phaser.Scene {
     const visible = this.isPaused;
     this._pauseBg.setVisible(visible);
     this._pauseTitle.setVisible(visible);
+    this._pauseKillsText.setVisible(visible);
+    this._pauseTimeText.setVisible(visible);
+    this._pauseCreditsText.setVisible(visible);
     this._resumeText.setVisible(visible);
     this._quitText.setVisible(visible);
+
+    // 일시정지 시 런 리포트 갱신
+    if (visible) {
+      const min = Math.floor(this.runTime / 60);
+      const sec = Math.floor(this.runTime % 60);
+      const timeStr = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+      this._pauseKillsText.setText(t('hud.pauseKills', this.killCount));
+      this._pauseTimeText.setText(t('hud.pauseTime', timeStr));
+      this._pauseCreditsText.setText(t('hud.pauseCredits', this.creditsEarned));
+    }
 
     // 물리 엔진도 함께 일시정지/재개하여 적 이동을 멈춘다
     if (this.isPaused) {
