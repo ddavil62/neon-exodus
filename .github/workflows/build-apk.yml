@@ -37,6 +37,36 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      # 키스토어: KEYSTORE_BASE64 시크릿이 있으면 사용, 없으면 캐시, 없으면 신규 생성
+      - name: Restore keystore from cache
+        id: cache-keystore
+        uses: actions/cache@v4
+        with:
+          path: release.keystore
+          key: release-keystore-neonexodus-v1
+
+      - name: Decode keystore from secret
+        if: env.KEYSTORE_BASE64 != ''
+        run: echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Generate keystore (first run)
+        if: steps.cache-keystore.outputs.cache-hit != 'true' && env.KEYSTORE_BASE64 == ''
+        run: |
+          keytool -genkeypair -v \
+            -keystore release.keystore \
+            -alias "$KEY_ALIAS" \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" \
+            -dname "CN=ddavil62, OU=Dev, O=Antigravity, L=Seoul, C=KR"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
       - name: Configure release signing
         working-directory: android/app
         run: |
@@ -58,9 +88,6 @@ jobs:
               }
           }
           SIGNING
-
-      - name: Decode release keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/release.keystore
 
       - name: Build release APK & AAB
         working-directory: android
