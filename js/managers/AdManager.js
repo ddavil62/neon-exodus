@@ -74,8 +74,11 @@ class AdManagerClass {
     }
 
     try {
-      // 동적 import로 @capacitor-community/admob 플러그인 로드
-      const { AdMob } = await import('@capacitor-community/admob');
+      // Capacitor 전역 플러그인 브리지에서 AdMob 참조 (번들러 없이 동작)
+      const AdMob = window.Capacitor.Plugins.AdMob;
+      if (!AdMob) {
+        throw new Error('AdMob 플러그인이 Capacitor에 등록되지 않음');
+      }
       this._admob = AdMob;
 
       await this._admob.initialize({
