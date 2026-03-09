@@ -55,9 +55,9 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
     // 스프라이트 스케일 적용
     this.setScale(SPRITE_SCALE);
 
-    // 충돌체: 원형 (스케일 반영, 12x12 디스플레이 기준)
-    const gemDispW = 6 * SPRITE_SCALE;
-    this.body.setCircle(3, (gemDispW / 2) - 3, (gemDispW / 2) - 3);
+    // 충돌체: 원형 (프레임 좌표 기준, Phaser가 scale 자동 적용)
+    const gemBodyOff0 = Math.max(0, 6 / 2 - 3);
+    this.body.setCircle(3, gemBodyOff0, gemBodyOff0);
 
     // 초기 비활성 상태
     this.setActive(false);
@@ -97,10 +97,10 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
     this.clearTint();
     const radii = { small: 3, medium: 5, large: 7 };
     const r = radii[type] || 3;
-    // 텍스처 원본 크기 × SPRITE_SCALE 기준 body 오프셋 계산
+    // 프레임 좌표 기준 body 오프셋 (Phaser가 scale 자동 적용)
     const texSizes = { small: 6, medium: 10, large: 14 };
-    const gemDisplayW = (texSizes[type] || 6) * SPRITE_SCALE;
-    const gemBodyOff = Math.max(0, (gemDisplayW / 2) - r);
+    const texW = texSizes[type] || 6;
+    const gemBodyOff = Math.max(0, (texW / 2) - r);
     this.body.setCircle(r, gemBodyOff, gemBodyOff);
   }
 
