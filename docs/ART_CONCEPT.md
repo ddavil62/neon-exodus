@@ -1,147 +1,218 @@
 # NEON EXODUS 아트 컨셉 문서
 
-## 아트 방향: 네온 미니멀 픽셀
+## 아트 방향: 글로우 벡터
 
-**스타일 키워드**: 미니멀 픽셀아트 + 네온 글로우 + 사이버펑크 기하학
+**스타일 키워드**: SVG 벡터 + 네온 발광(Glow) + 사이버펑크 그라데이션
 
-현재 네온 팔레트와 Galmuri 픽셀 폰트의 감성을 살려, 최소한의 도트로 실루엣과 개성을 전달하는 **미니멀 픽셀아트** 스타일로 통일한다. 복잡한 디테일보다 깔끔한 형태 + 네온 발광 효과로 사이버펑크 분위기를 극대화한다.
+기존 네온 팔레트와 사이버펑크 감성을 유지하면서, **SVG 기반 벡터 그래픽**으로 전환한다. 픽셀아트의 도트 느낌 대신 매끄러운 외곽선과 네온 글로우 효과로 세련된 사이버펑크 분위기를 극대화한다.
+
+### 이전 방식 (폐기)
+- DALL-E 3 API + sharp 후처리 → 미니멀 픽셀아트 PNG
+- `pixelArt: true`, `antialias: false`, `SPRITE_SCALE = 2`
+
+### 새 방식
+- **Node.js SVG 코드 생성 → PNG 변환**
+- `pixelArt: false`, `antialias: true`, `SPRITE_SCALE = 1`
+- 에셋을 최종 표시 크기로 직접 렌더링 (스케일 불필요)
 
 ---
 
 ## 디자인 원칙
 
 ### 1. 실루엣 우선
-- 각 엔티티는 축소(8px)해도 구분 가능한 고유 실루엣을 가진다
-- 잡몹 vs 미니보스 vs 보스는 크기 차이로 위협도를 직관적으로 전달
+- 각 엔티티는 축소해도 구분 가능한 고유 실루엣을 가진다
+- 잡몹 vs 미니보스 vs 보스는 크기 + 글로우 강도로 위협도 전달
 
 ### 2. 네온 컬러 코드
-- 기존 12색 팔레트를 유지하되, 스프라이트 외곽에 1px 글로우(밝은색) 적용
 - 아군 = 시안/그린 계열, 적 = 레드/오렌지 계열, 보스 = 마젠타
+- 모든 엔티티에 1~3px 네온 글로우(SVG feGaussianBlur) 적용
 
-### 3. 애니메이션 최소화
-- 아이들 2프레임, 이동/공격 2~4프레임 이내
-- 프레임 수를 줄이되 네온 깜빡임(flicker)으로 생동감 부여
+### 3. 글로우 레이어 구조
+모든 SVG 에셋은 3개 레이어로 구성:
+1. **코어 (Core)**: 밝은 중심부 — 불투명 도형, 주 색상
+2. **바디 (Body)**: 중간 톤 — 그라데이션 + 반투명
+3. **글로우 (Glow)**: 외곽 발광 — feGaussianBlur 필터, 낮은 opacity
 
-### 4. 해상도 기준
-| 엔티티 | 스프라이트 크기 | 비고 |
-|--------|----------------|------|
-| 플레이어 | 24x24px | 방향 표시 포함 |
-| 잡몹 (소형) | 16x16px | nano_drone, spark_drone, shield_drone |
-| 잡몹 (중형) | 20x20px | scout_bot, repair_bot, teleport_drone |
-| 잡몹 (대형) | 24~32px | battle_robot, heavy_bot, rush_bot, suicide_bot |
-| 미니보스 | 40x40px | guardian_drone, assault_mech |
-| 보스 | 64x64px | commander, titan, core_processor |
-| 투사체 | 6x6px ~ 8x8px | 무기별 차별화 |
-| XP 보석 | 6/10/14px | 현재 다이아몬드 형태 유지 |
-| 조이스틱 | 64x64 / 32x32 | 반투명 UI 오버레이 |
+### 4. 애니메이션 전략
+- 프레임 기반 스프라이트시트 **제거** → **정적 이미지 1장**
+- 생동감은 Phaser 코드 애니메이션으로 부여:
+  - 아이들: `tween { scaleX/Y: ±0.05, yoyo, repeat: -1 }` (미세한 맥동)
+  - 이동: 약간의 rotation oscillation
+  - 보스: 글로우 레이어 alpha 깜빡임 (pulse)
+- 장점: 에셋 용량 절감, 코드로 다양한 효과 제어 가능
+
+### 5. 해상도 기준 (표시 크기 = 에셋 크기)
+
+| 엔티티 | 에셋 크기 | 비고 |
+|--------|----------|------|
+| 플레이어 | 48x48px | 기존 24x24 × SCALE 2 = 48px |
+| 잡몹 (소형) | 32x32px | nano_drone, spark_drone, shield_drone 등 |
+| 잡몹 (중형) | 40x40px | scout_bot, repair_bot, teleport_drone 등 |
+| 잡몹 (대형) | 48~64px | battle_robot, heavy_bot, rush_bot, suicide_bot |
+| 미니보스 | 80x80px | guardian_drone, assault_mech |
+| 보스 | 128x128px | commander, titan, core_processor |
+| 투사체 | 12x12px | 기존 6x6 × SCALE 2 = 12px |
+| XP 보석 | 12/20/28px | 소/중/대 |
+| 조이스틱 | 128x128 / 64x64 | 반투명 UI 오버레이 |
 
 ---
 
 ## 색상 팔레트
 
-기존 네온 팔레트를 기반으로 스프라이트용 중간톤을 추가한다.
+기존 네온 팔레트를 유지하고, 벡터용 그라데이션 쌍을 추가한다.
 
 ```
-배경층     ██ #0A0A1A (BG)        ██ #060612 (BG_DARK)    ██ #1A1A2E (UI_PANEL)
+배경층     #0A0A1A (BG)        #060612 (BG_DARK)    #1A1A2E (UI_PANEL)
 
-네온 주색  ██ #00FFFF (CYAN)      ██ #FF00FF (MAGENTA)    ██ #39FF14 (GREEN)
-네온 부색  ██ #FF6600 (ORANGE)    ██ #FF3333 (RED)        ██ #FFDD00 (YELLOW)
+네온 주색  #00FFFF (CYAN)      #FF00FF (MAGENTA)    #39FF14 (GREEN)
+네온 부색  #FF6600 (ORANGE)    #FF3333 (RED)        #FFDD00 (YELLOW)
 
-스프라이트  ██ #008888 (CYAN MID)   ██ #880088 (MAG MID)    ██ #1A8800 (GREEN MID)
-중간톤     ██ #884400 (ORG MID)   ██ #881A1A (RED MID)    ██ #888800 (YLW MID)
+그라데이션 쌍 (벡터 전용)
+  시안:    #00FFFF → #006688 (코어 → 엣지)
+  마젠타:  #FF00FF → #660066 (코어 → 엣지)
+  그린:    #39FF14 → #0A6600 (코어 → 엣지)
+  오렌지:  #FF6600 → #663300 (코어 → 엣지)
+  레드:    #FF3333 → #661414 (코어 → 엣지)
 
-하이라이트 ██ #FFFFFF (WHITE)     ██ #CCCCCC (LIGHT)
-섀도우     ██ #222244 (SHADOW)    ██ #333344 (DISABLED)
+하이라이트 #FFFFFF (WHITE)     #CCCCCC (LIGHT)
+섀도우     #222244 (SHADOW)    #333344 (DISABLED)
 ```
+
+### 글로우 필터 표준 정의
+
+```svg
+<filter id="neon-glow">
+  <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+</filter>
+```
+
+- 소형 엔티티: `stdDeviation="1.5"`
+- 중/대형 엔티티: `stdDeviation="2"`
+- 보스: `stdDeviation="3"` (강한 글로우)
 
 ---
 
-## 에셋 총 목록 (교체 대상)
+## 에셋 총 목록 (벡터 교체 대상)
 
-### 스프라이트 (27종)
+### 캐릭터 + 적 스프라이트 (20종 — 전부 교체)
 
-| # | 텍스처 키 | 현재 | 목표 | Phase |
-|---|-----------|------|------|-------|
-| 1 | `player` | DALL-E 3 스프라이트 48x24 (2F) | 사이버 전사 정면/이동 24x24 | Phase 1 (완료) |
-| 2 | `projectile` | DALL-E 3 정적 6x6 | 에너지탄 도트 6x6 | Phase 1 (완료) |
-| 3 | `enemy_nano_drone` | DALL-E 3 스프라이트 32x16 (2F) | 작은 비행 드론 16x16 | Phase 1 (완료) |
-| 4 | `enemy_scout_bot` | DALL-E 3 스프라이트 40x20 (2F) | 정찰 로봇 20x20 | Phase 1 (완료) |
-| 5 | `enemy_spark_drone` | DALL-E 3 스프라이트 32x16 (2F) | 전기 드론 16x16 | Phase 1 (완료) |
-| 6 | `enemy_battle_robot` | DALL-E 3 스프라이트 56x28 (2F) | 전투 로봇 28x28 | Phase 1 (완료) |
-| 7 | `enemy_shield_drone` | DALL-E 3 스프라이트 40x20 (2F) | 방패 드론 20x20 | Phase 1 (완료) |
-| 8 | `enemy_rush_bot` | DALL-E 3 스프라이트 48x24 (2F) | 돌격봇 24x24 | Phase 1 (완료) |
-| 9 | `enemy_repair_bot` | DALL-E 3 스프라이트 40x20 (2F) | 수리 로봇 20x20 | Phase 1 (완료) |
-| 10 | `enemy_heavy_bot` | DALL-E 3 스프라이트 64x32 (2F) | 중장갑봇 32x32 | Phase 1 (완료) |
-| 11 | `enemy_teleport_drone` | DALL-E 3 스프라이트 40x20 (2F) | 순간이동 드론 20x20 | Phase 1 (완료) |
-| 12 | `enemy_suicide_bot` | DALL-E 3 스프라이트 48x24 (2F) | 자폭봇 (깜빡임) 24x24 | Phase 1 (완료) |
-| 13 | `enemy_guardian_drone` | DALL-E 3 스프라이트 80x40 (2F) | 가디언 미니보스 40x40 | Phase 2 (완료) |
-| 14 | `enemy_assault_mech` | DALL-E 3 스프라이트 80x40 (2F) | 어썰트 메카 40x40 | Phase 2 (완료) |
-| 15 | `enemy_commander_drone` | DALL-E 3 스프라이트 256x64 (4F) | 커맨더 보스 64x64 | Phase 2 (완료) |
-| 16 | `enemy_siege_titan` | DALL-E 3 스프라이트 256x64 (4F) | 시즈 타이탄 보스 64x64 | Phase 2 (완료) |
-| 17 | `enemy_core_processor` | DALL-E 3 스프라이트 256x64 (4F) | 코어 프로세서 최종보스 64x64 | Phase 2 (완료) |
-| 18 | `xp_gem_s` | DALL-E 3 정적 6x6 | 데이터 파편 (소) 6x6 | Phase 1 (완료) |
-| 19 | `xp_gem_m` | DALL-E 3 정적 10x10 | 데이터 파편 (중) 10x10 | Phase 1 (완료) |
-| 20 | `xp_gem_l` | DALL-E 3 정적 14x14 | 데이터 파편 (대) 14x14 | Phase 1 (완료) |
-| 21 | `bg_tile` | 그리드+리벳 64x64 | 사이버 바닥 타일 64x64 | Phase 3 |
-| 22 | `particle` | 흰색 사각 4x4 | 유지 (색상은 코드에서 제어) | - |
-| 23 | `joystick_base` | 반투명 원 64x64 | 홀로그램 원 UI 64x64 | Phase 3 |
-| 24 | `joystick_thumb` | 시안 원 32x32 | 홀로그램 엄지 32x32 | Phase 3 |
+| # | 텍스처 키 | 이전 (픽셀) | 목표 (벡터) | 에셋 크기 | Phase |
+|---|-----------|------------|------------|----------|-------|
+| 1 | `player` | DALL-E 3 스프라이트시트 48x24 | 시안 글로우 전사, 둥근 헬멧+바이저, 어깨 패드 | 48x48 정적 | Phase 1 |
+| 2 | `projectile` | DALL-E 3 정적 6x6 | 시안 에너지탄, 원형 코어 + 글로우 후광 | 12x12 정적 | Phase 1 |
+| 3 | `enemy_nano_drone` | DALL-E 3 스프라이트시트 | 작은 삼각형 드론, 레드 코어, 2개 날개 | 32x32 정적 | Phase 1 |
+| 4 | `enemy_scout_bot` | DALL-E 3 스프라이트시트 | 원형 바디 + 안테나, 오렌지 센서 아이 | 32x32 정적 | Phase 1 |
+| 5 | `enemy_spark_drone` | DALL-E 3 스프라이트시트 | 전기 아크 장식, 옐로우 코어 + 글로우 스파크 | 32x32 정적 | Phase 1 |
+| 6 | `enemy_battle_robot` | DALL-E 3 스프라이트시트 | 사각 바디 + 팔 2개, 레드 글로우 눈, 중장감 | 48x48 정적 | Phase 1 |
+| 7 | `enemy_shield_drone` | DALL-E 3 스프라이트시트 | 육각형 실드 패널, 시안-레드 이중 글로우 | 32x32 정적 | Phase 1 |
+| 8 | `enemy_rush_bot` | DALL-E 3 스프라이트시트 | 삼각 쐐기형, 오렌지 부스터 글로우, 날카로운 전면 | 40x40 정적 | Phase 1 |
+| 9 | `enemy_repair_bot` | DALL-E 3 스프라이트시트 | 둥근 바디 + 십자 마크, 그린 힐링 글로우 | 32x32 정적 | Phase 1 |
+| 10 | `enemy_heavy_bot` | DALL-E 3 스프라이트시트 | 넓은 직사각형, 두꺼운 장갑, 오렌지-레드 듀얼 코어 | 48x48 정적 | Phase 1 |
+| 11 | `enemy_teleport_drone` | DALL-E 3 스프라이트시트 | 다이아몬드 형태, 마젠타 점멸 코어, 잔상 효과선 | 32x32 정적 | Phase 1 |
+| 12 | `enemy_suicide_bot` | DALL-E 3 스프라이트시트 | 구형 바디 + 경고 삼각형, 레드-옐로우 맥동 코어 | 40x40 정적 | Phase 1 |
+| 13 | `enemy_guardian_drone` | DALL-E 3 스프라이트시트 80x40 | 육각형 가디언, 회전 링 아머, 오렌지-레드 강한 글로우 | 80x80 정적 | Phase 1 |
+| 14 | `enemy_assault_mech` | DALL-E 3 스프라이트시트 80x40 | 이족 메카, 넓은 어깨장갑, 다크레드 미사일 포드 | 80x80 정적 | Phase 1 |
+| 15 | `enemy_commander_drone` | DALL-E 3 스프라이트시트 256x64 | 모선 드론, 왕관 안테나, 마젠타 코어, 궤도 링 | 128x128 정적 | Phase 1 |
+| 16 | `enemy_siege_titan` | DALL-E 3 스프라이트시트 256x64 | 시즈 워커, 캐터필러, 포 팔, 오렌지-옐로우 포구 | 128x128 정적 | Phase 1 |
+| 17 | `enemy_core_processor` | DALL-E 3 스프라이트시트 256x64 | AI 크리스탈 코어, 궤도 링 3중, 마젠타-화이트 맥동 | 128x128 정적 | Phase 1 |
+| 18 | `xp_gem_s` | DALL-E 3 정적 6x6 | 작은 다이아몬드, 시안 글로우 | 12x12 정적 | Phase 1 |
+| 19 | `xp_gem_m` | DALL-E 3 정적 10x10 | 중간 다이아몬드, 시안-그린 그라데이션 | 20x20 정적 | Phase 1 |
+| 20 | `xp_gem_l` | DALL-E 3 정적 14x14 | 큰 다이아몬드, 다중 글로우 레이어 | 28x28 정적 | Phase 1 |
 
-### 무기 이펙트 (코드 기반, Phase 4)
+### UI + 배경 에셋 (Phase 2)
+
+| # | 텍스처 키 | 현재 | 목표 (벡터) | 에셋 크기 |
+|---|-----------|------|------------|----------|
+| 21 | `bg_tile` | 프로시저럴 그리드 64x64 | 사이버 바닥 타일, 미세 그리드 + 네온 라인 | 128x128 |
+| 22 | `particle` | 흰색 사각 4x4 | 유지 (색상은 코드에서 제어) | 4x4 |
+| 23 | `joystick_base` | 프로시저럴 원 64x64 | 홀로그램 원, 동심원 글로우 | 128x128 |
+| 24 | `joystick_thumb` | 프로시저럴 원 32x32 | 글로우 엄지, 시안 코어 | 64x64 |
+
+### 무기 이펙트 (Phase 3 — 코드 기반)
 
 | # | 무기 | 현재 | 목표 |
 |---|------|------|------|
-| 25 | 블래스터 | 6px 원 투사체 | 에너지 탄환 스프라이트 |
-| 26 | 레이저건 | Graphics 직선 | 빔 스프라이트 (타일링) |
-| 27 | 플라즈마 오브 | Graphics 원 | 에너지 구체 애니메이션 |
-| 28 | 전기 체인 | Graphics 선+점 | 번개 스프라이트시트 |
-| 29 | 미사일 | 임시 스프라이트 | 미사일 + 연기 트레일 |
-| 30 | 드론 | Graphics 원 | 소형 드론 스프라이트 |
-| 31 | EMP | 파티클 폭발 | EMP 파동 애니메이션 |
+| 25 | 블래스터 | 6px 원 투사체 | 에너지 탄환 SVG |
+| 26 | 레이저건 | Graphics 직선 | 빔 SVG (타일링) |
+| 27 | 플라즈마 오브 | Graphics 원 | 에너지 구체 SVG + 회전 tween |
+| 28 | 전기 체인 | Graphics 선+점 | 번개 SVG (세그먼트) |
+| 29 | 미사일 | 임시 스프라이트 | 미사일 SVG + 연기 파티클 |
+| 30 | 드론 | Graphics 원 | 소형 드론 SVG |
+| 31 | EMP | 파티클 폭발 | EMP 파동 SVG + 스케일 tween |
 
-### UI 에셋 (Phase 3)
+### UI 에셋 (Phase 2)
 
 | # | 요소 | 현재 | 목표 |
 |---|------|------|------|
-| 32 | 메뉴 배경 | 단색 | 사이버 도시 실루엣 배경 |
-| 33 | 버튼 | Graphics 사각형 | 네온 테두리 버튼 스프라이트 |
-| 34 | 카드 배경 | Graphics 패널 | UI 카드 9-slice 스프라이트 |
-| 35 | 아이콘 (무기 7종) | 없음 | 16x16 무기 아이콘 |
-| 36 | 아이콘 (패시브 10종) | 이모지 텍스트 | 16x16 패시브 아이콘 |
-| 37 | 아이콘 (업그레이드) | 없음 | 16x16 업그레이드 아이콘 |
+| 32 | 메뉴 배경 | 단색 | 사이버 도시 실루엣 SVG |
+| 33 | 버튼 | Graphics 사각형 | 네온 테두리 버튼 SVG (9-slice) |
+| 34 | 카드 배경 | Graphics 패널 | UI 카드 SVG (9-slice) |
+| 35 | 아이콘 (무기 7종) | 이모지 텍스트 | 16x16 무기 아이콘 SVG |
+| 36 | 아이콘 (패시브 10종) | 이모지 텍스트 | 16x16 패시브 아이콘 SVG |
+| 37 | 아이콘 (업그레이드) | 없음 | 16x16 업그레이드 아이콘 SVG |
+
+---
+
+## 엔티티별 SVG 디자인 가이드
+
+### 플레이어 (player)
+- **형태**: 둥근 헬멧(원) + 어깨 패드(타원 2개) + 바이저(가로 직사각형)
+- **코어 색**: `#00FFFF` (시안)
+- **글로우**: 헬멧 주변 시안 글로우 `stdDeviation="2"`
+- **특징**: 바이저에 밝은 화이트 하이라이트, 어깨에 그라데이션
+
+### 잡몹 공통
+- **코어 색**: `#FF3333` (레드) 또는 `#FF6600` (오렌지)
+- **글로우**: `stdDeviation="1.5"` (소형), `"2"` (대형)
+- **특징**: 각 잡몹마다 고유한 기본 도형 (삼각형, 원, 사각형, 육각형, 다이아몬드)
+
+### 미니보스
+- **코어 색**: `#FF6600` (오렌지)
+- **글로우**: `stdDeviation="2.5"`, 이중 글로우 레이어
+- **특징**: 잡몹보다 복잡한 도형 조합, 디테일 추가 (장갑판, 무기 마운트 등)
+
+### 보스
+- **코어 색**: `#FF00FF` (마젠타) + `#FFFFFF` 하이라이트
+- **글로우**: `stdDeviation="3"`, 삼중 글로우 레이어 (코어 + 중간 + 외곽)
+- **특징**: 가장 복잡한 구조, 궤도 링/크리스탈/에너지 필드 등 고유 장식 요소
+
+### XP 보석
+- **형태**: 다이아몬드(마름모) 형태 유지
+- **코어 색**: `#00FFFF` → `#39FF14` 그라데이션 (크기에 따라 강도 증가)
+- **글로우**: 소 `stdDeviation="1"`, 중 `"1.5"`, 대 `"2"`
+
+### 투사체
+- **형태**: 원형 코어 + 방사형 글로우
+- **코어 색**: `#00FFFF` (시안)
+- **글로우**: 강한 발광 `stdDeviation="2"` (작지만 밝게)
 
 ---
 
 ## 제작 Phase
 
-### Phase 1: 플레이어 + 잡몹 + 수집물 (핵심 게임플레이) -- 완료 (2026-03-09)
-> **우선순위 최고** — 가장 많이 보이는 요소
+### Phase 1: 전체 캐릭터 + 적 + 수집물 (20종 — 벡터 완전 교체)
+> **우선순위 최고** — 기존 DALL-E 픽셀 에셋 20종을 SVG 벡터로 교체
 
-- [x] 플레이어 스프라이트 (24x24, 아이들 2F) *(DALL-E 3 API로 생성, 스프라이트시트 48x24)*
-- [x] 잡몹 10종 스프라이트 (각 크기별, 아이들 2F) *(16x16 ~ 64x32 스프라이트시트)*
-- [x] 투사체 스프라이트 (6x6) *(정적 이미지)*
-- [x] XP 보석 3종 (데이터 파편) *(소 6x6, 중 10x10, 대 14x14 정적 이미지)*
-- [x] BootScene 텍스처 생성 -> 이미지 로드 방식 전환 *(preload()에서 PNG 로드, 에셋 미존재 시 플레이스홀더 폴백 유지)*
+- [ ] 플레이어 스프라이트 (48x48, 정적 PNG)
+- [ ] 잡몹 10종 스프라이트 (32~64px, 정적 PNG)
+- [ ] 미니보스 2종 (80x80, 정적 PNG)
+- [ ] 보스 3종 (128x128, 정적 PNG)
+- [ ] 투사체 스프라이트 (12x12, 정적 PNG)
+- [ ] XP 보석 3종 (12/20/28px, 정적 PNG)
+- [ ] Phaser config 변경: `pixelArt: false`, `antialias: true`
+- [ ] SPRITE_SCALE = 1로 변경 + 관련 코드 수정
+- [ ] BootScene 수정: 스프라이트시트 → 정적 이미지 로드 전환
+- [ ] BootScene 수정: 프레임 animation → Phaser tween 애니메이션 전환
+- [ ] Enemy.js, Player.js 등: 스케일/바디 오프셋 재계산
 
-**산출물**: `assets/sprites/` 디렉토리 (15종 PNG), BootScene preload() + _createAnimations() 수정
-**실제 에셋 수**: 15종 (player 1 + projectile 1 + enemy 10 + xp_gem 3)
-**생성 방식**: DALL-E 3 API + sharp 후처리 (`scripts/generate-sprites.js`)
+**산출물**: `assets/sprites/` 전체 PNG 교체 (20종), `scripts/generate-vector-sprites.js`
+**생성 방식**: Node.js SVG 코드 생성 → sharp/resvg PNG 변환
 
-### Phase 2: 보스 + 미니보스 (위협감 연출) -- 완료 (2026-03-09)
-> 보스전의 임팩트를 높이는 단계
-
-- [x] 미니보스 2종 (40x40, 아이들 2F) *(DALL-E 3 API로 생성, 스프라이트시트 80x40)*
-- [x] 보스 3종 (64x64, 아이들 2F + 특수 패턴 2F) *(DALL-E 3 API 2회 호출/종, 스프라이트시트 256x64)*
-- [x] 보스 등장 연출 효과 *(미니보스: 오렌지 플래시 300ms, 보스: 마젠타 플래시 500ms + 카메라 흔들림 500ms/0.02)*
-
-**산출물**: `assets/sprites/bosses/` 디렉토리 (5종 PNG), BootScene preload() + _createAnimations() 수정, GameScene 카메라 연출, Enemy.js 피격 복원 분기
-**실제 에셋 수**: 5종 (미니보스 2 + 보스 3)
-**생성 방식**: DALL-E 3 API + sharp 후처리 (`scripts/generate-sprites-phase2.js`)
-
-### Phase 3: UI + 배경 (폴리싱)
+### Phase 2: UI + 배경 (폴리싱)
 > 전체적인 완성도를 높이는 단계
 
-- [ ] 배경 타일 (64x64 사이버 바닥)
+- [ ] 배경 타일 (128x128 사이버 바닥)
 - [ ] 메뉴 배경 (사이버 도시 실루엣)
 - [ ] 조이스틱 UI (홀로그램 스타일)
 - [ ] 버튼 / 카드 / 패널 UI 스프라이트
@@ -149,73 +220,131 @@
 - [ ] 패시브 아이콘 10종 (16x16)
 - [ ] 업그레이드 아이콘 (카테고리별)
 
-**산출물**: UI 스프라이트시트, 배경 에셋
+**산출물**: UI 벡터 에셋, 배경 에셋
 **예상 에셋 수**: ~25종
 
-### Phase 4: 무기 이펙트 + 애니메이션 (최종 폴리싱)
-> Graphics 코드를 스프라이트 기반으로 교체
+### Phase 3: 무기 이펙트 (최종 폴리싱)
+> Graphics 코드를 SVG 스프라이트 기반으로 교체
 
-- [ ] 블래스터 탄환 애니메이션
-- [ ] 레이저 빔 스프라이트
-- [ ] 플라즈마 오브 회전 애니메이션
-- [ ] 전기 체인 번개 스프라이트
-- [ ] 미사일 + 연기 트레일
-- [ ] 드론 스프라이트 (미니 비행체)
-- [ ] EMP 파동 애니메이션
+- [ ] 블래스터 탄환 SVG
+- [ ] 레이저 빔 SVG (타일링)
+- [ ] 플라즈마 오브 SVG + 회전 tween
+- [ ] 전기 체인 번개 SVG
+- [ ] 미사일 SVG + 연기 파티클
+- [ ] 드론 SVG (미니 비행체)
+- [ ] EMP 파동 SVG + 스케일 tween
 - [ ] VFX 파티클 개선
 
-**산출물**: 무기 이펙트 스프라이트시트
+**산출물**: 무기 이펙트 벡터 에셋
 **예상 에셋 수**: ~10종
 
 ---
 
 ## 기술 통합 계획
 
-### Phase 1 적용 완료 (에셋 로드)
-```
-BootScene.preload() → this.load.spritesheet('player', 'assets/sprites/player.png', { frameWidth: 24, frameHeight: 24 })
-BootScene.create() → this._createAnimations() → this.anims.create({ key: 'player_idle', ... })
-```
-> Phase 1에서 player, projectile, 잡몹 10종, XP 보석 3종이 PNG 에셋으로 전환되었다.
-> 에셋 미존재 시 `_generatePlaceholderTextures()`의 `textures.exists()` 가드로 폴백 동작.
+### Phaser Config 변경
 
-### Phase 2 적용 완료 (보스/미니보스)
-```
-BootScene.preload() → this.load.spritesheet('enemy_guardian_drone', 'assets/sprites/bosses/guardian_drone.png', { frameWidth: 40, frameHeight: 40 })
-BootScene._createAnimations() → 미니보스 idle(3fps) + 보스 idle(2fps) + 보스 special(8fps)
-```
-> Phase 2에서 미니보스 2종, 보스 3종이 PNG 에셋으로 전환되었다.
-> _generatePlaceholderTextures()의 보스/미니보스 플레이스홀더 코드는 폴백용으로 유지.
+```javascript
+// main.js — 변경 전
+pixelArt: true,
+antialias: false,
 
-### 미전환 (프로시저럴 유지)
-```
-BootScene.create() → Graphics API → generateTexture() (UI, 배경, 조이스틱 등)
+// main.js — 변경 후
+pixelArt: false,
+antialias: true,
 ```
 
-### 전환 전략
-1. `assets/sprites/` 디렉토리에 PNG 파일 배치
-2. `BootScene.preload()`에서 `this.load.image()` 또는 `this.load.spritesheet()` 추가
-3. 기존 `_generatePlaceholderTextures()`에서 해당 텍스처 키가 이미 로드되었으면 스킵 (`this.textures.exists()` 이미 적용됨)
-4. 점진적 교체 — 에셋이 준비된 것부터 하나씩 교체 가능
+### SPRITE_SCALE 전환
+
+```javascript
+// config.js — 변경 전
+export const SPRITE_SCALE = 2;
+
+// config.js — 변경 후
+export const SPRITE_SCALE = 1;
+```
+
+> 벡터 에셋은 최종 표시 크기로 직접 생성하므로 스케일 배율이 불필요하다.
+> SPRITE_SCALE = 1로 변경하면 모든 엔티티의 body offset이 자동으로 정확해진다.
+
+### 에셋 로드 방식 전환
+
+```
+변경 전 (스프라이트시트):
+  this.load.spritesheet('player', 'assets/sprites/player.png', { frameWidth: 24, frameHeight: 24 })
+
+변경 후 (정적 이미지):
+  this.load.image('player', 'assets/sprites/player.png')
+```
+
+### 애니메이션 전환
+
+```
+변경 전 (프레임 기반):
+  this.anims.create({ key: 'player_idle', frames: [...], frameRate: 3, repeat: -1 })
+  entity.play('player_idle')
+
+변경 후 (Phaser tween):
+  this.tweens.add({
+    targets: entity,
+    scaleX: { from: 1.0, to: 1.05 },
+    scaleY: { from: 1.0, to: 0.95 },
+    duration: 800,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.easeInOut'
+  })
+```
+
+### 폴백 전략
+- `_generatePlaceholderTextures()` 유지 — 벡터 PNG 미존재 시 기존 Graphics 폴백 동작
+- `this.textures.exists(key)` 가드 그대로 유지
+
+### SVG → PNG 생성 파이프라인
+
+```
+scripts/generate-vector-sprites.js
+  │
+  ├── SVG 문자열 생성 (각 엔티티별 함수)
+  │   ├── createPlayerSVG(width, height)
+  │   ├── createEnemySVG(type, width, height)
+  │   ├── createBossSVG(type, width, height)
+  │   └── createGemSVG(size)
+  │
+  ├── SVG → PNG 변환 (sharp 또는 @resvg/resvg-js)
+  │   └── sharp(Buffer.from(svgString)).png().toFile(outputPath)
+  │
+  └── assets/sprites/ 디렉토리에 저장
+```
 
 ### 파일 구조
+
 ```
 assets/
 ├── sprites/
-│   ├── player.png              (24x24, 스프라이트시트)
+│   ├── player.png              (48x48, 정적)
+│   ├── projectile.png          (12x12, 정적)
 │   ├── enemies/
-│   │   ├── nano_drone.png      (16x16)
-│   │   ├── scout_bot.png       (20x20)
-│   │   └── ...
+│   │   ├── nano_drone.png      (32x32)
+│   │   ├── scout_bot.png       (32x32)
+│   │   ├── spark_drone.png     (32x32)
+│   │   ├── battle_robot.png    (48x48)
+│   │   ├── shield_drone.png    (32x32)
+│   │   ├── rush_bot.png        (40x40)
+│   │   ├── repair_bot.png      (32x32)
+│   │   ├── heavy_bot.png       (48x48)
+│   │   ├── teleport_drone.png  (32x32)
+│   │   └── suicide_bot.png     (40x40)
 │   ├── bosses/
-│   │   ├── commander_drone.png (64x64)
-│   │   └── ...
-│   ├── items/
-│   │   ├── xp_gem_s.png        (6x6)
-│   │   └── ...
-│   └── weapons/
-│       ├── blaster_projectile.png
-│       └── ...
+│   │   ├── guardian_drone.png  (80x80)
+│   │   ├── assault_mech.png    (80x80)
+│   │   ├── commander_drone.png (128x128)
+│   │   ├── siege_titan.png     (128x128)
+│   │   └── core_processor.png  (128x128)
+│   └── items/
+│       ├── xp_gem_s.png        (12x12)
+│       ├── xp_gem_m.png        (20x20)
+│       └── xp_gem_l.png        (28x28)
 ├── ui/
 │   ├── button.png              (9-slice)
 │   ├── card.png                (9-slice)
@@ -224,10 +353,10 @@ assets/
 │   │   ├── passive_booster.png (16x16)
 │   │   └── ...
 │   └── joystick/
-│       ├── base.png            (64x64)
-│       └── thumb.png           (32x32)
+│       ├── base.png            (128x128)
+│       └── thumb.png           (64x64)
 └── backgrounds/
-    ├── bg_tile.png             (64x64)
+    ├── bg_tile.png             (128x128)
     └── menu_bg.png             (360x640)
 ```
 
@@ -235,16 +364,15 @@ assets/
 
 ## 참고: 캐릭터 6종 시각적 차별화 방안
 
-| 캐릭터 | 기본색 | 실루엣 특징 | 구분 포인트 |
-|--------|--------|------------|------------|
-| Agent | 시안 | 기본 전사 | 밸런스형 체형 |
-| Sniper | 그린 | 가늘고 긴 체형 | 스코프/조준기 |
-| Engineer | 오렌지 | 둥근 체형 + 공구 | 렌치/장비 |
-| Berserker | 레드 | 큰 체형 + 장갑 | 붉은 글로우 |
-| Medic | 화이트/그린 | 십자 마크 | 회복 심볼 |
-| Weapon Master | 마젠타 | 다수 무기 실루엣 | 복합 장비 |
+| 캐릭터 | 기본색 | 실루엣 특징 | 벡터 글로우 포인트 |
+|--------|--------|------------|-------------------|
+| Agent | 시안 | 기본 전사 | 헬멧 바이저 글로우 |
+| Sniper | 그린 | 가늘고 긴 체형 | 스코프 발광 |
+| Engineer | 오렌지 | 둥근 체형 + 공구 | 렌치/장비 글로우 |
+| Berserker | 레드 | 큰 체형 + 장갑 | 전신 붉은 아우라 |
+| Medic | 화이트/그린 | 십자 마크 | 회복 심볼 맥동 |
+| Weapon Master | 마젠타 | 다수 무기 실루엣 | 복합 무기 글로우 |
 
-> 캐릭터별 전용 스프라이트는 Phase 1 이후 별도 논의.
 > 초기에는 색상 틴트(tint)로 캐릭터를 구분하는 것도 가능.
 
 ---
@@ -253,13 +381,10 @@ assets/
 
 | Phase | 에셋 수 | 상태 | 비고 |
 |-------|---------|------|------|
-| Phase 1 | 15종 | 완료 (2026-03-09) | DALL-E 3 API, `scripts/generate-sprites.js` |
-| Phase 2 | 5종 | 완료 (2026-03-09) | DALL-E 3 API, `scripts/generate-sprites-phase2.js` |
-| Phase 3 | ~25종 | 미착수 | UI + 배경 |
-| Phase 4 | ~10종 | 미착수 | 무기 이펙트 |
-| **합계** | **~56종** | **20종 완료** | - |
-
-> Phase 1, 2 모두 DALL-E 3 API로 생성. Phase 3~4 일정은 제작 방식에 따라 달라짐.
+| Phase 1 | 20종 | 미착수 | 전체 캐릭터/적/수집물 벡터 교체 |
+| Phase 2 | ~25종 | 미착수 | UI + 배경 |
+| Phase 3 | ~10종 | 미착수 | 무기 이펙트 |
+| **합계** | **~55종** | - | SVG 코드 생성이므로 빠른 반복 가능 |
 
 ---
 
