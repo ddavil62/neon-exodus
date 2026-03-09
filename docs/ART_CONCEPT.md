@@ -74,11 +74,11 @@
 | 10 | `enemy_heavy_bot` | DALL-E 3 스프라이트 64x32 (2F) | 중장갑봇 32x32 | Phase 1 (완료) |
 | 11 | `enemy_teleport_drone` | DALL-E 3 스프라이트 40x20 (2F) | 순간이동 드론 20x20 | Phase 1 (완료) |
 | 12 | `enemy_suicide_bot` | DALL-E 3 스프라이트 48x24 (2F) | 자폭봇 (깜빡임) 24x24 | Phase 1 (완료) |
-| 13 | `enemy_guardian_drone` | 오렌지 원 40x40 | 가디언 미니보스 40x40 | Phase 2 |
-| 14 | `enemy_assault_mech` | 오렌지 원 40x40 | 어썰트 메카 40x40 | Phase 2 |
-| 15 | `enemy_commander_drone` | 마젠타 원 64x64 | 커맨더 보스 64x64 | Phase 2 |
-| 16 | `enemy_siege_titan` | 오렌지 원 64x64 | 시즈 타이탄 보스 64x64 | Phase 2 |
-| 17 | `enemy_core_processor` | 마젠타 원 64x64 | 코어 프로세서 최종보스 64x64 | Phase 2 |
+| 13 | `enemy_guardian_drone` | DALL-E 3 스프라이트 80x40 (2F) | 가디언 미니보스 40x40 | Phase 2 (완료) |
+| 14 | `enemy_assault_mech` | DALL-E 3 스프라이트 80x40 (2F) | 어썰트 메카 40x40 | Phase 2 (완료) |
+| 15 | `enemy_commander_drone` | DALL-E 3 스프라이트 256x64 (4F) | 커맨더 보스 64x64 | Phase 2 (완료) |
+| 16 | `enemy_siege_titan` | DALL-E 3 스프라이트 256x64 (4F) | 시즈 타이탄 보스 64x64 | Phase 2 (완료) |
+| 17 | `enemy_core_processor` | DALL-E 3 스프라이트 256x64 (4F) | 코어 프로세서 최종보스 64x64 | Phase 2 (완료) |
 | 18 | `xp_gem_s` | DALL-E 3 정적 6x6 | 데이터 파편 (소) 6x6 | Phase 1 (완료) |
 | 19 | `xp_gem_m` | DALL-E 3 정적 10x10 | 데이터 파편 (중) 10x10 | Phase 1 (완료) |
 | 20 | `xp_gem_l` | DALL-E 3 정적 14x14 | 데이터 파편 (대) 14x14 | Phase 1 (완료) |
@@ -127,15 +127,16 @@
 **실제 에셋 수**: 15종 (player 1 + projectile 1 + enemy 10 + xp_gem 3)
 **생성 방식**: DALL-E 3 API + sharp 후처리 (`scripts/generate-sprites.js`)
 
-### Phase 2: 보스 + 미니보스 (위협감 연출)
+### Phase 2: 보스 + 미니보스 (위협감 연출) -- 완료 (2026-03-09)
 > 보스전의 임팩트를 높이는 단계
 
-- [ ] 미니보스 2종 (40x40, 아이들 2F)
-- [ ] 보스 3종 (64x64, 아이들 2F + 특수 패턴 2F)
-- [ ] 보스 등장 연출 효과
+- [x] 미니보스 2종 (40x40, 아이들 2F) *(DALL-E 3 API로 생성, 스프라이트시트 80x40)*
+- [x] 보스 3종 (64x64, 아이들 2F + 특수 패턴 2F) *(DALL-E 3 API 2회 호출/종, 스프라이트시트 256x64)*
+- [x] 보스 등장 연출 효과 *(미니보스: 오렌지 플래시 300ms, 보스: 마젠타 플래시 500ms + 카메라 흔들림 500ms/0.02)*
 
-**산출물**: 보스 스프라이트 5종
-**예상 에셋 수**: 5종
+**산출물**: `assets/sprites/bosses/` 디렉토리 (5종 PNG), BootScene preload() + _createAnimations() 수정, GameScene 카메라 연출, Enemy.js 피격 복원 분기
+**실제 에셋 수**: 5종 (미니보스 2 + 보스 3)
+**생성 방식**: DALL-E 3 API + sharp 후처리 (`scripts/generate-sprites-phase2.js`)
 
 ### Phase 3: UI + 배경 (폴리싱)
 > 전체적인 완성도를 높이는 단계
@@ -178,9 +179,17 @@ BootScene.create() → this._createAnimations() → this.anims.create({ key: 'pl
 > Phase 1에서 player, projectile, 잡몹 10종, XP 보석 3종이 PNG 에셋으로 전환되었다.
 > 에셋 미존재 시 `_generatePlaceholderTextures()`의 `textures.exists()` 가드로 폴백 동작.
 
+### Phase 2 적용 완료 (보스/미니보스)
+```
+BootScene.preload() → this.load.spritesheet('enemy_guardian_drone', 'assets/sprites/bosses/guardian_drone.png', { frameWidth: 40, frameHeight: 40 })
+BootScene._createAnimations() → 미니보스 idle(3fps) + 보스 idle(2fps) + 보스 special(8fps)
+```
+> Phase 2에서 미니보스 2종, 보스 3종이 PNG 에셋으로 전환되었다.
+> _generatePlaceholderTextures()의 보스/미니보스 플레이스홀더 코드는 폴백용으로 유지.
+
 ### 미전환 (프로시저럴 유지)
 ```
-BootScene.create() → Graphics API → generateTexture() (미니보스, 보스, UI, 배경 등)
+BootScene.create() → Graphics API → generateTexture() (UI, 배경, 조이스틱 등)
 ```
 
 ### 전환 전략
@@ -242,16 +251,16 @@ assets/
 
 ## 일정 추정
 
-| Phase | 에셋 수 | 예상 소요 | 누적 |
-|-------|---------|----------|------|
-| Phase 1 | 15종 | 완료 (2026-03-09, DALL-E 3 API) | - |
-| Phase 2 | 5종 | - | - |
-| Phase 3 | ~25종 | - | - |
-| Phase 4 | ~10종 | - | - |
-| **합계** | **~56종** | - | - |
+| Phase | 에셋 수 | 상태 | 비고 |
+|-------|---------|------|------|
+| Phase 1 | 15종 | 완료 (2026-03-09) | DALL-E 3 API, `scripts/generate-sprites.js` |
+| Phase 2 | 5종 | 완료 (2026-03-09) | DALL-E 3 API, `scripts/generate-sprites-phase2.js` |
+| Phase 3 | ~25종 | 미착수 | UI + 배경 |
+| Phase 4 | ~10종 | 미착수 | 무기 이펙트 |
+| **합계** | **~56종** | **20종 완료** | - |
 
-> 일정은 제작 방식(직접 도트 작업 / AI 생성 / 외주)에 따라 크게 달라짐.
+> Phase 1, 2 모두 DALL-E 3 API로 생성. Phase 3~4 일정은 제작 방식에 따라 달라짐.
 
 ---
 
-*최종 수정: 2026-03-09*
+*최종 수정: 2026-03-10*

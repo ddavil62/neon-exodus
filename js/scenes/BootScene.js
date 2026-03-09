@@ -1,7 +1,8 @@
 /**
  * @fileoverview 에셋 로드 및 게임 초기화 씬.
  *
- * Phase 1 스프라이트 에셋(player, projectile, 잡몹 10종, XP 보석 3종)을 preload한다.
+ * Phase 1 스프라이트 에셋(player, projectile, 잡몹 10종, XP 보석 3종)과
+ * Phase 2 보스/미니보스 에셋(미니보스 2종, 보스 3종)을 preload한다.
  * 에셋 파일이 없는 경우 Graphics 플레이스홀더 텍스처로 폴백한다.
  * 로딩 바를 표시하고, 완료 후 MenuScene으로 전환한다.
  */
@@ -88,6 +89,31 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('xp_gem_s', 'assets/sprites/items/xp_gem_s.png');
     this.load.image('xp_gem_m', 'assets/sprites/items/xp_gem_m.png');
     this.load.image('xp_gem_l', 'assets/sprites/items/xp_gem_l.png');
+
+    // ── Phase 2 보스/미니보스 스프라이트시트 ──
+
+    // 미니보스 2종 (40x40, 2프레임 가로배치)
+    const miniBossAssets2 = [
+      { key: 'enemy_guardian_drone', file: 'bosses/guardian_drone.png', fw: 40, fh: 40 },
+      { key: 'enemy_assault_mech',  file: 'bosses/assault_mech.png',  fw: 40, fh: 40 },
+    ];
+    for (const e of miniBossAssets2) {
+      this.load.spritesheet(e.key, 'assets/sprites/' + e.file, {
+        frameWidth: e.fw, frameHeight: e.fh,
+      });
+    }
+
+    // 보스 3종 (64x64, 4프레임: idle 2F + special 2F)
+    const bossAssets = [
+      { key: 'enemy_commander_drone', file: 'bosses/commander_drone.png', fw: 64, fh: 64 },
+      { key: 'enemy_siege_titan',     file: 'bosses/siege_titan.png',     fw: 64, fh: 64 },
+      { key: 'enemy_core_processor',  file: 'bosses/core_processor.png',  fw: 64, fh: 64 },
+    ];
+    for (const e of bossAssets) {
+      this.load.spritesheet(e.key, 'assets/sprites/' + e.file, {
+        frameWidth: e.fw, frameHeight: e.fh,
+      });
+    }
   }
 
   /**
@@ -227,6 +253,42 @@ export default class BootScene extends Phaser.Scene {
           frames: this.anims.generateFrameNumbers(key, { start: 0, end: 1 }),
           frameRate: 3,
           repeat: -1,
+        });
+      }
+    }
+
+    // 미니보스 2종: idle 2F, 3fps, 반복
+    const miniBossKeys = ['enemy_guardian_drone', 'enemy_assault_mech'];
+    for (const key of miniBossKeys) {
+      const animKey = key + '_idle';
+      if (this.textures.exists(key) && !this.anims.exists(animKey)) {
+        this.anims.create({
+          key: animKey,
+          frames: this.anims.generateFrameNumbers(key, { start: 0, end: 1 }),
+          frameRate: 3,
+          repeat: -1,
+        });
+      }
+    }
+
+    // 보스 3종: idle 2F (2fps, 반복) + special 2F (8fps, 3회 반복)
+    const bossKeys = ['enemy_commander_drone', 'enemy_siege_titan', 'enemy_core_processor'];
+    for (const key of bossKeys) {
+      if (!this.textures.exists(key)) continue;
+      if (!this.anims.exists(key + '_idle')) {
+        this.anims.create({
+          key: key + '_idle',
+          frames: this.anims.generateFrameNumbers(key, { start: 0, end: 1 }),
+          frameRate: 2,
+          repeat: -1,
+        });
+      }
+      if (!this.anims.exists(key + '_special')) {
+        this.anims.create({
+          key: key + '_special',
+          frames: this.anims.generateFrameNumbers(key, { start: 2, end: 3 }),
+          frameRate: 8,
+          repeat: 3,
         });
       }
     }

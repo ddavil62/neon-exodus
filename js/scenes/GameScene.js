@@ -476,19 +476,24 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 미니보스 스폰 시 호출된다. 경고 표시.
+   * 미니보스 스폰 시 호출된다. 오렌지 카메라 플래시 + 경고 표시.
    * @param {import('../entities/Enemy.js').default} enemy - 스폰된 미니보스
    */
   onMiniBossSpawn(enemy) {
+    // 미니보스 등장: 오렌지 플래시 300ms
+    this.cameras.main.flash(300, 255, 100, 0, false);
     this._showWarning(t('hud.minibossWarning'));
   }
 
   /**
-   * 보스 스폰 시 호출된다. 경고 표시.
+   * 보스 스폰 시 호출된다. 마젠타 카메라 플래시 + 카메라 흔들림 + 경고 표시.
    * @param {import('../entities/Enemy.js').default} enemy - 스폰된 보스
    */
   onBossSpawn(enemy) {
     SoundSystem.play('boss_appear');
+    // 보스 등장: 마젠타 플래시 500ms + 카메라 흔들림 500ms
+    this.cameras.main.flash(500, 255, 0, 255, false);
+    this.cameras.main.shake(500, 0.02);
     this._showWarning(t('hud.bossWarning'));
   }
 

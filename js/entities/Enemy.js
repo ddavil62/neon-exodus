@@ -261,10 +261,16 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setTint(0xFFFFFF);
     this.scene.time.delayedCall(100, () => {
       if (this.active) {
-        // 원래 색상 복원
-        if (this.isBoss) this.setTint(COLORS.NEON_MAGENTA);
-        else if (this.isMiniBoss) this.setTint(COLORS.NEON_ORANGE);
-        else this.setTint(COLORS.HP_RED);
+        const texKey = 'enemy_' + this.typeId;
+        if (this.scene.textures.exists(texKey)) {
+          // 정식 스프라이트 사용 시: 틴트 제거로 원래 색상 복원
+          this.clearTint();
+        } else {
+          // 플레이스홀더 사용 시: 기존 색상 복원
+          if (this.isBoss) this.setTint(COLORS.NEON_MAGENTA);
+          else if (this.isMiniBoss) this.setTint(COLORS.NEON_ORANGE);
+          else this.setTint(COLORS.HP_RED);
+        }
       }
     });
 

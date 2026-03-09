@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-09 (인게임 인벤토리 HUD)
+> 최종 업데이트: 2026-03-09 (Phase 2 아트웍 - 보스/미니보스 스프라이트)
 
 ## 프로젝트 개요
 
@@ -53,10 +53,10 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(Phase 1 스프라이트 15종), 플레이스홀더 폴백, 애니메이션 등록, SoundSystem 초기화
+│   │   ├── BootScene.js           # 에셋 로드(Phase 1 스프라이트 15종 + Phase 2 보스/미니보스 5종), 플레이스홀더 폴백, 애니메이션 등록, SoundSystem 초기화
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드)
@@ -90,7 +90,7 @@ neon-exodus/
 │       ├── characters.js          # 캐릭터 6종
 │       └── achievements.js        # 도전과제 13종
 ├── assets/
-│   └── sprites/                   # Phase 1 스프라이트 에셋 (DALL-E 3 생성)
+│   └── sprites/                   # 스프라이트 에셋 (DALL-E 3 생성)
 │       ├── player.png             # 플레이어 스프라이트시트 (48x24, 2F)
 │       ├── projectile.png         # 투사체 정적 이미지 (6x6)
 │       ├── enemies/               # 잡몹 10종 스프라이트시트 (각 2F 가로배치)
@@ -104,13 +104,20 @@ neon-exodus/
 │       │   ├── heavy_bot.png      # 64x32
 │       │   ├── teleport_drone.png # 40x20
 │       │   └── suicide_bot.png    # 48x24
+│       ├── bosses/                # Phase 2 보스/미니보스 스프라이트시트
+│       │   ├── guardian_drone.png # 80x40  (미니보스, 2F idle)
+│       │   ├── assault_mech.png   # 80x40  (미니보스, 2F idle)
+│       │   ├── commander_drone.png# 256x64 (보스, 4F: idle 2F + special 2F)
+│       │   ├── siege_titan.png    # 256x64 (보스, 4F: idle 2F + special 2F)
+│       │   └── core_processor.png # 256x64 (보스, 4F: idle 2F + special 2F)
 │       └── items/                 # XP 보석 3종 정적 이미지
 │           ├── xp_gem_s.png       # 6x6
 │           ├── xp_gem_m.png       # 10x10
 │           └── xp_gem_l.png       # 14x14
 ├── scripts/
 │   ├── build.js                   # www/ 디렉토리 빌드 스크립트
-│   └── generate-sprites.js        # DALL-E 3 API 스프라이트 생성 스크립트
+│   ├── generate-sprites.js        # Phase 1 DALL-E 3 스프라이트 생성 스크립트
+│   └── generate-sprites-phase2.js # Phase 2 보스/미니보스 스프라이트 생성 스크립트
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
@@ -169,6 +176,8 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 |---|---|---|---|
 | Player | 24x24 | 48x48 | circle(12, 12, 12) |
 | Enemy (잡몹) | 16~32px | 32~64px | 동적 계산 (displayW 기준) |
+| Enemy (미니보스) | 40x40 | 80x80 | circle(18), 동적 offset |
+| Enemy (보스) | 64x64 | 128x128 | circle(26), 동적 offset |
 | Enemy (플레이스홀더) | - | SPRITE_SCALE * radius / 12 | 동적 계산 |
 | Projectile | 6x6 | 12x12 | circle(4, 2, 2) |
 | XP Gem (small) | 6x6 | 12x12 | circle(3, 3, 3) |
@@ -370,8 +379,23 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 코어 프로세서 | 3000 | 15분 | 회전 레이저 + 잡몹 소환 + 광역 EMP (150px, 20dmg) | 런 클리어 보상 |
 
 - 시간 경과에 따라 HP/데미지 +5%/분 스케일링
-- 관련 파일: `js/data/enemies.js`, `js/entities/Enemy.js`, `js/entities/EnemyTypes.js`
-- 구현 일자: 2026-03-08
+
+#### 보스/미니보스 등장 연출
+| 연출 대상 | 카메라 플래시 | 카메라 흔들림 | SFX |
+|---|---|---|---|
+| 미니보스 | 오렌지(255,100,0) 300ms | 없음 | 없음 |
+| 보스 | 마젠타(255,0,255) 500ms | 500ms, 강도 0.02 | boss_appear |
+
+- `GameScene.onMiniBossSpawn()`: 오렌지 플래시 + 경고 텍스트 표시
+- `GameScene.onBossSpawn()`: 마젠타 플래시 + 카메라 흔들림 + boss_appear SFX + 경고 텍스트 표시
+
+#### 피격 플래시 복원
+- 정식 스프라이트 사용 시: 흰색 틴트(100ms) 후 `clearTint()`로 원래 색상 복원
+- 플레이스홀더 사용 시: 흰색 틴트(100ms) 후 `setTint()`로 기존 타입별 색상 복원 (보스=마젠타, 미니보스=오렌지, 잡몹=레드)
+- 분기 로직: `Enemy.takeDamage()`에서 `textures.exists('enemy_' + typeId)` 체크
+
+- 관련 파일: `js/data/enemies.js`, `js/entities/Enemy.js`, `js/entities/EnemyTypes.js`, `js/scenes/GameScene.js`
+- 구현 일자: 2026-03-08 (보스/미니보스 등장 연출 및 피격 복원 로직: 2026-03-09)
 
 ### 스폰 시스템
 
@@ -714,7 +738,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 
 1. **폰트 파일 누락**: `assets/fonts/Galmuri11.woff2` 미존재. monospace 폴백 사용 중. 폰트 파일 추가 또는 @font-face 선언 제거 필요.
 2. **Player._passives 미초기화**: constructor에 `this._passives` 미선언. LevelUpScene에서 lazy init으로 안전하게 처리됨.
-3. **BootScene 플레이스홀더 텍스처**: Phase 1에서 player/projectile/잡몹 10종/XP 보석 3종은 정식 PNG로 전환 완료. 미니보스/보스/UI 등은 여전히 플레이스홀더 텍스처 사용. `_temp` 텍스처 코드는 전부 제거됨.
+3. **BootScene 플레이스홀더 텍스처**: Phase 1에서 player/projectile/잡몹 10종/XP 보석 3종, Phase 2에서 미니보스 2종/보스 3종 모두 정식 PNG로 전환 완료. UI/배경/조이스틱 등은 여전히 플레이스홀더 텍스처 사용. `_temp` 텍스처 코드는 전부 제거됨.
 4. **체인 무기 초기 타겟 탐색 범위 하드코딩**: `WeaponSystem.js` findClosestEnemy에 300px 하드코딩. chainRange(120~200px)는 체인 연결 거리이고 초기 타겟 탐색은 별도 범위. 기능 문제 없으나 상수화 권장.
 5. **부활 시 HP 직접 대입**: 스펙은 `player.heal(maxHp * 0.5)`이나, 실제 구현은 `player.currentHp = Math.floor(maxHp * 0.5)` 직접 대입. 동작에 문제 없으나 스펙과 불일치.
 6. **CollectionScene ENEMY_IDS 하드코딩**: 적 ID 15개가 하드코딩. 신규 적 추가 시 수동 업데이트 필요.
@@ -835,3 +859,15 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 진화 무기 아이콘 자동 교체 (w._evolvedId 기반)
 - [x] setScrollFactor(0) + depth 105~107로 카메라 고정
 - [x] 이벤트 기반 갱신 (매 프레임 갱신 없음)
+
+### 아트 Phase 2: 보스/미니보스 스프라이트 -- 완료 (2026-03-09)
+- [x] DALL-E 3 API 에셋 생성 스크립트 (`scripts/generate-sprites-phase2.js`, Phase 1 스크립트 독립 유지)
+- [x] 미니보스 2종 스프라이트시트 생성 (guardian_drone 80x40 2F, assault_mech 80x40 2F)
+- [x] 보스 3종 스프라이트시트 생성 (commander_drone/siege_titan/core_processor 각 256x64 4F: idle 2F + special 2F)
+- [x] BootScene.preload()에 미니보스 2종(fw:40, fh:40) + 보스 3종(fw:64, fh:64) spritesheet 로드 추가
+- [x] BootScene._createAnimations()에 미니보스 idle(3fps, 반복) + 보스 idle(2fps, 반복) + 보스 special(8fps, 3회 반복) animation 등록
+- [x] GameScene.onMiniBossSpawn()에 카메라 플래시(오렌지 255,100,0, 300ms) 추가
+- [x] GameScene.onBossSpawn()에 카메라 플래시(마젠타 255,0,255, 500ms) + 카메라 흔들림(500ms, 강도 0.02) 추가
+- [x] Enemy.takeDamage() 피격 플래시 복원 로직: textures.exists() 분기 (스프라이트 시 clearTint, 플레이스홀더 시 setTint)
+- [x] 에셋 미존재 시 기존 플레이스홀더 폴백 동작 유지
+- [x] Phase 1 스크립트(generate-sprites.js) 수정 없음

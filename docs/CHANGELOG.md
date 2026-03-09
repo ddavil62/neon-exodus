@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-03-09 -- 아트 Phase 2: 보스/미니보스 스프라이트
+
+### 추가
+- 에셋 생성 스크립트 (`scripts/generate-sprites-phase2.js`): Phase 2 전용 DALL-E 3 API 스크립트. ASSETS 배열 5종 정의. 미니보스(frames:2)는 DALL-E 1회 호출로 idle 2F 시트 조립, 보스(frames:4)는 DALL-E 2회 호출(idle + special)로 4F 시트 조립. sharp 배경 제거(밝기 임계값 40) + nearest-neighbor 리사이즈. API rate limit 대응 에셋 간 1초 딜레이. Phase 1 스크립트와 독립 실행
+- 미니보스 스프라이트시트 2종 (`assets/sprites/bosses/`): guardian_drone.png (80x40, 2F idle), assault_mech.png (80x40, 2F idle)
+- 보스 스프라이트시트 3종 (`assets/sprites/bosses/`): commander_drone.png (256x64, 4F: idle 2F + special 2F), siege_titan.png (256x64, 4F), core_processor.png (256x64, 4F)
+- BootScene.preload() Phase 2 블록 (`js/scenes/BootScene.js` L93-116): miniBossAssets2(fw:40, fh:40) + bossAssets(fw:64, fh:64) spritesheet 로드
+- BootScene._createAnimations() Phase 2 블록 (`js/scenes/BootScene.js` L260-294): 미니보스 2종 idle(frameRate:3, repeat:-1, frames 0~1) + 보스 3종 idle(frameRate:2, repeat:-1, frames 0~1) + 보스 3종 special(frameRate:8, repeat:3, frames 2~3) animation 등록
+- Playwright 테스트 (`tests/phase2-art.spec.js`): 24개 테스트 (수용기준 12 + 예외 9 + 시각적 검증 3)
+
+### 변경
+- GameScene.onMiniBossSpawn() (`js/scenes/GameScene.js` L482-485): 카메라 오렌지 플래시(300ms, RGB 255,100,0) 추가. 기존 텍스트 경고와 함께 표시
+- GameScene.onBossSpawn() (`js/scenes/GameScene.js` L492-497): 카메라 마젠타 플래시(500ms, RGB 255,0,255) + 카메라 흔들림(500ms, 강도 0.02) 추가. 기존 boss_appear SFX + 텍스트 경고와 함께 표시
+- Enemy.takeDamage() (`js/entities/Enemy.js` L260-275): 피격 플래시 복원 로직에 `textures.exists('enemy_' + typeId)` 분기 추가. 정식 스프라이트 사용 시 `clearTint()`로 원래 색상 복원, 플레이스홀더 사용 시 기존 `setTint()` 유지. Phase 1 아트에서 발견된 정식 텍스처 피격 틴트 부작용 해결
+- BootScene @fileoverview 주석 갱신 (`js/scenes/BootScene.js` L1-8): Phase 2 보스/미니보스 에셋 preload 내용 반영
+
+### 참고
+- 스펙: `.claude/specs/2026-03-09-phase2-art.md`
+- 구현 리포트: `.claude/specs/2026-03-09-phase2-art-report.md`
+- QA: `.claude/specs/2026-03-09-phase2-art-qa.md`
+- QA 결과: 수용기준 12개 전체 PASS, 예외 시나리오 9개 PASS, Playwright 24/24 전체 통과. 시각적 검증 스크린샷 7건 확인
+- Phase 1 스크립트(generate-sprites.js) 수정 없음 (git diff 0줄 확인)
+- 보스 special animation은 anims 레지스트리 등록만 완료. 실제 재생 트리거(EnemyTypes.js 수정)는 별도 스펙에서 처리 예정
+- 보스 special animation 파라미터: frameRate 8, repeat 3 (3회 반복 후 정지)
+
 ## 2026-03-09 -- 인게임 인벤토리 HUD
 
 ### 추가
