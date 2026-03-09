@@ -1016,8 +1016,8 @@ export default class WeaponSystem {
 
       const gfx = drone.gfx;
 
-      // 1. 가장 가까운 활성 적을 타겟으로 설정
-      drone.targetEnemy = this.findClosestEnemy(gfx.x, gfx.y, stats.shootRange * 2);
+      // 1. 플레이어 기준 가장 가까운 활성 적을 타겟으로 설정
+      drone.targetEnemy = this.findClosestEnemy(this.player.x, this.player.y, stats.shootRange * 2);
 
       if (drone.targetEnemy && drone.targetEnemy.active) {
         // 2. 타겟으로 이동
