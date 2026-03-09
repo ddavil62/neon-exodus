@@ -6,6 +6,7 @@
  */
 
 import { AD_LIMITS } from '../config.js';
+import SoundSystem from '../systems/SoundSystem.js';
 
 // ── localStorage 키 ──
 /** @const {string} 일일 광고 카운터 저장 키 */
@@ -118,6 +119,9 @@ class AdManagerClass {
       return { rewarded: true };
     }
 
+    // 광고 시청 중 BGM 일시정지
+    this._suspendAudio();
+
     try {
       await this._admob.prepareRewardVideoAd({
         adId: adUnitId,
@@ -130,6 +134,8 @@ class AdManagerClass {
       return { rewarded: false, error: e.message };
     } finally {
       this.isBusy = false;
+      // 광고 종료 후 BGM 복원
+      this._resumeAudio();
     }
   }
 
@@ -181,6 +187,36 @@ class AdManagerClass {
   }
 
   // ── 내부 헬퍼 ──
+
+  // ── 오디오 제어 ──
+
+  /**
+   * 광고 표시 전 AudioContext를 suspend하여 BGM/SFX를 일시정지한다.
+   * @private
+   */
+  _suspendAudio() {
+    try {
+      if (SoundSystem._ctx && SoundSystem._ctx.state === 'running') {
+        SoundSystem._ctx.suspend().catch(() => {});
+      }
+    } catch (e) {
+      // 오디오 제어 실패 시 무시
+    }
+  }
+
+  /**
+   * 광고 종료 후 AudioContext를 resume하여 BGM/SFX를 복원한다.
+   * @private
+   */
+  _resumeAudio() {
+    try {
+      if (SoundSystem._ctx && SoundSystem._ctx.state === 'suspended') {
+        SoundSystem._ctx.resume().catch(() => {});
+      }
+    } catch (e) {
+      // 오디오 제어 실패 시 무시
+    }
+  }
 
   /**
    * 오늘 날짜를 'YYYY-MM-DD' 형식 문자열로 반환한다.
