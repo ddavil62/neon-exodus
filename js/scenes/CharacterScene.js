@@ -104,8 +104,18 @@ export default class CharacterScene extends Phaser.Scene {
 
     // 뒤로가기 버튼
     this._createBtn(centerX + 60, btnY, t('ui.back'), UI_COLORS.btnSecondary, () => {
-      this.scene.start('MenuScene');
+      this._onBack();
     });
+
+    // ── ESC 키로 뒤로가기 ──
+    this.input.keyboard.on('keydown-ESC', () => this._onBack());
+  }
+
+  // ── 뒤로가기 ──
+
+  /** 메뉴 화면으로 돌아간다. */
+  _onBack() {
+    this.scene.start('MenuScene');
   }
 
   // ── 캐릭터 잠금 해제 판별 ──

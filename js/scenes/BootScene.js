@@ -5,6 +5,7 @@
  * 로딩 바를 표시하고, 완료 후 MenuScene으로 전환한다.
  */
 
+import { App } from '@capacitor/app';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t, setLocale } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
@@ -77,10 +78,37 @@ export default class BootScene extends Phaser.Scene {
     // ── Particle 텍스처 생성 (VFXSystem용 4x4 흰색) ──
     this._generateParticleTexture();
 
+    // ── 하드웨어 뒤로가기 버튼 (Android) 글로벌 핸들러 ──
+    this._setupHardwareBackButton();
+
     // 짧은 딜레이 후 메뉴 씬으로 전환
     this.time.delayedCall(300, () => {
       this.scene.start('MenuScene');
     });
+  }
+
+  // ── 하드웨어 뒤로가기 ──
+
+  /**
+   * Android 하드웨어 백버튼 글로벌 리스너를 등록한다.
+   * 현재 활성 씬의 _onBack() 메서드를 호출한다.
+   * @private
+   */
+  _setupHardwareBackButton() {
+    try {
+      App.addListener('backButton', () => {
+        const scenes = this.scene.manager.getScenes(true);
+        // 가장 위에 있는 활성 씬을 찾아 _onBack 호출
+        for (const scene of scenes) {
+          if (scene._onBack && scene.scene.key !== 'BootScene') {
+            scene._onBack();
+            return;
+          }
+        }
+      });
+    } catch (e) {
+      // 브라우저 환경에서는 @capacitor/app 미동작 — 무시
+    }
   }
 
   // ── 내부 메서드 ──

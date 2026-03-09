@@ -5,6 +5,7 @@
  * 네온 사이버펑크 분위기의 텍스트와 UI를 렌더링한다.
  */
 
+import { App } from '@capacitor/app';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t, toggleLocale } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
@@ -106,6 +107,18 @@ export default class MenuScene extends Phaser.Scene {
       // 씬 재시작으로 언어 변경 반영
       this.scene.restart();
     });
+
+    // ── ESC 키로 앱 종료 ──
+    this.input.keyboard.on('keydown-ESC', () => this._onBack());
+  }
+
+  // ── 뒤로가기 ──
+
+  /**
+   * 메뉴에서 뒤로가기 시 앱을 종료한다.
+   */
+  _onBack() {
+    try { App.exitApp(); } catch (e) { /* 브라우저 환경 무시 */ }
   }
 
   // ── 내부 메서드 ──

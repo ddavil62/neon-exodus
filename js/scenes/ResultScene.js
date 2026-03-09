@@ -217,6 +217,14 @@ export default class ResultScene extends Phaser.Scene {
     this._createButton(centerX, btnY + 60, t('result.toMenu'), UI_COLORS.btnSecondary, () => {
       this.scene.start('MenuScene');
     }, 1400);
+
+    // ── ESC 키로 메뉴 복귀 ──
+    this.input.keyboard.on('keydown-ESC', () => this._onBack());
+  }
+
+  /** 메뉴 화면으로 돌아간다. */
+  _onBack() {
+    this.scene.start('MenuScene');
   }
 
   // ── 내부 메서드 ──

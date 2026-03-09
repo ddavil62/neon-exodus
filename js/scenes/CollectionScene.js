@@ -76,11 +76,19 @@ export default class CollectionScene extends Phaser.Scene {
 
     // ── 뒤로가기 버튼 ──
     this._createButton(centerX, GAME_HEIGHT - 40, t('ui.back'), UI_COLORS.btnSecondary, () => {
-      this.scene.start('MenuScene');
+      this._onBack();
     });
+
+    // ── ESC 키로 뒤로가기 ──
+    this.input.keyboard.on('keydown-ESC', () => this._onBack());
 
     // ── 초기 탭 렌더링 ──
     this._renderList();
+  }
+
+  /** 메뉴 화면으로 돌아간다. */
+  _onBack() {
+    this.scene.start('MenuScene');
   }
 
   // ── 탭 ──

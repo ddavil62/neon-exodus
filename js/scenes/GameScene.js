@@ -212,6 +212,9 @@ export default class GameScene extends Phaser.Scene {
     // ── BGM: 게임 BGM 시작 ──
     SoundSystem.resume();
     SoundSystem.playBgm('bgm_game');
+
+    // ── ESC 키로 일시정지 토글 ──
+    this.input.keyboard.on('keydown-ESC', () => this._onBack());
   }
 
   /**
@@ -820,6 +823,15 @@ export default class GameScene extends Phaser.Scene {
         this.scene.start('MenuScene');
       }
     });
+  }
+
+  /**
+   * 하드웨어 뒤로가기/ESC 키 핸들러. 게임 중에는 일시정지를 토글한다.
+   * @private
+   */
+  _onBack() {
+    if (this.isGameOver) return;
+    this._togglePause();
   }
 
   /**
