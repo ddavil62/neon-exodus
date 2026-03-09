@@ -167,11 +167,14 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setTint(tintColor);
     }
 
-    // 충돌체 크기 재설정 — 프레임 좌표 기준 (Phaser가 offset에 scale 자동 적용)
+    // 충돌체 크기 재설정
+    // Phaser는 offset에 scale을 자동 곱하므로 중심 정렬 공식:
+    // offset = frameW/2 - radius/scale
     const bodyRadius = radius;
     const texFrame = this.texture.get(this.frame?.name || '__BASE');
     const frameW = texFrame ? texFrame.width : 24;
-    const bodyOffset = Math.max(0, (frameW / 2) - bodyRadius);
+    const currentScale = this.scaleX || SPRITE_SCALE;
+    const bodyOffset = Math.max(0, (frameW / 2) - bodyRadius / currentScale);
     this.body.setCircle(bodyRadius, bodyOffset, bodyOffset);
 
     // 활성화

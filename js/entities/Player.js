@@ -145,8 +145,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // 스프라이트 스케일 적용 (픽셀아트 선명 유지)
     this.setScale(SPRITE_SCALE);
 
-    // 원형 충돌체 (반경 12px — Phaser가 offset에 scale을 자동 적용하므로 프레임 좌표 기준)
-    const bodyOff = Math.max(0, 24 / 2 - 12);
+    // 원형 충돌체 (반경 12px)
+    // Phaser는 offset에 scale을 자동 곱하므로 중심 정렬 공식:
+    // offset = frameW/2 - radius/scale
+    const bodyOff = Math.max(0, 24 / 2 - 12 / SPRITE_SCALE);
     this.body.setCircle(12, bodyOff, bodyOff);
     this.body.setCollideWorldBounds(true);
 

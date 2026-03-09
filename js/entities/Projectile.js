@@ -52,8 +52,9 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
     // 스프라이트 스케일 적용
     this.setScale(SPRITE_SCALE);
 
-    // 충돌체 설정: 원형 (반경 4px — 프레임 좌표 기준, Phaser가 scale 자동 적용)
-    const projBodyOff = Math.max(0, 6 / 2 - 4);
+    // 충돌체 설정: 원형 (반경 4px)
+    // Phaser는 offset에 scale을 자동 곱하므로 중심 정렬: offset = frameW/2 - radius/scale
+    const projBodyOff = Math.max(0, 6 / 2 - 4 / SPRITE_SCALE);
     this.body.setCircle(4, projBodyOff, projBodyOff);
 
     // 초기 비활성 상태
