@@ -20,6 +20,8 @@ const DEFAULT_SAVE = {
   characters: { agent: true }, // 해금된 캐릭터 (key: id, value: true)
   selectedCharacter: 'agent',
   achievements: {},         // { achievementId: true }
+  autoHuntUnlocked: false,  // 자동 사냥 IAP 구매 여부
+  autoHuntEnabled: false,   // 마지막 런의 자동 사냥 토글 상태 (다음 런에 자동 적용)
   stats: {
     totalKills: 0,
     totalRuns: 0,
@@ -400,8 +402,19 @@ export class SaveManager {
       data.version = 3;
     }
 
+    // v3 → v4: 자동 사냥(Auto Hunt) IAP 필드 추가
+    if (data.version < 4) {
+      if (data.autoHuntUnlocked === undefined) {
+        data.autoHuntUnlocked = false;
+      }
+      if (data.autoHuntEnabled === undefined) {
+        data.autoHuntEnabled = false;
+      }
+      data.version = 4;
+    }
+
     // 이후 버전 추가 시 체인 패턴:
-    // if (data.version < 4) { ... data.version = 4; }
+    // if (data.version < 5) { ... data.version = 5; }
 
     data.version = SAVE_DATA_VERSION;
     return data;

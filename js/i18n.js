@@ -409,6 +409,18 @@ const TRANSLATIONS = {
     'game.newWeaponAcquired': '새 무기 획득: {0}',
     'game.newPassiveAcquired': '새 패시브 획득: {0}',
     'game.weaponMaxLevel': '{0} 최대 레벨 달성!',
+
+    // ── 자동 사냥 (Auto Hunt) ──
+    'autoHunt.label': 'AUTO',
+    'autoHunt.on': 'AUTO ON',
+    'autoHunt.off': 'AUTO OFF',
+    'autoHunt.locked': '자동 사냥 (잠김)',
+    'autoHunt.purchase': '자동 사냥 해금',
+    'autoHunt.purchaseDesc': 'AI가 자동으로 이동을 제어합니다.\n영구 해금 (1회 구매)',
+    'autoHunt.purchaseBtn': '구매하기',
+    'autoHunt.purchaseSuccess': '자동 사냥 해금 완료!',
+    'autoHunt.purchaseFail': '구매에 실패했습니다.',
+    'autoHunt.restored': '자동 사냥 복원 완료!',
   },
 
   en: {
@@ -814,6 +826,18 @@ const TRANSLATIONS = {
     'game.newWeaponAcquired': 'New weapon: {0}',
     'game.newPassiveAcquired': 'New passive: {0}',
     'game.weaponMaxLevel': '{0} Max Level!',
+
+    // ── Auto Hunt ──
+    'autoHunt.label': 'AUTO',
+    'autoHunt.on': 'AUTO ON',
+    'autoHunt.off': 'AUTO OFF',
+    'autoHunt.locked': 'Auto Hunt (Locked)',
+    'autoHunt.purchase': 'Unlock Auto Hunt',
+    'autoHunt.purchaseDesc': 'AI controls movement automatically.\nPermanent unlock (one-time purchase)',
+    'autoHunt.purchaseBtn': 'Purchase',
+    'autoHunt.purchaseSuccess': 'Auto Hunt unlocked!',
+    'autoHunt.purchaseFail': 'Purchase failed.',
+    'autoHunt.restored': 'Auto Hunt restored!',
   },
 };
 

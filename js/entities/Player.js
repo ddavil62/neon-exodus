@@ -377,17 +377,28 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   // ── 내부 메서드 ──
 
   /**
-   * 조이스틱 입력을 읽어 velocity를 설정한다.
+   * 조이스틱 입력 또는 AutoPilot AI 방향을 읽어 velocity를 설정한다.
+   * 자동 사냥이 활성화된 경우에도 유저 조이스틱 입력이 있으면 유저 입력을 우선한다.
    * @private
    */
   _handleMovement() {
     const joystick = this.scene.joystick;
-    if (!joystick) {
-      this.body.setVelocity(0, 0);
-      return;
+    const autoPilot = this.scene.autoPilot;
+
+    let dirX = 0;
+    let dirY = 0;
+
+    // 1. 유저 조이스틱 입력 확인 (최우선)
+    if (joystick && joystick.isActive && (joystick.direction.x !== 0 || joystick.direction.y !== 0)) {
+      dirX = joystick.direction.x;
+      dirY = joystick.direction.y;
+    }
+    // 2. AutoPilot AI 방향 사용 (유저 입력 없을 때)
+    else if (autoPilot && autoPilot.enabled && (autoPilot.direction.x !== 0 || autoPilot.direction.y !== 0)) {
+      dirX = autoPilot.direction.x;
+      dirY = autoPilot.direction.y;
     }
 
-    const { x: dirX, y: dirY } = joystick.direction;
     const speed = this.baseSpeed * this.speedMultiplier;
 
     if (dirX === 0 && dirY === 0) {

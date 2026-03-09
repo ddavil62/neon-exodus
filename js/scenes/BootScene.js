@@ -9,6 +9,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t, setLocale } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { AdManager } from '../managers/AdManager.js';
+import { IAPManager } from '../managers/IAPManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
 
 // ── BootScene 클래스 ──
@@ -77,6 +78,12 @@ export default class BootScene extends Phaser.Scene {
 
     // ── AdManager 초기화 ──
     await AdManager.initialize();
+
+    // ── IAPManager 초기화 ──
+    await IAPManager.initialize();
+
+    // 구매 내역 복원 (네이티브 환경에서만 실행)
+    await IAPManager.restorePurchases();
 
     // ── Particle 텍스처 생성 (VFXSystem용 4x4 흰색) ──
     this._generateParticleTexture();

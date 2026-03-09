@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-03-09 -- 자동 사냥 (Auto Hunt) 유료 기능
+
+### 추가
+- AutoPilotSystem 신규 생성 (`js/systems/AutoPilotSystem.js`): 종합형 AI 이동 시스템. 행동 우선순위: 위험 회피(120px) > XP 보석 수집(200px) > 적 접근(150px) > 방랑(중앙 경향). 의도적 불완전성 포함 (랜덤 각도 변동 0.3rad, 반응 누락 5%, 방향 전환 간격 150ms). 벽 회피 마진 80px, 심각한 위험 반경 60px
+- IAPManager 신규 생성 (`js/managers/IAPManager.js`): Google Play 인앱결제 관리자. Capacitor.Plugins.InAppPurchase 래핑. 웹 환경 Mock 모드(즉시 purchased:true). purchase(), restorePurchases(), isAutoHuntUnlocked(), unlockAutoHunt() API 제공. isBusy 플래그로 중복 구매 차단. 싱글톤 패턴 (AdManager와 동일 구조)
+- IAP 상수 (`js/config.js`): `IAP_PRODUCTS.autoHunt = 'com.antigravity.neonexodus.auto_hunt'`, `AUTO_HUNT = { directionInterval: 150, dangerRadius: 120, xpSearchRadius: 200 }`
+- SaveManager v3->v4 마이그레이션 (`js/managers/SaveManager.js`): `autoHuntUnlocked`(boolean, 기본 false), `autoHuntEnabled`(boolean, 기본 false) 필드 추가. DEFAULT_SAVE 및 _migrate() 체인 확장
+- GameScene HUD AUTO 토글 버튼 (`js/scenes/GameScene.js`): 해금 시에만 표시, 우상단(GAME_WIDTH-12, y=48), _toggleAutoHunt()로 활성/비활성 전환 및 SaveManager 즉시 저장
+- MenuScene 자동 사냥 구매 UI (`js/scenes/MenuScene.js`): 미해금 시 오렌지 "자동 사냥 해금" 버튼, _showAutoHuntPurchase() 메서드(구매 성공/실패 메시지). 해금 후 "AUTO ON" 녹색 텍스트 표시
+- i18n 자동 사냥 키 10개 (`js/i18n.js`): `autoHunt.label/on/off/locked/purchase/purchaseDesc/purchaseBtn/purchaseSuccess/purchaseFail/restored` ko/en 양쪽
+- 자동 사냥 Playwright 테스트 (`tests/auto-hunt.spec.js`): 29개 테스트
+
+### 변경
+- config.js: `SAVE_DATA_VERSION` 3->4, `IAP_PRODUCTS` 상수 추가, `AUTO_HUNT` 설정 상수 추가
+- BootScene (`js/scenes/BootScene.js`): IAPManager import, create()에서 IAPManager.initialize() + restorePurchases() 호출
+- GameScene (`js/scenes/GameScene.js`): IAPManager/AutoPilotSystem import, create()에서 AutoPilotSystem 초기화 및 이전 런 설정 복원, update()에 autoPilot.update() 호출, _cleanup()에 autoPilot.destroy() 추가
+- Player._handleMovement() (`js/entities/Player.js`): 조이스틱 입력 우선 + else if autoPilot AI 방향 사용 구조로 변경
+- MenuScene (`js/scenes/MenuScene.js`): IAPManager import, IAP_PRODUCTS import, 자동 사냥 구매/해금 완료 UI 추가
+
+### 참고
+- 스펙: `.claude/specs/2026-03-09-auto-hunt.md`
+- 구현 리포트: `.claude/specs/2026-03-09-auto-hunt-report.md`
+- QA: `.claude/specs/2026-03-09-auto-hunt-qa.md`
+- QA 결과: 수용기준 13개 + 예외 시나리오 12개 = 총 29개 전체 PASS, Playwright 29/29, 시각적 검증 스크린샷 10건 확인
+
 ## 2026-03-09 -- 업그레이드 다운그레이드 + 크레딧 환불
 
 ### 추가

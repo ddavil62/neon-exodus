@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-09
+> 최종 업데이트: 2026-03-09 (자동 사냥 기능 추가)
 
 ## 프로젝트 개요
 
@@ -54,9 +54,9 @@ neon-exodus/
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
 │   │   ├── BootScene.js           # 에셋 로드, 플레이스홀더 텍스처 생성, particle 텍스처, SoundSystem 초기화
-│   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM)
+│   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드)
@@ -74,11 +74,13 @@ neon-exodus/
 │   │   ├── WeaponSystem.js        # 무기 관리, 자동 발사 (7종 타입: projectile/beam/orbital/chain/homing/summon/aoe)
 │   │   ├── WaveSystem.js          # 적 스폰 웨이브 관리, 엔들리스 모드 스케일링
 │   │   ├── SoundSystem.js         # AudioContext 프로그래매틱 SFX 9종 + BGM 2곡
-│   │   └── VFXSystem.js           # Phaser Particles 기반 VFX 6종
+│   │   ├── VFXSystem.js           # Phaser Particles 기반 VFX 6종
+│   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (위험 회피 > XP 수집 > 적 접근 > 방랑)
 │   ├── managers/
 │   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
-│   │   └── AchievementManager.js  # 도전과제 추적/보상
+│   │   ├── AchievementManager.js  # 도전과제 추적/보상
+│   │   └── IAPManager.js          # Google Play IAP 관리 (구매/복원, Mock 모드)
 │   └── data/
 │       ├── weapons.js             # 무기 7종 (블래스터/레이저건/플라즈마 오브/전기 체인/미사일/드론/EMP 각 Lv1~8) + 진화 무기 3종
 │       ├── enemies.js             # 잡몹 10종 + 미니보스 2종 + 보스 3종
@@ -94,7 +96,8 @@ neon-exodus/
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
 │   ├── phase3.spec.js             # Phase 3 QA 테스트 (12개)
 │   ├── phase3-crit.spec.js        # Phase 3 치명타 시스템 전용 테스트 (7개)
-│   └── phase4.spec.js             # Phase 4 QA 테스트 (27개)
+│   ├── phase4.spec.js             # Phase 4 QA 테스트 (27개)
+│   └── auto-hunt.spec.js          # 자동 사냥 QA 테스트 (29개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     └── CHANGELOG.md               # 변경 이력
@@ -115,7 +118,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수 일괄 관리 |
-| 다국어 | `js/i18n.js` | ko/en 338키, `t()` 함수로 참조 |
+| 다국어 | `js/i18n.js` | ko/en 348키, `t()` 함수로 참조 |
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 일시정지 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, HP/XP/레벨업, 메타 업그레이드 반영 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴 |
@@ -128,6 +131,8 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/도전과제) |
+| 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (위험 회피 > XP 수집 > 적 접근 > 방랑) |
+| IAP 관리 | `js/managers/IAPManager.js` | Google Play IAP 구매/복원, Mock 모드 |
 
 ## 기능 명세
 
@@ -501,11 +506,90 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - 구현 일자: 2026-03-09
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase4.md`
 
+### 자동 사냥 (AutoPilot) 시스템
+
+AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Play IAP로 영구 해금한다.
+
+#### AI 행동 우선순위
+1. **위험 회피** (evade): 반경 120px 내 적이 3마리 이상이거나, 60px 내 적이 있으면 반대 방향으로 회피. 거리 기반 가중 반발 벡터 사용.
+2. **XP 보석 수집** (collect): 200px 이내 XP 보석 중 (xpValue/거리) 점수가 가장 높은 보석 방향으로 이동. 자석 반경 내 보석은 무시.
+3. **적 접근** (approach): 가장 가까운 적이 150px 이상 떨어져 있으면 접근하여 무기 사거리를 유지.
+4. **방랑** (idle): 위 행동이 불필요하면 월드 중앙 경향 + 랜덤 방향 혼합 이동.
+
+#### AI 파라미터 (소스 코드 검증 기준)
+| 파라미터 | 값 | 위치 |
+|---|---|---|
+| 위험 감지 반경 | 120px | `AutoPilotSystem.js` DANGER_RADIUS |
+| 심각한 위험 반경 | 60px | `AutoPilotSystem.js` CRITICAL_DANGER_RADIUS |
+| XP 보석 탐색 반경 | 200px | `AutoPilotSystem.js` XP_SEARCH_RADIUS |
+| 적 접근 유지 거리 | 150px | `AutoPilotSystem.js` PREFERRED_ENEMY_DISTANCE |
+| 벽 회피 마진 | 80px | `AutoPilotSystem.js` WALL_MARGIN |
+| 방향 전환 간격 | 150ms | `AutoPilotSystem.js` DIRECTION_CHANGE_INTERVAL |
+| 랜덤 각도 변동 (jitter) | 0.3 rad | `AutoPilotSystem.js` IMPERFECTION_ANGLE |
+| 반응 누락 확률 | 5% (0.05) | `AutoPilotSystem.js` REACTION_MISS_CHANCE |
+
+#### 의도적 불완전성
+- 매 프레임 5% 확률로 AI가 반응하지 않고 이전 방향 유지 (REACTION_MISS_CHANCE)
+- 방향 결정 시 최대 0.3rad 랜덤 각도 변동 (IMPERFECTION_ANGLE)
+- 방향 전환 최소 간격 150ms로 과도한 지터 방지
+- _wander() 모드에서 벽 회피(wall avoidance)가 _applyDirection() 경유가 아닌 중앙 경향으로 처리됨 (물리 레벨 setCollideWorldBounds로 보완)
+
+#### 유저 입력 우선
+- Player._handleMovement()에서 joystick.isActive가 true이면 AI 방향 무시
+- 조이스틱 해제 시 자동으로 AI 이동 재개
+
+#### HUD 토글 버튼
+- 위치: 우상단 `(GAME_WIDTH-12, 48)`, 레벨 텍스트(y=12) 아래
+- 해금 시에만 표시, "AUTO ON"(녹색) / "AUTO OFF"(회색) 토글
+- 토글 상태를 SaveManager에 즉시 저장 (autoHuntEnabled)
+- 다음 런 시작 시 저장된 상태 자동 복원
+
+#### 일시정지/사망 시 동작
+- GameScene.update()에서 isPaused 시 전체 return하므로 AutoPilot도 정지
+- player.active === false이면 direction을 (0,0)으로 초기화
+- 씬 정리 시 autoPilot.destroy() 호출
+
+- 관련 파일: `js/systems/AutoPilotSystem.js`, `js/scenes/GameScene.js`, `js/entities/Player.js`
+- 구현 일자: 2026-03-09
+- 스펙 문서: `.claude/specs/2026-03-09-auto-hunt.md`
+
+### IAP (인앱결제) 시스템
+
+Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 환경에서는 실제 IAP, 웹 환경에서는 Mock 모드 동작.
+
+#### IAPManager
+- 싱글톤 패턴 (AdManager와 동일 구조)
+- `initialize()`: Capacitor.Plugins.InAppPurchase 감지. 실패 시 Mock 모드 폴백
+- `purchase(productId)`: 구매 요청. Mock 모드에서는 `{ purchased: true }` 즉시 반환. 실패 시 reject하지 않고 `{ purchased: false, error }` 반환. `isBusy` 플래그로 중복 호출 차단
+- `restorePurchases()`: 이전 구매 복원. Mock 모드에서는 `{ restored: false }` 반환. 네이티브에서 autoHunt 상품 확인 시 SaveManager에 기록
+- `isAutoHuntUnlocked()`: SaveManager에서 `autoHuntUnlocked` 읽기
+- `unlockAutoHunt()`: SaveManager에 `autoHuntUnlocked = true` 저장
+
+#### IAP 상품
+| 상품 ID | 설명 | 타입 |
+|---|---|---|
+| `com.antigravity.neonexodus.auto_hunt` | 자동 사냥 영구 해금 | 비소모형 (inapp) |
+
+#### 구매 흐름
+1. MenuScene: 미해금 시 "자동 사냥 해금" 오렌지 버튼 표시, 해금 시 "AUTO ON" 녹색 텍스트
+2. 구매 버튼 클릭 -> IAPManager.purchase() -> 성공 시 IAPManager.unlockAutoHunt() + 씬 새로고침
+3. BootScene.create()에서 IAPManager.initialize() + restorePurchases() 호출 (기기 변경 시 자동 복원)
+
+#### 세이브 데이터 (v4)
+- `autoHuntUnlocked`: boolean, 자동 사냥 IAP 구매 여부 (기본: false)
+- `autoHuntEnabled`: boolean, 마지막 런의 자동 사냥 토글 상태 (기본: false)
+- v3->v4 마이그레이션: 두 필드가 undefined이면 false로 초기화
+
+- 관련 파일: `js/managers/IAPManager.js`, `js/config.js`, `js/scenes/BootScene.js`, `js/scenes/MenuScene.js`, `js/managers/SaveManager.js`
+- 구현 일자: 2026-03-09
+- 스펙 문서: `.claude/specs/2026-03-09-auto-hunt.md`
+
 ### UI/HUD
 
 #### 상단 HUD
 - 일시정지 버튼, HP 바, 레벨 표시
 - XP 바, 타이머 (15:00 카운트다운 / 엔들리스 모드: +MM:SS 카운트업)
+- AUTO ON/OFF 토글 버튼 (자동 사냥 해금 시에만 표시, 우상단 y=48)
 
 #### 하단 HUD
 - 크레딧, 킬 수
@@ -528,11 +612,12 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 ### 세이브/매니저 시스템
 
-- SaveManager: 로컬스토리지 기반, 세이브 버전 v3. 크레딧/통계/도감 영구 저장 연동 완료. v1->v2 마이그레이션(totalBossKills), v2->v3 마이그레이션(totalSurviveMinutes) 구현.
+- SaveManager: 로컬스토리지 기반, 세이브 버전 v4. 크레딧/통계/도감/자동사냥 영구 저장 연동 완료. v1->v2 마이그레이션(totalBossKills), v2->v3 마이그레이션(totalSurviveMinutes), v3->v4 마이그레이션(autoHuntUnlocked, autoHuntEnabled) 구현.
 - MetaManager: 영구 업그레이드 구매/다운그레이드/적용 계산. canDowngrade(), getDowngradeRefund(), downgradeUpgrade() 메서드 제공. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
 - AchievementManager: 도전과제 조건 검사/보상 지급. ResultScene에서 checkAll() 호출.
-- 관련 파일: `js/managers/SaveManager.js`, `js/managers/MetaManager.js`, `js/managers/AchievementManager.js`
-- 구현 일자: 2026-03-08 (Phase 2 연동: 2026-03-09)
+- IAPManager: Google Play 인앱결제 구매/복원. 웹 환경 Mock 모드 지원. BootScene에서 초기화 및 구매 복원.
+- 관련 파일: `js/managers/SaveManager.js`, `js/managers/MetaManager.js`, `js/managers/AchievementManager.js`, `js/managers/IAPManager.js`
+- 구현 일자: 2026-03-08 (Phase 2 연동: 2026-03-09, IAP/AutoPilot: 2026-03-09)
 
 ## 알려진 제약사항
 
@@ -545,6 +630,9 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 6. **MetaManager/Player 이중 경로**: GameScene에서 MetaManager.getPlayerBonuses()와 SaveManager.getUpgradeLevel()을 별도로 호출. 동일 데이터 소스이므로 현재 문제 없으나, 보너스 계산 공식 변경 시 불일치 위험.
 7. **consecutiveClears 직접 조작**: SaveManager.updateStats() 로직에 맞지 않아 data.stats를 직접 조작. SaveManager에 setStats() 메서드 추가 권장.
 8. **오브 시각적 크기 고정**: 플라즈마 오브의 시각적 크기가 8px로 고정되어 orbRadius(55~90px)와 불일치. orbRadius는 데미지 판정 범위.
+9. **AutoPilotSystem AUTO_HUNT import 미사용**: config.js에서 AUTO_HUNT를 import하지만 내부 로컬 상수(DANGER_RADIUS 등)를 사용. 값은 동일하므로 기능 문제 없으나, config 변경 시 반영이 안 되는 리스크. import 제거 또는 로컬 상수 제거 권장.
+10. **AutoPilotSystem _wander() 벽 회피 미경유**: idle 모드에서 _applyDirection()을 거치지 않아 벽 회피와 jitter가 미적용. Phaser setCollideWorldBounds가 물리 레벨에서 보완하나, 벽 근처 AI 움직임이 부자연스러울 수 있음.
+11. **IAP 플러그인 미등록**: InAppPurchase Capacitor 플러그인이 package.json에 미등록. 네이티브 빌드 전 `@nicegram/capacitor-iap` 등 설치 필요. 웹 환경에서는 Mock 모드로 정상 동작.
 
 ## 현재 구현 상태
 
@@ -601,3 +689,15 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - [x] 엔지니어 drone 무기 실구현 (blaster 폴백 코드 제거)
 - [x] 무기 풀 확장 (getAvailableWeapons(4), Phase 4 무기 레벨업 선택지)
 - [x] i18n 확장 (드론/EMP Lv1~8, 메딕/히든 캐릭터, 엔들리스 모드 텍스트, ko/en 338키)
+
+### 자동 사냥 (Auto Hunt) -- 완료 (2026-03-09)
+- [x] AutoPilotSystem 신규 구현 (종합형 AI: 위험 회피 > XP 수집 > 적 접근 > 방랑)
+- [x] 의도적 불완전성 (랜덤 각도 변동 0.3rad, 반응 누락 5%, 방향 전환 간격 150ms)
+- [x] IAPManager 신규 구현 (Google Play IAP, Capacitor 플러그인 래핑, Mock 모드)
+- [x] MenuScene 자동 사냥 구매 UI (미해금 시 구매 버튼, 해금 시 완료 표시)
+- [x] GameScene HUD 토글 버튼 (AUTO ON/OFF, 해금 시에만 표시)
+- [x] 유저 조이스틱 입력 우선 (joystick.isActive 시 AI 방향 무시)
+- [x] 설정 기억 (autoHuntEnabled를 SaveManager에 저장, 다음 런 자동 적용)
+- [x] 구매 복원 (BootScene에서 restorePurchases, 기기 변경 시 재구매 방지)
+- [x] SaveManager v3->v4 마이그레이션 (autoHuntUnlocked, autoHuntEnabled 필드 추가)
+- [x] i18n 확장 (autoHunt.* 10키 ko/en, 총 348키)

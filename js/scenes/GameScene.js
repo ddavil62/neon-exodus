@@ -35,6 +35,8 @@ import { getCharacterById } from '../data/characters.js';
 import SoundSystem from '../systems/SoundSystem.js';
 import VFXSystem from '../systems/VFXSystem.js';
 import { AdManager } from '../managers/AdManager.js';
+import { IAPManager } from '../managers/IAPManager.js';
+import AutoPilotSystem from '../systems/AutoPilotSystem.js';
 
 // ── 접촉 데미지 쿨다운 (ms) ──
 /** 같은 적이 연속으로 접촉 데미지를 주지 않도록 하는 최소 간격 */
@@ -142,6 +144,19 @@ export default class GameScene extends Phaser.Scene {
 
     // ── 시스템 초기화 ──
     this.joystick = new VirtualJoystick(this);
+
+    // ── 자동 사냥(AutoPilot) 시스템 ──
+    this.autoPilot = new AutoPilotSystem(this, this.player);
+
+    // 자동 사냥 해금 상태 확인 및 이전 런 설정 복원
+    this._autoHuntUnlocked = IAPManager.isAutoHuntUnlocked();
+    if (this._autoHuntUnlocked) {
+      const savedEnabled = SaveManager.getData().autoHuntEnabled === true;
+      if (savedEnabled) {
+        this.autoPilot.activate();
+      }
+    }
+
     this.weaponSystem = new WeaponSystem(this, this.player);
 
     // 초기 무기 레벨 (메타 보너스 반영)
@@ -232,6 +247,9 @@ export default class GameScene extends Phaser.Scene {
     this.runTime += delta / 1000;
 
     // 시스템 업데이트
+    if (this.autoPilot && this.autoPilot.enabled) {
+      this.autoPilot.update(time, delta);
+    }
     this.player.update(time, delta);
     this.weaponSystem.update(time, delta);
     this.weaponSystem.renderBeams();
@@ -825,6 +843,29 @@ export default class GameScene extends Phaser.Scene {
       this._togglePause();
     });
 
+    // ── 자동 사냥 토글 버튼 (우상단, 레벨 옆) ──
+    if (this._autoHuntUnlocked) {
+      const autoLabel = this.autoPilot.enabled
+        ? t('autoHunt.on')
+        : t('autoHunt.off');
+      const autoColor = this.autoPilot.enabled
+        ? UI_COLORS.neonGreen
+        : UI_COLORS.textSecondary;
+
+      hud.autoHuntBtn = this.add.text(GAME_WIDTH - 12, 48, autoLabel, {
+        fontSize: '11px',
+        fontFamily: 'Galmuri11, monospace',
+        color: autoColor,
+        backgroundColor: '#1A1A2E',
+        padding: { x: 6, y: 3 },
+      }).setOrigin(1, 0).setScrollFactor(0).setDepth(100)
+        .setInteractive({ useHandCursor: true });
+
+      hud.autoHuntBtn.on('pointerdown', () => {
+        this._toggleAutoHunt();
+      });
+    }
+
     // ── HP 바 ──
     const hpBarX = 42;
     const hpBarY = 12;
@@ -1094,6 +1135,42 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
+  // ── 자동 사냥 토글 ──
+
+  /**
+   * 자동 사냥 활성/비활성을 토글한다.
+   * 토글 상태를 SaveManager에 저장하여 다음 런에도 유지한다.
+   * @private
+   */
+  _toggleAutoHunt() {
+    if (!this.autoPilot) return;
+
+    if (this.autoPilot.enabled) {
+      this.autoPilot.deactivate();
+    } else {
+      this.autoPilot.activate();
+    }
+
+    // HUD 버튼 텍스트/색상 갱신
+    const hud = this._hud;
+    if (hud && hud.autoHuntBtn) {
+      const label = this.autoPilot.enabled
+        ? t('autoHunt.on')
+        : t('autoHunt.off');
+      const color = this.autoPilot.enabled
+        ? UI_COLORS.neonGreen
+        : UI_COLORS.textSecondary;
+
+      hud.autoHuntBtn.setText(label);
+      hud.autoHuntBtn.setColor(color);
+    }
+
+    // 상태를 SaveManager에 저장 (다음 런 자동 적용)
+    const data = SaveManager.getData();
+    data.autoHuntEnabled = this.autoPilot.enabled;
+    SaveManager.save();
+  }
+
   // ── 정리 ──
 
   /**
@@ -1102,6 +1179,7 @@ export default class GameScene extends Phaser.Scene {
    */
   _cleanup() {
     if (this.joystick) this.joystick.destroy();
+    if (this.autoPilot) this.autoPilot.destroy();
     if (this.weaponSystem) this.weaponSystem.destroy();
     if (this.waveSystem) this.waveSystem.destroy();
     if (this.xpGemPool) this.xpGemPool.destroy();

@@ -105,7 +105,7 @@ export const CREDIT_DROP_AMOUNT = 1;
 export const SAVE_KEY = 'neon-exodus-save';
 
 /** 세이브 데이터 버전 */
-export const SAVE_DATA_VERSION = 3;
+export const SAVE_DATA_VERSION = 4;
 
 /** 엔들리스 모드 스케일링 간격 (ms). 60초마다 적 HP/데미지 +10% */
 export const ENDLESS_SCALE_INTERVAL = 60000;
@@ -190,4 +190,23 @@ export const ADMOB_UNITS = {
 export const AD_LIMITS = {
   creditDouble: 3,  // 크레딧 2배: 하루 3회
   adRevive:     2,  // 광고 부활: 하루 2회
+};
+
+// ── IAP (인앱결제) 설정 ──
+
+/** Google Play 인앱 상품 ID 맵 */
+export const IAP_PRODUCTS = {
+  /** 자동 사냥 영구 해금 */
+  autoHunt: 'com.antigravity.neonexodus.auto_hunt',
+};
+
+// ── 자동 사냥 (Auto Hunt) 설정 ──
+
+export const AUTO_HUNT = {
+  /** AI 방향 갱신 간격 (ms) */
+  directionInterval: 150,
+  /** 위험 감지 반경 (px) */
+  dangerRadius: 120,
+  /** XP 보석 탐색 반경 (px) */
+  xpSearchRadius: 200,
 };

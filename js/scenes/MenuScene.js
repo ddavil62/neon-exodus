@@ -5,9 +5,10 @@
  * 네온 사이버펑크 분위기의 텍스트와 UI를 렌더링한다.
  */
 
-import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
+import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS, IAP_PRODUCTS } from '../config.js';
 import { t, toggleLocale } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
+import { IAPManager } from '../managers/IAPManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
 
 // ── MenuScene 클래스 ──
@@ -66,6 +67,20 @@ export default class MenuScene extends Phaser.Scene {
       this.scene.start('CollectionScene');
     });
 
+    // ── 자동 사냥 구매 버튼 (미해금 시 표시) ──
+    if (!IAPManager.isAutoHuntUnlocked()) {
+      this._createButton(centerX, 550, t('autoHunt.purchase'), COLORS.NEON_ORANGE, () => {
+        this._showAutoHuntPurchase();
+      });
+    } else {
+      // 해금 완료 표시
+      this.add.text(centerX, 550, t('autoHunt.on'), {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonGreen,
+      }).setOrigin(0.5);
+    }
+
     // ── 하단: 크레딧/데이터코어 보유량 ──
     /** @type {Phaser.GameObjects.Text} 크레딧 표시 텍스트 */
     this._creditText = this.add.text(
@@ -109,6 +124,58 @@ export default class MenuScene extends Phaser.Scene {
 
     // ── ESC 키로 앱 종료 ──
     this.input.keyboard.on('keydown-ESC', () => this._onBack());
+  }
+
+  // ── 자동 사냥 구매 팝업 ──
+
+  /**
+   * 자동 사냥 구매 팝업을 표시한다.
+   * IAP 구매 완료 시 SaveManager에 해금 상태를 저장하고 씬을 새로고침한다.
+   * @private
+   */
+  async _showAutoHuntPurchase() {
+    const result = await IAPManager.purchase(IAP_PRODUCTS.autoHunt);
+
+    if (result.purchased) {
+      // 해금 처리
+      IAPManager.unlockAutoHunt();
+
+      // 성공 메시지 표시
+      const msg = this.add.text(
+        GAME_WIDTH / 2, GAME_HEIGHT / 2,
+        t('autoHunt.purchaseSuccess'),
+        {
+          fontSize: '16px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.neonGreen,
+          stroke: '#000000',
+          strokeThickness: 2,
+        }
+      ).setOrigin(0.5).setDepth(500);
+
+      // 1.5초 후 씬 새로고침
+      this.time.delayedCall(1500, () => {
+        msg.destroy();
+        this.scene.restart();
+      });
+    } else {
+      // 실패 메시지 표시
+      const msg = this.add.text(
+        GAME_WIDTH / 2, GAME_HEIGHT / 2,
+        t('autoHunt.purchaseFail'),
+        {
+          fontSize: '14px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.hpRed,
+          stroke: '#000000',
+          strokeThickness: 2,
+        }
+      ).setOrigin(0.5).setDepth(500);
+
+      this.time.delayedCall(2000, () => {
+        msg.destroy();
+      });
+    }
   }
 
   // ── 뒤로가기 ──
