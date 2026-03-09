@@ -202,7 +202,7 @@ export default class CollectionScene extends Phaser.Scene {
 
     // 스크롤 처리
     if (contentHeight > listHeight) {
-      this._scrollMin = LIST_START_Y - (contentHeight - listHeight);
+      this._scrollMin = -(contentHeight - listHeight);
       this._scrollMax = 0;
       this._scrollOffset = 0;
 
