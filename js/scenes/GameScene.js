@@ -834,6 +834,13 @@ export default class GameScene extends Phaser.Scene {
     this._pauseTitle.setVisible(visible);
     this._resumeText.setVisible(visible);
     this._quitText.setVisible(visible);
+
+    // 물리 엔진도 함께 일시정지/재개하여 적 이동을 멈춘다
+    if (this.isPaused) {
+      this.physics.pause();
+    } else {
+      this.physics.resume();
+    }
   }
 
   // ── 정리 ──
