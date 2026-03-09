@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-09 -- 레벨업 스킵 버튼 (버그 수정)
+
+### 수정
+- 모든 업그레이드 완료 상태에서 레벨업 시 게임이 멈추는 치명적 버그 수정 (`js/scenes/LevelUpScene.js`)
+  - `_renderCards()`에서 `choices.length === 0` 분기 추가, `_renderSkip()` 호출
+  - `_renderSkip()` 신규 메서드: "모든 업그레이드 완료!" 안내 텍스트 + 네온 스타일 스킵 버튼 렌더링, `_skipMode = true` 설정으로 리롤 버튼 숨김
+  - `_skipLevelUp()` 신규 메서드: `levelupDone` 이벤트 발행(rerollsLeft 유지) + GameScene resume + 씬 stop
+  - `create()` 상단에 `this._skipMode = false;` 초기화 추가 (Phaser 씬 인스턴스 재사용 시 이전 스킵 상태 잔존 방지)
+  - `_createRerollButton()`에서 기존 리롤 버튼 요소 제거 코드를 `_skipMode` 가드 앞으로 이동 (리롤 후 스킵 전환 시 잔존 버튼 정리)
+
+### 추가
+- i18n 2키 (`js/i18n.js`): `levelup.allMaxed`(ko: '모든 업그레이드 완료!', en: 'All Upgrades Maxed!'), `levelup.skip`(ko: '스킵', en: 'Skip')
+
+### 참고
+- 스펙: `.claude/specs/2026-03-09-levelup-skip.md`
+- 구현 리포트: `.claude/specs/2026-03-09-levelup-skip-report.md`
+- QA: `.claude/specs/2026-03-09-levelup-skip-qa.md`
+- QA 결과: 수용기준 5개 전체 PASS, 예외 시나리오 6개 PASS, Playwright 14/14. 이전 QA 발견 2건(HIGH: _skipMode 초기화 누락, MEDIUM: 리롤 시 잔존 버튼 미정리) 모두 수정 확인 완료
+
 ## 2026-03-09 -- 무기별 결과 리포트
 
 ### 추가

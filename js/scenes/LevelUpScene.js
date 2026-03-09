@@ -43,6 +43,9 @@ export default class LevelUpScene extends Phaser.Scene {
    * 레벨업 UI를 생성한다.
    */
   create() {
+    // 이전 스킵 상태 초기화 (Phaser는 scene.stop() 후 재실행 시 인스턴스를 재사용)
+    this._skipMode = false;
+
     const centerX = GAME_WIDTH / 2;
     const centerY = GAME_HEIGHT / 2;
 
@@ -91,6 +94,13 @@ export default class LevelUpScene extends Phaser.Scene {
 
     // 3택 카드 생성
     const choices = this._generateChoices();
+
+    // 선택지가 없으면 스킵 UI 표시
+    if (choices.length === 0) {
+      this._renderSkip();
+      return;
+    }
+
     const cardWidth = 96;
     const cardSpacing = 12;
     const totalWidth = choices.length * cardWidth + (choices.length - 1) * cardSpacing;
@@ -107,6 +117,17 @@ export default class LevelUpScene extends Phaser.Scene {
    * @private
    */
   _createRerollButton() {
+    // 기존 리롤 버튼 제거 (스킵 모드 전환 시에도 잔존 요소 정리를 위해 먼저 실행)
+    if (this._rerollBtnElements) {
+      for (const el of this._rerollBtnElements) {
+        el.destroy();
+      }
+    }
+    this._rerollBtnElements = [];
+
+    // 스킵 모드일 때 리롤 버튼을 표시하지 않음 (기존 버튼은 이미 정리됨)
+    if (this._skipMode) return;
+
     const centerX = GAME_WIDTH / 2;
     const btnY = GAME_HEIGHT - 80;
 
@@ -116,14 +137,6 @@ export default class LevelUpScene extends Phaser.Scene {
       : t('levelup.noReroll');
 
     const btnColor = hasRerolls ? UI_COLORS.neonCyan : UI_COLORS.textSecondary;
-
-    // 기존 리롤 버튼 제거
-    if (this._rerollBtnElements) {
-      for (const el of this._rerollBtnElements) {
-        el.destroy();
-      }
-    }
-    this._rerollBtnElements = [];
 
     const bg = this.add.graphics().setDepth(2);
     bg.fillStyle(COLORS.UI_PANEL, 0.9);
@@ -153,6 +166,71 @@ export default class LevelUpScene extends Phaser.Scene {
         this._createRerollButton();
       });
     }
+  }
+
+  // ── 스킵 UI ──
+
+  /**
+   * 모든 업그레이드가 완료되었을 때 스킵 UI를 렌더링한다.
+   * 안내 메시지와 스킵 버튼을 표시하고, 리롤 버튼을 숨긴다.
+   * @private
+   */
+  _renderSkip() {
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
+
+    // 리롤 버튼 숨김 플래그
+    this._skipMode = true;
+
+    // 안내 텍스트
+    const msg = this.add.text(centerX, centerY - 10, t('levelup.allMaxed'), {
+      fontSize: '18px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setOrigin(0.5).setDepth(3);
+    this._cardElements.push(msg);
+
+    // 스킵 버튼 배경
+    const btnW = 140;
+    const btnH = 32;
+    const btnX = centerX - btnW / 2;
+    const btnY = centerY + 50 - btnH / 2;
+
+    const bg = this.add.graphics().setDepth(2);
+    bg.fillStyle(COLORS.UI_PANEL, 0.9);
+    bg.fillRoundedRect(btnX, btnY, btnW, btnH, 6);
+    bg.lineStyle(1, COLORS.NEON_CYAN, 0.5);
+    bg.strokeRoundedRect(btnX, btnY, btnW, btnH, 6);
+    this._cardElements.push(bg);
+
+    // 스킵 버튼 텍스트
+    const btnText = this.add.text(centerX, centerY + 50, t('levelup.skip'), {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setOrigin(0.5).setDepth(3);
+    this._cardElements.push(btnText);
+
+    // 스킵 버튼 터치 영역
+    const zone = this.add.zone(centerX, centerY + 50, btnW, btnH)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(4);
+    this._cardElements.push(zone);
+
+    zone.on('pointerdown', () => {
+      this._skipLevelUp();
+    });
+  }
+
+  /**
+   * 레벨업을 스킵하고 GameScene을 재개한다.
+   * 선택지가 없는 상태에서 호출된다.
+   * @private
+   */
+  _skipLevelUp() {
+    this.events.emit('levelupDone', { rerollsLeft: this.rerollsLeft });
+    this.scene.resume('GameScene');
+    this.scene.stop();
   }
 
   // ── 선택지 생성 ──

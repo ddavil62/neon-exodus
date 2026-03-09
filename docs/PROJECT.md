@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-09 (무기별 결과 리포트)
+> 최종 업데이트: 2026-03-09 (레벨업 스킵 버그 수정)
 
 ## 프로젝트 개요
 
@@ -57,7 +57,7 @@ neon-exodus/
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot)
-│   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias)
+│   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드)
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (13개, 진행률)
@@ -377,8 +377,9 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - 레벨업 시 3택 카드 (무기 레벨업 / 패시브 획득 / 패시브 레벨업 / 새 무기 획득)
 - 새 무기 카드: 미장착 Phase 4 이하 무기 중 선택 (슬롯 여유 시에만 생성, getAvailableWeapons(4))
 - 리롤 버튼: 남은 리롤 횟수 > 0일 때 활성화, 클릭 시 선택지 재생성
+- 스킵 처리: 모든 무기/패시브가 최대 레벨이고 무기 슬롯이 가득 찬 상태에서 레벨업 시, 선택지가 0개가 되면 "모든 업그레이드 완료!" 안내 메시지와 스킵 버튼을 표시. 스킵 클릭 시 `levelupDone` 이벤트 발행 후 GameScene 재개. 리롤 버튼은 숨김 (`_skipMode` 플래그). `create()` 시 `_skipMode = false`로 초기화하여 Phaser 씬 인스턴스 재사용 시 상태 잔존 방지.
 - 관련 파일: `js/entities/XPGem.js`, `js/scenes/LevelUpScene.js`
-- 구현 일자: 2026-03-08 (Phase 2 확장: 2026-03-09)
+- 구현 일자: 2026-03-08 (Phase 2 확장: 2026-03-09, 스킵 버그 수정: 2026-03-09)
 
 #### 패시브 아이템 (10종)
 | # | 아이템 | 효과/Lv | 최대 Lv |
@@ -625,6 +626,7 @@ Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 
 - 3택 카드 (아이콘 + 이름 + 효과 + 레벨)
 - 무기 레벨업 / 패시브 획득 / 패시브 레벨업 / 새 무기 획득 카드
 - 리롤 버튼 (메타 업그레이드 연동, rerollsLeft 기반)
+- 스킵 모드: 선택지 0개 시 "모든 업그레이드 완료!" + 스킵 버튼 표시, 리롤 버튼 숨김
 
 #### 결과 화면
 - 승리/패배/엔들리스 분기, 생존 시간/처치 수/도달 레벨, 보상 표시

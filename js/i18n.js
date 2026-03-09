@@ -53,6 +53,8 @@ const TRANSLATIONS = {
     'levelup.maxLevel': 'MAX',
     'levelup.reroll': '\uD83D\uDD04 리롤 ({0})',
     'levelup.noReroll': '리롤 불가',
+    'levelup.allMaxed': '모든 업그레이드 완료!',
+    'levelup.skip': '스킵',
 
     // ── 결과 화면 ──
     'result.victory': 'RUN CLEAR!',
@@ -473,6 +475,8 @@ const TRANSLATIONS = {
     'levelup.maxLevel': 'MAX',
     'levelup.reroll': '\uD83D\uDD04 Reroll ({0})',
     'levelup.noReroll': 'No Reroll',
+    'levelup.allMaxed': 'All Upgrades Maxed!',
+    'levelup.skip': 'Skip',
 
     // ── Result ──
     'result.victory': 'RUN CLEAR!',
