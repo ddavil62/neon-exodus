@@ -125,14 +125,14 @@ export const MISSILE_LEVELS = [
  * @type {Array<{level: number, droneCount: number, damage: number, cooldown: number, shootRange: number, moveSpeed: number}>}
  */
 export const DRONE_LEVELS = [
-  { level: 1, droneCount: 1, damage: 12, cooldown: 1000, shootRange: 120, moveSpeed: 150 },
-  { level: 2, droneCount: 1, damage: 18, cooldown: 950,  shootRange: 125, moveSpeed: 158 },
-  { level: 3, droneCount: 2, damage: 22, cooldown: 900,  shootRange: 130, moveSpeed: 165 },
-  { level: 4, droneCount: 2, damage: 28, cooldown: 850,  shootRange: 135, moveSpeed: 172 },
-  { level: 5, droneCount: 3, damage: 34, cooldown: 800,  shootRange: 140, moveSpeed: 180 },
-  { level: 6, droneCount: 3, damage: 40, cooldown: 750,  shootRange: 145, moveSpeed: 188 },
-  { level: 7, droneCount: 4, damage: 46, cooldown: 700,  shootRange: 150, moveSpeed: 195 },
-  { level: 8, droneCount: 4, damage: 50, cooldown: 600,  shootRange: 160, moveSpeed: 200 },
+  { level: 1, droneCount: 1, damage: 12, cooldown: 1000, shootRange: 120, moveSpeed: 450 },
+  { level: 2, droneCount: 1, damage: 18, cooldown: 950,  shootRange: 125, moveSpeed: 474 },
+  { level: 3, droneCount: 2, damage: 22, cooldown: 900,  shootRange: 130, moveSpeed: 495 },
+  { level: 4, droneCount: 2, damage: 28, cooldown: 850,  shootRange: 135, moveSpeed: 516 },
+  { level: 5, droneCount: 3, damage: 34, cooldown: 800,  shootRange: 140, moveSpeed: 540 },
+  { level: 6, droneCount: 3, damage: 40, cooldown: 750,  shootRange: 145, moveSpeed: 564 },
+  { level: 7, droneCount: 4, damage: 46, cooldown: 700,  shootRange: 150, moveSpeed: 585 },
+  { level: 8, droneCount: 4, damage: 50, cooldown: 600,  shootRange: 160, moveSpeed: 600 },
 ];
 
 // ── EMP 폭발: Phase 4 범위 무기 (Lv1~Lv8) ──
