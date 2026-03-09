@@ -396,24 +396,27 @@ export default class GameScene extends Phaser.Scene {
     // BGM 정지 (결과 화면에서 게임 BGM이 계속 재생되는 것을 방지)
     SoundSystem.stopBgm();
 
+    // _cleanup() 전에 결과 데이터를 스냅샷 (destroy 후 접근 불가 방지)
+    const resultData = {
+      victory: victory,
+      isEndless: this.isEndlessMode,
+      endlessMinutes: this.endlessMinutes,
+      killCount: this.killCount,
+      runTime: this.runTime,
+      creditsEarned: this.creditsEarned,
+      level: this.player ? this.player.level : 1,
+      weaponSlotsFilled: this.weaponSystem ? this.weaponSystem.weapons.length : 0,
+      weaponEvolutions: this.weaponEvolutions,
+      weaponReport: this._buildWeaponReport(),
+    };
+
+    // 물리 엔진 즉시 정지 (딜레이 중 추가 충돌 방지)
+    this.physics.pause();
+
     // 약간의 딜레이 후 결과 화면
     this.time.delayedCall(500, () => {
-      // 무기별 통계 스냅샷 (씬 전환 전 복사)
-      const weaponReport = this._buildWeaponReport();
-
       this._cleanup();
-      this.scene.start('ResultScene', {
-        victory: victory,
-        isEndless: this.isEndlessMode,
-        endlessMinutes: this.endlessMinutes,
-        killCount: this.killCount,
-        runTime: this.runTime,
-        creditsEarned: this.creditsEarned,
-        level: this.player.level,
-        weaponSlotsFilled: this.weaponSystem.weapons.length,
-        weaponEvolutions: this.weaponEvolutions,
-        weaponReport: weaponReport,
-      });
+      this.scene.start('ResultScene', resultData);
     });
   }
 
@@ -674,6 +677,9 @@ export default class GameScene extends Phaser.Scene {
 
           // 팝업 제거
           destroyPopup();
+
+          // 광고 복귀 후 씬이 이미 전환되었을 수 있으므로 안전 가드
+          if (!this.player || this.isGameOver) return;
 
           // HP 50% 회복
           this.player.currentHp = Math.floor(this.player.maxHp * 0.5);
@@ -1108,6 +1114,7 @@ export default class GameScene extends Phaser.Scene {
    * @private
    */
   _refreshInventoryHUD() {
+    if (this.isGameOver) return;
     const inv = this._inventoryHUD;
     if (!inv) return;
 
@@ -1278,38 +1285,22 @@ export default class GameScene extends Phaser.Scene {
       // BGM 정지 (결과/메뉴 화면에서 게임 BGM이 계속 재생되는 것을 방지)
       SoundSystem.stopBgm();
 
-      // 무기별 통계 스냅샷 (씬 전환 전 복사)
-      const weaponReport = this._buildWeaponReport();
+      // _cleanup() 전에 결과 데이터를 스냅샷 (destroy 후 접근 불가 방지)
+      const resultData = {
+        victory: this.isEndlessMode ? true : false,
+        isEndless: this.isEndlessMode ? true : undefined,
+        endlessMinutes: this.isEndlessMode ? this.endlessMinutes : undefined,
+        killCount: this.killCount,
+        runTime: this.runTime,
+        creditsEarned: this.creditsEarned,
+        level: this.player ? this.player.level : 1,
+        weaponSlotsFilled: this.weaponSystem ? this.weaponSystem.weapons.length : 0,
+        weaponEvolutions: this.weaponEvolutions,
+        weaponReport: this._buildWeaponReport(),
+      };
 
-      if (this.isEndlessMode) {
-        // 엔들리스 모드에서 포기하면 결과 화면으로
-        this._cleanup();
-        this.scene.start('ResultScene', {
-          victory: true,
-          isEndless: true,
-          endlessMinutes: this.endlessMinutes,
-          killCount: this.killCount,
-          runTime: this.runTime,
-          creditsEarned: this.creditsEarned,
-          level: this.player.level,
-          weaponSlotsFilled: this.weaponSystem.weapons.length,
-          weaponEvolutions: this.weaponEvolutions,
-          weaponReport: weaponReport,
-        });
-      } else {
-        // 일반 모드 포기 — 결과 화면으로 이동하여 크레딧 정산
-        this._cleanup();
-        this.scene.start('ResultScene', {
-          victory: false,
-          killCount: this.killCount,
-          runTime: this.runTime,
-          creditsEarned: this.creditsEarned,
-          level: this.player.level,
-          weaponSlotsFilled: this.weaponSystem.weapons.length,
-          weaponEvolutions: this.weaponEvolutions,
-          weaponReport: weaponReport,
-        });
-      }
+      this._cleanup();
+      this.scene.start('ResultScene', resultData);
     });
   }
 
@@ -1405,5 +1396,13 @@ export default class GameScene extends Phaser.Scene {
     if (this.waveSystem) this.waveSystem.destroy();
     if (this.xpGemPool) this.xpGemPool.destroy();
     this._contactCooldowns.clear();
+
+    // destroy 후 참조를 null로 설정하여 use-after-destroy 방지
+    this.joystick = null;
+    this.autoPilot = null;
+    this.weaponSystem = null;
+    this.waveSystem = null;
+    this.xpGemPool = null;
+    this.player = null;
   }
 }
