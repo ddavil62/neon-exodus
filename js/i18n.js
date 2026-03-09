@@ -80,6 +80,8 @@ const TRANSLATIONS = {
     'upgrade.category.growth': '성장 가속',
     'upgrade.category.special': '특수',
     'upgrade.category.limitBreak': '한도 돌파',
+    'upgrade.downgrade': '-',
+    'upgrade.downgradeRefund': '환불: {0}',
     'upgrade.limitBreakHint': '기본 스탯 전부 최대 레벨\n달성 시 해금',
 
     // ── 도감 ──
@@ -389,6 +391,16 @@ const TRANSLATIONS = {
     'result.endless': '엔들리스 생존: {0}분',
     'result.endlessOver': 'ENDLESS OVER!',
 
+    // ── 광고 ──
+    'ad.creditDouble': '광고 보고 2배',
+    'ad.creditDoubleCount': '({0}/{1})',
+    'ad.creditDoubleUsed': '사용 완료',
+    'ad.revive': '광고로 부활?',
+    'ad.reviveDesc': 'HP 50% 회복 + 3초 무적',
+    'ad.reviveBtn': '광고 보기',
+    'ad.reviveBtnCount': '({0}/{1})',
+    'ad.reviveGiveUp': '포기',
+
     // ── 게임 상태 메시지 ──
     'game.start': '출격!',
     'game.bossApproaching': '보스가 다가온다...',
@@ -473,6 +485,8 @@ const TRANSLATIONS = {
     'upgrade.category.growth': 'Growth',
     'upgrade.category.special': 'Special',
     'upgrade.category.limitBreak': 'Limit Break',
+    'upgrade.downgrade': '-',
+    'upgrade.downgradeRefund': 'Refund: {0}',
     'upgrade.limitBreakHint': 'Unlock by maxing all\nbasic stat upgrades',
 
     // ── Collection ──
@@ -781,6 +795,16 @@ const TRANSLATIONS = {
     'game.endlessMode': 'ENDLESS MODE!',
     'result.endless': 'Endless survived: {0} min',
     'result.endlessOver': 'ENDLESS OVER!',
+
+    // ── Ads ──
+    'ad.creditDouble': 'Watch Ad for 2x',
+    'ad.creditDoubleCount': '({0}/{1})',
+    'ad.creditDoubleUsed': 'Used',
+    'ad.revive': 'Revive with Ad?',
+    'ad.reviveDesc': 'HP 50% + 3s invincible',
+    'ad.reviveBtn': 'Watch Ad',
+    'ad.reviveBtnCount': '({0}/{1})',
+    'ad.reviveGiveUp': 'Give Up',
 
     // ── Game State Messages ──
     'game.start': 'Deploy!',

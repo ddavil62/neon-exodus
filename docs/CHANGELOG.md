@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-03-09 -- 업그레이드 다운그레이드 + 크레딧 환불
+
+### 추가
+- MetaManager 다운그레이드 메서드 3종 (`js/managers/MetaManager.js`): `canDowngrade(upgradeId)` 가능 여부 확인, `getDowngradeRefund(upgradeId)` 환불액 계산 (`costFormula(currentLevel)` 100% 전액), `downgradeUpgrade(upgradeId)` 실행 (addCredits + setUpgradeLevel)
+- MetaManager.getAllUpgrades() 반환 객체에 `canDowngrade`, `downgradeRefund` 필드 추가 (`js/managers/MetaManager.js`)
+- UpgradeScene `_createDowngradeButton()` 헬퍼 메서드 (`js/scenes/UpgradeScene.js`): [-] 다운그레이드 버튼 생성. 활성 색상 `0xAA3300`, 비활성 `0x333344`. 너비 51px ([+] 버튼 80px, 간격 4px)
+- i18n 키 2개 (`js/i18n.js`): `upgrade.downgrade` ('-'), `upgrade.downgradeRefund` ('환불: {0}') ko/en 양쪽
+
+### 변경
+- UpgradeScene `_createUpgradeCard()` (`js/scenes/UpgradeScene.js`): 버튼 영역을 [-]/[+] 2열 레이아웃으로 변경. MAX 카드에서도 [-] 버튼 + MAX 레이블 나란히 배치. 잠금 카드에는 [-] 버튼 미표시
+
+### 참고
+- 스펙: `.claude/specs/2026-03-09-upgrade-downgrade.md`
+- 구현 리포트: `.claude/specs/2026-03-09-upgrade-downgrade-report.md`
+- QA: `.claude/specs/2026-03-09-upgrade-downgrade-qa.md`
+- QA 결과: 수용기준 10개 + 예외 시나리오 8개 = 총 17개 전체 PASS, Playwright 17/17
+
 ## 2026-03-09 -- Phase 4: 폴리싱
 
 ### 추가

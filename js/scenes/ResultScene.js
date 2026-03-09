@@ -5,11 +5,12 @@
  * 다시 도전 또는 메인 메뉴로 이동할 수 있다.
  */
 
-import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
+import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS, ADMOB_UNITS, AD_LIMITS } from '../config.js';
 import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { AchievementManager } from '../managers/AchievementManager.js';
 import { MetaManager } from '../managers/MetaManager.js';
+import { AdManager } from '../managers/AdManager.js';
 
 // ── ResultScene 클래스 ──
 
@@ -168,7 +169,7 @@ export default class ResultScene extends Phaser.Scene {
     divider.lineBetween(centerX - 100, rewardY - 10, centerX + 100, rewardY - 10);
 
     // 획득 크레딧
-    const creditText = this.add.text(
+    this._creditText = this.add.text(
       centerX, rewardY + 10,
       t('result.creditsEarned', this.creditsEarned),
       {
@@ -179,7 +180,7 @@ export default class ResultScene extends Phaser.Scene {
     ).setOrigin(0.5).setAlpha(0);
 
     this.tweens.add({
-      targets: creditText,
+      targets: this._creditText,
       alpha: 1,
       duration: 500,
       delay: 800,
@@ -205,6 +206,9 @@ export default class ResultScene extends Phaser.Scene {
       });
     }
 
+    // ── 광고 보고 2배 버튼 ──
+    this._createAdDoubleButton(centerX, GAME_HEIGHT - 200, 1000);
+
     // ── 버튼 ──
     const btnY = GAME_HEIGHT - 140;
 
@@ -225,6 +229,104 @@ export default class ResultScene extends Phaser.Scene {
   /** 메뉴 화면으로 돌아간다. */
   _onBack() {
     this.scene.start('MenuScene');
+  }
+
+  // ── 광고 2배 버튼 ──
+
+  /**
+   * 크레딧 2배 광고 버튼을 생성한다.
+   * 일일 제한에 도달하지 않았으면 활성, 도달했으면 비활성(회색) 상태로 표시한다.
+   * @param {number} x - 중심 X 좌표
+   * @param {number} y - 중심 Y 좌표
+   * @param {number} delay - 등장 딜레이 (ms)
+   * @private
+   */
+  _createAdDoubleButton(x, y, delay) {
+    const btnWidth = 200;
+    const btnHeight = 36;
+    const limitReached = AdManager.isAdLimitReached('creditDouble');
+    const remaining = AdManager.getRemainingAdCount('creditDouble');
+    const limit = AD_LIMITS.creditDouble;
+    const used = limit - remaining;
+
+    // 버튼 배경
+    this._adBtnBg = this.add.graphics();
+    const bgColor = limitReached ? UI_COLORS.btnDisabled : COLORS.NEON_ORANGE;
+    this._adBtnBg.fillStyle(bgColor, 0.8);
+    this._adBtnBg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6);
+    this._adBtnBg.lineStyle(1, COLORS.NEON_CYAN, 0.3);
+    this._adBtnBg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6);
+    this._adBtnBg.setAlpha(0);
+
+    // 버튼 텍스트
+    const labelText = limitReached
+      ? `${t('ad.creditDouble')} ${t('ad.creditDoubleUsed')}`
+      : `${t('ad.creditDouble')} ${t('ad.creditDoubleCount', used, limit)}`;
+
+    this._adBtnText = this.add.text(x, y, labelText, {
+      fontSize: '13px',
+      fontFamily: 'Galmuri11, monospace',
+      color: limitReached ? UI_COLORS.textSecondary : UI_COLORS.textPrimary,
+    }).setOrigin(0.5).setAlpha(0);
+
+    // 등장 애니메이션
+    this.tweens.add({
+      targets: [this._adBtnBg, this._adBtnText],
+      alpha: 1,
+      duration: 400,
+      delay: delay,
+    });
+
+    // 비활성 상태면 인터랙션 없음
+    if (limitReached || this.creditsEarned <= 0) return;
+
+    // 터치 영역
+    const zone = this.add.zone(x, y, btnWidth, btnHeight)
+      .setInteractive({ useHandCursor: true });
+
+    /** @type {boolean} 광고 사용 완료 여부 */
+    this._adUsed = false;
+
+    let pressed = false;
+    zone.on('pointerdown', () => {
+      if (this._adUsed) return;
+      pressed = true;
+      this._adBtnText.setAlpha(0.6);
+    });
+    zone.on('pointerup', async () => {
+      this._adBtnText.setAlpha(1);
+      if (!pressed || this._adUsed) return;
+      pressed = false;
+
+      // 광고 시청
+      const result = await AdManager.showRewarded(ADMOB_UNITS.creditDouble);
+      if (result.rewarded) {
+        // 크레딧 2배 지급 (원래 지급분 + 동일량 추가)
+        SaveManager.addCredits(this.creditsEarned);
+        AdManager.incrementDailyAdCount('creditDouble');
+
+        // 크레딧 텍스트 갱신 (2배 금액)
+        const doubledCredits = this.creditsEarned * 2;
+        this._creditText.setText(t('result.creditsEarned', doubledCredits));
+
+        // 버튼 비활성화
+        this._adUsed = true;
+        this._adBtnBg.clear();
+        this._adBtnBg.fillStyle(UI_COLORS.btnDisabled, 0.8);
+        this._adBtnBg.fillRoundedRect(
+          x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6
+        );
+        this._adBtnText.setText(
+          `${t('ad.creditDouble')} ${t('ad.creditDoubleUsed')}`
+        );
+        this._adBtnText.setColor(UI_COLORS.textSecondary);
+        zone.disableInteractive();
+      }
+    });
+    zone.on('pointerout', () => {
+      pressed = false;
+      if (!this._adUsed) this._adBtnText.setAlpha(1);
+    });
   }
 
   // ── 내부 메서드 ──

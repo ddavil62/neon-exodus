@@ -18,6 +18,8 @@ import {
   CAMERA_LERP,
   WEAPON_SLOTS,
   ENDLESS_SCALE_INTERVAL,
+  ADMOB_UNITS,
+  AD_LIMITS,
 } from '../config.js';
 import { t } from '../i18n.js';
 import Player from '../entities/Player.js';
@@ -32,6 +34,7 @@ import { WEAPON_EVOLUTIONS } from '../data/weapons.js';
 import { getCharacterById } from '../data/characters.js';
 import SoundSystem from '../systems/SoundSystem.js';
 import VFXSystem from '../systems/VFXSystem.js';
+import { AdManager } from '../managers/AdManager.js';
 
 // ── 접촉 데미지 쿨다운 (ms) ──
 /** 같은 적이 연속으로 접촉 데미지를 주지 않도록 하는 최소 간격 */
@@ -276,10 +279,11 @@ export default class GameScene extends Phaser.Scene {
 
   /**
    * 플레이어 사망 시 호출된다.
-   * 부활 횟수가 남아있으면 부활 처리하고, 아니면 ResultScene으로 전환한다.
+   * 부활 횟수가 남아있으면 부활 처리하고, 아니면 광고 부활 팝업을 표시한다.
+   * 광고 부활도 불가능하면 ResultScene으로 전환한다.
    */
   onPlayerDeath() {
-    // 부활 처리
+    // 메타 부활 처리
     if (this.revivesLeft > 0) {
       this.revivesLeft--;
       this.player.currentHp = Math.floor(this.player.maxHp * 0.5);
@@ -298,6 +302,22 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
+    // 광고 부활 팝업 표시 (일일 제한 미도달 시)
+    if (!AdManager.isAdLimitReached('adRevive')) {
+      this._showAdRevivePopup();
+      return;
+    }
+
+    // 광고 부활도 불가 — 결과 화면으로 전환
+    this._goToResult(false);
+  }
+
+  /**
+   * 결과 화면으로 전환한다.
+   * @param {boolean} victory - 승리 여부
+   * @private
+   */
+  _goToResult(victory) {
     this.isGameOver = true;
 
     // BGM 정지 (결과 화면에서 게임 BGM이 계속 재생되는 것을 방지)
@@ -307,7 +327,7 @@ export default class GameScene extends Phaser.Scene {
     this.time.delayedCall(500, () => {
       this._cleanup();
       this.scene.start('ResultScene', {
-        victory: false,
+        victory: victory,
         isEndless: this.isEndlessMode,
         endlessMinutes: this.endlessMinutes,
         killCount: this.killCount,
@@ -411,6 +431,184 @@ export default class GameScene extends Phaser.Scene {
       duration: 400,
       onComplete: () => gfx.destroy(),
     });
+  }
+
+  // ── 광고 부활 팝업 ──
+
+  /**
+   * 광고 부활 팝업을 표시한다.
+   * 게임을 일시정지하고, 광고 시청 또는 포기를 선택할 수 있다.
+   * 10초 타임아웃 시 자동으로 포기 처리된다.
+   * @private
+   */
+  _showAdRevivePopup() {
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
+
+    // 게임 일시정지
+    this.isPaused = true;
+    this.physics.pause();
+
+    // 팝업 요소를 저장할 배열 (정리 시 사용)
+    const popupElements = [];
+
+    // 반투명 배경
+    const overlay = this.add.rectangle(
+      centerX, centerY, GAME_WIDTH, GAME_HEIGHT,
+      0x000000, 0.75
+    ).setScrollFactor(0).setDepth(400);
+    popupElements.push(overlay);
+
+    // 타이틀 텍스트
+    const titleText = this.add.text(centerX, centerY - 70, t('ad.revive'), {
+      fontSize: '22px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+      stroke: '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
+    popupElements.push(titleText);
+
+    // 설명 텍스트
+    const descText = this.add.text(centerX, centerY - 38, t('ad.reviveDesc'), {
+      fontSize: '13px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(401);
+    popupElements.push(descText);
+
+    // 광고 보기 버튼
+    const adBtnWidth = 180;
+    const adBtnHeight = 40;
+    const adBtnY = centerY + 10;
+
+    const remaining = AdManager.getRemainingAdCount('adRevive');
+    const limit = AD_LIMITS.adRevive;
+    const used = limit - remaining;
+    const limitReached = AdManager.isAdLimitReached('adRevive');
+
+    const adBtnBg = this.add.graphics()
+      .setScrollFactor(0).setDepth(401);
+    const adBtnColor = limitReached ? UI_COLORS.btnDisabled : COLORS.NEON_ORANGE;
+    adBtnBg.fillStyle(adBtnColor, 0.9);
+    adBtnBg.fillRoundedRect(
+      centerX - adBtnWidth / 2, adBtnY - adBtnHeight / 2,
+      adBtnWidth, adBtnHeight, 6
+    );
+    popupElements.push(adBtnBg);
+
+    const adBtnLabel = limitReached
+      ? t('ad.reviveBtn')
+      : `${t('ad.reviveBtn')} ${t('ad.reviveBtnCount', used, limit)}`;
+
+    const adBtnText = this.add.text(centerX, adBtnY, adBtnLabel, {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: limitReached ? UI_COLORS.textSecondary : UI_COLORS.textPrimary,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(402);
+    popupElements.push(adBtnText);
+
+    // 포기 버튼
+    const giveUpBtnY = centerY + 60;
+
+    const giveUpBg = this.add.graphics()
+      .setScrollFactor(0).setDepth(401);
+    giveUpBg.fillStyle(UI_COLORS.btnSecondary, 0.8);
+    giveUpBg.fillRoundedRect(
+      centerX - adBtnWidth / 2, giveUpBtnY - adBtnHeight / 2,
+      adBtnWidth, adBtnHeight, 6
+    );
+    popupElements.push(giveUpBg);
+
+    const giveUpText = this.add.text(centerX, giveUpBtnY, t('ad.reviveGiveUp'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.hpRed,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(402);
+    popupElements.push(giveUpText);
+
+    /** 팝업을 제거하고 게임 상태를 정리한다. */
+    const destroyPopup = () => {
+      if (timeoutEvent) timeoutEvent.remove(false);
+      popupElements.forEach((el) => {
+        if (el && el.destroy) el.destroy();
+      });
+      if (adZone && adZone.destroy) adZone.destroy();
+      if (giveUpZone && giveUpZone.destroy) giveUpZone.destroy();
+    };
+
+    /** 포기 처리: 팝업 제거 후 결과 화면 전환 */
+    const onGiveUp = () => {
+      destroyPopup();
+      // 일시정지 해제 후 결과 화면 전환
+      this.isPaused = false;
+      this.physics.resume();
+      this._goToResult(false);
+    };
+
+    // 10초 타임아웃 → 자동 포기
+    const timeoutEvent = this.time.delayedCall(10000, () => {
+      onGiveUp();
+    });
+
+    // 광고 보기 버튼 인터랙션 (비활성이 아닐 때만)
+    let adZone = null;
+    if (!limitReached) {
+      adZone = this.add.zone(centerX, adBtnY, adBtnWidth, adBtnHeight)
+        .setScrollFactor(0).setDepth(403)
+        .setInteractive({ useHandCursor: true });
+
+      let adPressed = false;
+      adZone.on('pointerdown', () => { adPressed = true; adBtnText.setAlpha(0.6); });
+      adZone.on('pointerup', async () => {
+        adBtnText.setAlpha(1);
+        if (!adPressed) return;
+        adPressed = false;
+
+        const result = await AdManager.showRewarded(ADMOB_UNITS.adRevive);
+        if (result.rewarded) {
+          AdManager.incrementDailyAdCount('adRevive');
+
+          // 팝업 제거
+          destroyPopup();
+
+          // HP 50% 회복
+          this.player.currentHp = Math.floor(this.player.maxHp * 0.5);
+          this.player.active = true;
+
+          // 3초 무적
+          this.player.invincible = true;
+          this.player.invincibleTimer = 3000;
+
+          // 화면 플래시 효과
+          this.cameras.main.flash(500, 255, 255, 255, false);
+
+          // 부활 SFX + 메시지 표시
+          SoundSystem.play('revive');
+          this._showWarning(t('game.revived'));
+
+          // 게임 재개
+          this.isPaused = false;
+          this.physics.resume();
+        }
+        // rewarded: false → 팝업 유지 (사용자가 직접 포기 선택)
+      });
+      adZone.on('pointerout', () => { adPressed = false; adBtnText.setAlpha(1); });
+    }
+
+    // 포기 버튼 인터랙션
+    const giveUpZone = this.add.zone(centerX, giveUpBtnY, adBtnWidth, adBtnHeight)
+      .setScrollFactor(0).setDepth(403)
+      .setInteractive({ useHandCursor: true });
+
+    let giveUpPressed = false;
+    giveUpZone.on('pointerdown', () => { giveUpPressed = true; giveUpText.setAlpha(0.6); });
+    giveUpZone.on('pointerup', () => {
+      giveUpText.setAlpha(1);
+      if (giveUpPressed) onGiveUp();
+      giveUpPressed = false;
+    });
+    giveUpZone.on('pointerout', () => { giveUpPressed = false; giveUpText.setAlpha(1); });
   }
 
   // ── 무기 진화 체크 ──

@@ -172,3 +172,22 @@ export const BG_TILE_SIZE = 64;
 
 /** 카메라 추적 감속 (lerp). 1에 가까울수록 즉시 추적 */
 export const CAMERA_LERP = 0.1;
+
+// ── AdMob 설정 ──
+
+/** AdMob 앱 ID */
+export const ADMOB_APP_ID = 'ca-app-pub-9149509805250873~5179575681';
+
+/** 광고 단위 ID 맵 */
+export const ADMOB_UNITS = {
+  /** 크레딧 2배 보상형 광고 */
+  creditDouble: 'ca-app-pub-9149509805250873/8105121927',
+  /** 광고 부활 보상형 광고 */
+  adRevive:     'ca-app-pub-9149509805250873/6373567427',
+};
+
+/** 광고 일일 시청 횟수 제한 */
+export const AD_LIMITS = {
+  creditDouble: 3,  // 크레딧 2배: 하루 3회
+  adRevive:     2,  // 광고 부활: 하루 2회
+};

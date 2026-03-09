@@ -8,6 +8,7 @@
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t, setLocale } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
+import { AdManager } from '../managers/AdManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
 
 // ── BootScene 클래스 ──
@@ -55,7 +56,7 @@ export default class BootScene extends Phaser.Scene {
   /**
    * 에셋 로드 완료 후 호출. 텍스처 생성 및 초기화 후 MenuScene으로 전환한다.
    */
-  create() {
+  async create() {
     // 세이브 데이터 초기화 (로컬스토리지에서 로드)
     SaveManager.init();
 
@@ -73,6 +74,9 @@ export default class BootScene extends Phaser.Scene {
 
     // ── SoundSystem 초기화 ──
     SoundSystem.init(SaveManager.getSettings());
+
+    // ── AdManager 초기화 ──
+    await AdManager.initialize();
 
     // ── Particle 텍스처 생성 (VFXSystem용 4x4 흰색) ──
     this._generateParticleTexture();

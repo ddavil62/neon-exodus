@@ -283,30 +283,53 @@ export default class UpgradeScene extends Phaser.Scene {
     this._cardElements.push(descText);
 
     // 비용/구매 버튼 영역
+    const totalBtnW = w - 20;   // 135px (양쪽 여백 10px)
+    const btnH = 22;
+    const btnY = y + h / 2 - 16;
+    const canDown = upgrade.canDowngrade;
+
     if (isMaxed) {
-      const maxLabel = this.add.text(x, y + h / 2 - 16, t('upgrade.maxed'), {
+      // ── MAX 도달 + 다운그레이드 버튼 ──
+      const downBtnW = Math.floor(totalBtnW * 0.38);
+      const upBtnW = totalBtnW - downBtnW - 4;
+      const startX = x - totalBtnW / 2;
+
+      const downBtnX = startX + downBtnW / 2;
+      const upBtnX = startX + downBtnW + 4 + upBtnW / 2;
+
+      // [-] 다운그레이드 버튼
+      this._createDowngradeButton(downBtnX, btnY, downBtnW, btnH, canDown, upgrade);
+
+      // MAX 레이블 (기존 구매 버튼 위치)
+      const maxLabel = this.add.text(upBtnX, btnY, t('upgrade.maxed'), {
         fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonCyan,
       }).setOrigin(0.5);
       this._cardElements.push(maxLabel);
     } else {
+      // ── 구매 가능 상태 + 다운그레이드 버튼 ──
+      const downBtnW = Math.floor(totalBtnW * 0.38);
+      const upBtnW = totalBtnW - downBtnW - 4;
+      const startX = x - totalBtnW / 2;
+
+      const downBtnX = startX + downBtnW / 2;
+      const upBtnX = startX + downBtnW + 4 + upBtnW / 2;
+
+      // [-] 다운그레이드 버튼
+      this._createDowngradeButton(downBtnX, btnY, downBtnW, btnH, canDown, upgrade);
+
+      // [+] 구매 버튼 배경
       const costStr = t('upgrade.cost', upgrade.nextCost);
       const costColor = canBuy ? UI_COLORS.neonOrange : UI_COLORS.textSecondary;
-
-      // 구매 버튼 배경
-      const btnW = w - 20;
-      const btnH = 22;
-      const btnX = x;
-      const btnY = y + h / 2 - 16;
 
       const btnBg = this.add.graphics();
       const btnBgColor = canBuy ? 0x00AAAA : 0x333344;
       btnBg.fillStyle(btnBgColor, canBuy ? 0.8 : 0.4);
-      btnBg.fillRoundedRect(btnX - btnW / 2, btnY - btnH / 2, btnW, btnH, 4);
+      btnBg.fillRoundedRect(upBtnX - upBtnW / 2, btnY - btnH / 2, upBtnW, btnH, 4);
       this._cardElements.push(btnBg);
 
-      const costText = this.add.text(btnX, btnY, costStr, {
+      const costText = this.add.text(upBtnX, btnY, costStr, {
         fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: costColor,
@@ -314,7 +337,7 @@ export default class UpgradeScene extends Phaser.Scene {
       this._cardElements.push(costText);
 
       if (canBuy) {
-        const btnZone = this.add.zone(btnX, btnY, btnW, btnH)
+        const btnZone = this.add.zone(upBtnX, btnY, upBtnW, btnH)
           .setInteractive({ useHandCursor: true });
         this._cardElements.push(btnZone);
 
@@ -326,6 +349,50 @@ export default class UpgradeScene extends Phaser.Scene {
           }
         });
       }
+    }
+  }
+
+  /**
+   * [-] 다운그레이드 버튼을 생성한다.
+   * 활성 상태(currentLevel > 0)이면 클릭 가능, 비활성이면 회색 표시.
+   * @param {number} btnX - 버튼 중심 X
+   * @param {number} btnY - 버튼 중심 Y
+   * @param {number} btnW - 버튼 너비
+   * @param {number} btnH - 버튼 높이
+   * @param {boolean} canDown - 다운그레이드 가능 여부
+   * @param {Object} upgrade - 업그레이드 데이터
+   * @private
+   */
+  _createDowngradeButton(btnX, btnY, btnW, btnH, canDown, upgrade) {
+    // 다운그레이드 버튼 배경
+    const downBg = this.add.graphics();
+    const downBgColor = canDown ? 0xAA3300 : UI_COLORS.btnDisabled;
+    downBg.fillStyle(downBgColor, canDown ? 0.8 : 0.4);
+    downBg.fillRoundedRect(btnX - btnW / 2, btnY - btnH / 2, btnW, btnH, 4);
+    this._cardElements.push(downBg);
+
+    // 다운그레이드 버튼 텍스트
+    const downTextColor = canDown ? UI_COLORS.neonOrange : UI_COLORS.textSecondary;
+    const downLabel = this.add.text(btnX, btnY, t('upgrade.downgrade'), {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: downTextColor,
+    }).setOrigin(0.5);
+    this._cardElements.push(downLabel);
+
+    // 활성 상태일 때만 클릭 핸들러 등록
+    if (canDown) {
+      const btnDownZone = this.add.zone(btnX, btnY, btnW, btnH)
+        .setInteractive({ useHandCursor: true });
+      this._cardElements.push(btnDownZone);
+
+      btnDownZone.on('pointerdown', () => {
+        const success = MetaManager.downgradeUpgrade(upgrade.id);
+        if (success) {
+          this._updateCreditHud();
+          this._renderCards();
+        }
+      });
     }
   }
 }

@@ -4,5 +4,10 @@
   "webDir": "www",
   "server": {
     "androidScheme": "https"
+  },
+  "plugins": {
+    "AdMob": {
+      "appId": "ca-app-pub-9149509805250873~5179575681"
+    }
   }
 }

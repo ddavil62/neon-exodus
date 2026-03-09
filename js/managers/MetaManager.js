@@ -112,6 +112,57 @@ export class MetaManager {
   }
 
   /**
+   * 업그레이드 다운그레이드 가능 여부를 확인한다.
+   * 현재 레벨 > 0이고 업그레이드 데이터가 존재하면 가능.
+   * @param {string} upgradeId - 업그레이드 ID
+   * @returns {boolean} 다운그레이드 가능 여부
+   */
+  static canDowngrade(upgradeId) {
+    const upgrade = getUpgradeById(upgradeId);
+    if (!upgrade) return false;
+
+    const currentLevel = MetaManager.getUpgradeLevel(upgradeId);
+    return currentLevel > 0;
+  }
+
+  /**
+   * 업그레이드 다운그레이드 시 환불액을 계산한다.
+   * costFormula는 1-indexed 레벨을 인자로 받으므로 현재 레벨 그대로 전달한다.
+   * @param {string} upgradeId - 업그레이드 ID
+   * @returns {number} 환불액 (레벨 0이거나 업그레이드가 없으면 0)
+   */
+  static getDowngradeRefund(upgradeId) {
+    const upgrade = getUpgradeById(upgradeId);
+    if (!upgrade) return 0;
+
+    const currentLevel = MetaManager.getUpgradeLevel(upgradeId);
+    if (currentLevel <= 0) return 0;
+
+    // 현재 레벨 구매 시 지불한 비용을 환불
+    return upgrade.costFormula(currentLevel);
+  }
+
+  /**
+   * 업그레이드를 1레벨 다운그레이드하고 크레딧을 전액 환불한다.
+   * @param {string} upgradeId - 업그레이드 ID
+   * @returns {boolean} 다운그레이드 성공 여부
+   */
+  static downgradeUpgrade(upgradeId) {
+    if (!MetaManager.canDowngrade(upgradeId)) return false;
+
+    const refund = MetaManager.getDowngradeRefund(upgradeId);
+    const currentLevel = MetaManager.getUpgradeLevel(upgradeId);
+
+    // 크레딧 환불
+    SaveManager.addCredits(refund);
+
+    // 레벨 감소
+    SaveManager.setUpgradeLevel(upgradeId, currentLevel - 1);
+
+    return true;
+  }
+
+  /**
    * 모든 영구 업그레이드의 현재 레벨을 기반으로 통합 플레이어 보너스를 계산한다.
    * 런 시작 시 이 값을 적용하여 플레이어 능력치를 결정한다.
    * @returns {Object} 통합 보너스 객체
@@ -175,6 +226,8 @@ export class MetaManager {
         isLocked,
         nextCost: isMaxed ? null : MetaManager.getUpgradeCost(upgrade.id),
         canBuy: MetaManager.canUpgrade(upgrade.id),
+        canDowngrade: MetaManager.canDowngrade(upgrade.id),
+        downgradeRefund: MetaManager.getDowngradeRefund(upgrade.id),
       };
     });
   }

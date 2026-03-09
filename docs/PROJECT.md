@@ -115,7 +115,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수 일괄 관리 |
-| 다국어 | `js/i18n.js` | ko/en 336키, `t()` 함수로 참조 |
+| 다국어 | `js/i18n.js` | ko/en 338키, `t()` 함수로 참조 |
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 일시정지 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, HP/XP/레벨업, 메타 업그레이드 반영 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴 |
@@ -124,7 +124,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 6종 |
 | 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장, 크레딧/통계/도감 관리 |
-| 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매 UI |
+| 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/도전과제) |
@@ -382,6 +382,13 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - 한도 돌파 3종 (무기 슬롯/패시브 슬롯/골드 러시, 기본 스탯 전부 최대 후 해금)
 - UpgradeScene에서 4탭(기본/성장/특수/한계돌파) 카드 그리드로 구매 가능
 - MetaManager.purchaseUpgrade()로 크레딧 차감 및 레벨 갱신
+- 다운그레이드: 각 카드의 [-] 버튼으로 1레벨 감소 + `costFormula(currentLevel)` 크레딧 100% 전액 환불
+  - MetaManager.downgradeUpgrade()로 처리 (canDowngrade guard -> addCredits -> setUpgradeLevel)
+  - Lv0일 때 [-] 버튼 비활성(회색 `0x333344`), Lv1 이상이면 활성(오렌지-레드 `0xAA3300`)
+  - MAX 레벨 카드에서도 [-] 버튼 동작. 잠금 카드에는 [-] 버튼 미표시
+  - 다운그레이드 후 크레딧 HUD 및 카드 UI 즉시 갱신
+  - 한계돌파(weaponSlots, passiveSlots, goldRush)도 다운그레이드 허용
+  - 환불 예시: attack Lv3 -> Lv2 = +300, goldRush Lv1 -> Lv0 = +2000
 - 관련 파일: `js/data/upgrades.js`, `js/managers/MetaManager.js`, `js/scenes/UpgradeScene.js`
 
 #### 런 시작 시 보너스 적용
@@ -522,7 +529,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 ### 세이브/매니저 시스템
 
 - SaveManager: 로컬스토리지 기반, 세이브 버전 v3. 크레딧/통계/도감 영구 저장 연동 완료. v1->v2 마이그레이션(totalBossKills), v2->v3 마이그레이션(totalSurviveMinutes) 구현.
-- MetaManager: 영구 업그레이드 구매/적용 계산. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
+- MetaManager: 영구 업그레이드 구매/다운그레이드/적용 계산. canDowngrade(), getDowngradeRefund(), downgradeUpgrade() 메서드 제공. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
 - AchievementManager: 도전과제 조건 검사/보상 지급. ResultScene에서 checkAll() 호출.
 - 관련 파일: `js/managers/SaveManager.js`, `js/managers/MetaManager.js`, `js/managers/AchievementManager.js`
 - 구현 일자: 2026-03-08 (Phase 2 연동: 2026-03-09)
@@ -593,4 +600,4 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - [x] SaveManager v2->v3 마이그레이션 (totalSurviveMinutes 통계 추가)
 - [x] 엔지니어 drone 무기 실구현 (blaster 폴백 코드 제거)
 - [x] 무기 풀 확장 (getAvailableWeapons(4), Phase 4 무기 레벨업 선택지)
-- [x] i18n 확장 (드론/EMP Lv1~8, 메딕/히든 캐릭터, 엔들리스 모드 텍스트, ko/en 336키)
+- [x] i18n 확장 (드론/EMP Lv1~8, 메딕/히든 캐릭터, 엔들리스 모드 텍스트, ko/en 338키)
