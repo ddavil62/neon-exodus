@@ -223,7 +223,7 @@ export default class ResultScene extends Phaser.Scene {
     // ── 하단 버튼 Y좌표 동적 계산 ──
     // 콘텐츠 끝 위치 기준으로 버튼 배치하되, 기존 고정 위치보다 위로 올라가지 않도록 보장
     // 메뉴 버튼 하단이 GAME_HEIGHT 이내에 들어오도록 상한 적용
-    const contentEndY = rewardEndY + 6;
+    const contentEndY = rewardEndY + 20;
     const btnGap = 44;
     // 메뉴 버튼 중심 = adBtnY + btnGap*2, 하단 = +20 → adBtnY <= GAME_HEIGHT - btnGap*2 - 20
     const maxAdBtnY = GAME_HEIGHT - btnGap * 2 - 20;
