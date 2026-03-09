@@ -1,0 +1,31 @@
+{
+  "name": "neon-exodus",
+  "version": "0.1.0",
+  "description": "Vampire Survivors-like auto-attack survival game with cyberpunk theme",
+  "main": "js/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "node scripts/build.js",
+    "cap:sync": "cap sync",
+    "cap:android": "cap open android"
+  },
+  "keywords": [
+    "phaser",
+    "survivors",
+    "auto-attack",
+    "cyberpunk",
+    "roguelike"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/core": "^8.1.0",
+    "@playwright/test": "^1.58.2",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0"
+  }
+}

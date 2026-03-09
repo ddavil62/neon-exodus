@@ -1,0 +1,8 @@
+{
+  "appId": "com.antigravity.neonexodus",
+  "appName": "Neon Exodus",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

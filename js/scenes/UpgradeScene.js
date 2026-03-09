@@ -1,0 +1,323 @@
+/**
+ * @fileoverview 영구 업그레이드 구매 씬.
+ *
+ * 4개 탭(기본 스탯/성장 가속/특수/한계돌파)으로 구성된 카드 그리드 방식 UI.
+ * MetaManager를 통해 크레딧을 소모하여 업그레이드를 구매한다.
+ * 360x640 화면에서 스크롤 없이 최대 4행 x 2열 표시.
+ */
+
+import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
+import { t } from '../i18n.js';
+import { MetaManager } from '../managers/MetaManager.js';
+import { SaveManager } from '../managers/SaveManager.js';
+import { getUpgradesByCategory } from '../data/upgrades.js';
+
+// ── 카테고리 탭 정의 ──
+
+/** @type {Array<{key: string, labelKey: string}>} */
+const TABS = [
+  { key: 'basic', labelKey: 'upgrade.category.basic' },
+  { key: 'growth', labelKey: 'upgrade.category.growth' },
+  { key: 'special', labelKey: 'upgrade.category.special' },
+  { key: 'limitBreak', labelKey: 'upgrade.category.limitBreak' },
+];
+
+// ── 카드 레이아웃 상수 ──
+
+const CARD_W = 155;
+const CARD_H = 100;
+const CARD_GAP_X = 10;
+const CARD_GAP_Y = 8;
+const GRID_COLS = 2;
+const GRID_START_Y = 120;
+
+// ── UpgradeScene 클래스 ──
+
+export default class UpgradeScene extends Phaser.Scene {
+  constructor() {
+    super('UpgradeScene');
+  }
+
+  /**
+   * 씬 UI를 생성한다.
+   */
+  create() {
+    /** 현재 선택된 탭 인덱스 */
+    this._currentTab = 0;
+
+    /** 카드 UI 요소 참조 배열 (탭 전환 시 제거용) */
+    this._cardElements = [];
+
+    /** 탭 버튼 UI 참조 배열 */
+    this._tabElements = [];
+
+    const centerX = GAME_WIDTH / 2;
+
+    // ── 배경 ──
+    this.cameras.main.setBackgroundColor(COLORS.BG_DARK);
+
+    // ── 상단 HUD ──
+    // 타이틀
+    this.add.text(centerX, 20, t('upgrade.title'), {
+      fontSize: '20px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setOrigin(0.5);
+
+    // 크레딧 표시
+    this._creditHud = this.add.text(centerX, 48, '', {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonOrange,
+    }).setOrigin(0.5);
+    this._updateCreditHud();
+
+    // ── 뒤로 가기 버튼 ──
+    const backBtn = this.add.text(20, 20, t('upgrade.back'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+      backgroundColor: '#1A1A2E',
+      padding: { x: 8, y: 4 },
+    }).setInteractive({ useHandCursor: true });
+
+    backBtn.on('pointerdown', () => {
+      this.scene.start('MenuScene');
+    });
+
+    // ── 탭 버튼 ──
+    this._createTabs();
+
+    // ── 초기 탭 카드 렌더링 ──
+    this._renderCards();
+  }
+
+  // ── 크레딧 HUD ──
+
+  /**
+   * 크레딧 HUD 텍스트를 갱신한다.
+   * @private
+   */
+  _updateCreditHud() {
+    if (this._creditHud) {
+      this._creditHud.setText(t('menu.credits', SaveManager.getCredits()));
+    }
+  }
+
+  // ── 탭 ──
+
+  /**
+   * 탭 버튼 4개를 생성한다.
+   * @private
+   */
+  _createTabs() {
+    const tabY = 75;
+    const tabW = 80;
+    const tabH = 28;
+    const totalW = TABS.length * tabW + (TABS.length - 1) * 4;
+    const startX = (GAME_WIDTH - totalW) / 2 + tabW / 2;
+
+    TABS.forEach((tab, i) => {
+      const tabX = startX + i * (tabW + 4);
+      const isActive = i === this._currentTab;
+
+      const bg = this.add.graphics();
+      const textColor = isActive ? UI_COLORS.neonCyan : UI_COLORS.textSecondary;
+      const bgAlpha = isActive ? 0.9 : 0.5;
+
+      bg.fillStyle(COLORS.UI_PANEL, bgAlpha);
+      bg.fillRoundedRect(tabX - tabW / 2, tabY - tabH / 2, tabW, tabH, 4);
+      if (isActive) {
+        bg.lineStyle(1, COLORS.NEON_CYAN, 0.7);
+        bg.strokeRoundedRect(tabX - tabW / 2, tabY - tabH / 2, tabW, tabH, 4);
+      }
+
+      const label = this.add.text(tabX, tabY, t(tab.labelKey), {
+        fontSize: '9px',
+        fontFamily: 'Galmuri11, monospace',
+        color: textColor,
+      }).setOrigin(0.5);
+
+      const zone = this.add.zone(tabX, tabY, tabW, tabH)
+        .setInteractive({ useHandCursor: true });
+
+      zone.on('pointerdown', () => {
+        this._currentTab = i;
+        this._refreshTabs();
+        this._renderCards();
+      });
+
+      this._tabElements.push(bg, label, zone);
+    });
+  }
+
+  /**
+   * 탭 버튼을 갱신한다 (현재 탭 하이라이트).
+   * @private
+   */
+  _refreshTabs() {
+    // 기존 탭 제거 후 재생성
+    for (const el of this._tabElements) {
+      el.destroy();
+    }
+    this._tabElements = [];
+    this._createTabs();
+  }
+
+  // ── 카드 그리드 ──
+
+  /**
+   * 현재 탭의 업그레이드 카드를 2열 그리드로 렌더링한다.
+   * @private
+   */
+  _renderCards() {
+    // 기존 카드 제거
+    for (const el of this._cardElements) {
+      el.destroy();
+    }
+    this._cardElements = [];
+
+    const tab = TABS[this._currentTab];
+    const upgrades = MetaManager.getAllUpgrades().filter(u => u.category === tab.key);
+
+    const gridStartX = (GAME_WIDTH - (GRID_COLS * CARD_W + (GRID_COLS - 1) * CARD_GAP_X)) / 2 + CARD_W / 2;
+
+    upgrades.forEach((upgrade, idx) => {
+      const col = idx % GRID_COLS;
+      const row = Math.floor(idx / GRID_COLS);
+
+      const cardX = gridStartX + col * (CARD_W + CARD_GAP_X);
+      const cardY = GRID_START_Y + row * (CARD_H + CARD_GAP_Y) + CARD_H / 2;
+
+      this._createUpgradeCard(cardX, cardY, upgrade);
+    });
+  }
+
+  /**
+   * 업그레이드 카드 하나를 생성한다.
+   * @param {number} x - 카드 중심 X
+   * @param {number} y - 카드 중심 Y
+   * @param {Object} upgrade - 업그레이드 데이터 (MetaManager.getAllUpgrades() 요소)
+   * @private
+   */
+  _createUpgradeCard(x, y, upgrade) {
+    const w = CARD_W;
+    const h = CARD_H;
+
+    const isLocked = upgrade.isLocked;
+    const isMaxed = upgrade.isMaxed;
+    const canBuy = upgrade.canBuy;
+
+    // 카드 배경
+    const bg = this.add.graphics();
+    const bgColor = isLocked ? 0x222233 : COLORS.UI_PANEL;
+    const bgAlpha = isLocked ? 0.6 : 0.95;
+    bg.fillStyle(bgColor, bgAlpha);
+    bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
+
+    if (canBuy) {
+      bg.lineStyle(1, COLORS.NEON_GREEN, 0.6);
+    } else if (isMaxed) {
+      bg.lineStyle(1, COLORS.NEON_CYAN, 0.4);
+    } else {
+      bg.lineStyle(1, COLORS.UI_BORDER, 0.3);
+    }
+    bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
+    this._cardElements.push(bg);
+
+    // 잠금 상태 표시
+    if (isLocked) {
+      const lockText = this.add.text(x, y, t('upgrade.locked'), {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.textSecondary,
+      }).setOrigin(0.5);
+      this._cardElements.push(lockText);
+
+      // 잠금 안내 텍스트
+      const hintText = this.add.text(x, y + 18, t('upgrade.limitBreakHint'), {
+        fontSize: '8px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.textSecondary,
+        wordWrap: { width: w - 12 },
+        align: 'center',
+      }).setOrigin(0.5);
+      this._cardElements.push(hintText);
+      return;
+    }
+
+    // 이름
+    const nameText = this.add.text(x, y - h / 2 + 14, t(upgrade.nameKey), {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5);
+    this._cardElements.push(nameText);
+
+    // 레벨 표시
+    const lvStr = t('upgrade.level', upgrade.currentLevel, upgrade.maxLevel);
+    const lvColor = isMaxed ? UI_COLORS.neonCyan : UI_COLORS.neonGreen;
+    const lvText = this.add.text(x, y - h / 2 + 30, lvStr, {
+      fontSize: '10px',
+      fontFamily: 'Galmuri11, monospace',
+      color: lvColor,
+    }).setOrigin(0.5);
+    this._cardElements.push(lvText);
+
+    // 효과 설명
+    const descText = this.add.text(x, y + 2, t(upgrade.descKey), {
+      fontSize: '8px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+      wordWrap: { width: w - 16 },
+      align: 'center',
+    }).setOrigin(0.5);
+    this._cardElements.push(descText);
+
+    // 비용/구매 버튼 영역
+    if (isMaxed) {
+      const maxLabel = this.add.text(x, y + h / 2 - 16, t('upgrade.maxed'), {
+        fontSize: '10px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonCyan,
+      }).setOrigin(0.5);
+      this._cardElements.push(maxLabel);
+    } else {
+      const costStr = t('upgrade.cost', upgrade.nextCost);
+      const costColor = canBuy ? UI_COLORS.neonOrange : UI_COLORS.textSecondary;
+
+      // 구매 버튼 배경
+      const btnW = w - 20;
+      const btnH = 22;
+      const btnX = x;
+      const btnY = y + h / 2 - 16;
+
+      const btnBg = this.add.graphics();
+      const btnBgColor = canBuy ? 0x00AAAA : 0x333344;
+      btnBg.fillStyle(btnBgColor, canBuy ? 0.8 : 0.4);
+      btnBg.fillRoundedRect(btnX - btnW / 2, btnY - btnH / 2, btnW, btnH, 4);
+      this._cardElements.push(btnBg);
+
+      const costText = this.add.text(btnX, btnY, costStr, {
+        fontSize: '10px',
+        fontFamily: 'Galmuri11, monospace',
+        color: costColor,
+      }).setOrigin(0.5);
+      this._cardElements.push(costText);
+
+      if (canBuy) {
+        const btnZone = this.add.zone(btnX, btnY, btnW, btnH)
+          .setInteractive({ useHandCursor: true });
+        this._cardElements.push(btnZone);
+
+        btnZone.on('pointerdown', () => {
+          const success = MetaManager.purchaseUpgrade(upgrade.id);
+          if (success) {
+            this._updateCreditHud();
+            this._renderCards();
+          }
+        });
+      }
+    }
+  }
+}
