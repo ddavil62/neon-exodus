@@ -84,7 +84,7 @@ export default class MenuScene extends Phaser.Scene {
     // ── 하단: 크레딧/데이터코어 보유량 ──
     /** @type {Phaser.GameObjects.Text} 크레딧 표시 텍스트 */
     this._creditText = this.add.text(
-      centerX, GAME_HEIGHT - 70,
+      centerX, GAME_HEIGHT - 55,
       t('menu.credits', SaveManager.getCredits()),
       {
         fontSize: '12px',
@@ -94,7 +94,7 @@ export default class MenuScene extends Phaser.Scene {
     ).setOrigin(0.5);
 
     this._dataCoreText = this.add.text(
-      centerX, GAME_HEIGHT - 50,
+      centerX, GAME_HEIGHT - 37,
       t('menu.dataCores', SaveManager.getDataCores()),
       {
         fontSize: '12px',
