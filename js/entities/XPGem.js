@@ -138,21 +138,6 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // 깜빡임 처리
-    if (this.aliveTime > this.blinkStart) {
-      const elapsed = this.aliveTime - this.blinkStart;
-
-      // 깜빡임 기간 초과 시 소멸
-      if (elapsed > this.blinkDuration) {
-        this._deactivate();
-        return;
-      }
-
-      // 200ms 주기로 alpha 토글
-      const blinkPhase = Math.floor(elapsed / 200) % 2;
-      this.setAlpha(blinkPhase === 0 ? 1 : 0.3);
-    }
-
     // 플레이어와의 거리 체크 (자석 반경)
     this._checkMagnet();
   }
