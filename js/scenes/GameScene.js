@@ -569,6 +569,9 @@ export default class GameScene extends Phaser.Scene {
       onGiveUp();
     });
 
+    // 광고 로딩 중 모든 버튼 입력 차단 플래그
+    let adLoading = false;
+
     // 광고 보기 버튼 인터랙션 (비활성이 아닐 때만)
     let adZone = null;
     if (!limitReached) {
@@ -577,11 +580,20 @@ export default class GameScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
 
       let adPressed = false;
-      adZone.on('pointerdown', () => { adPressed = true; adBtnText.setAlpha(0.6); });
+      adZone.on('pointerdown', () => {
+        if (adLoading) return;
+        adPressed = true;
+        adBtnText.setAlpha(0.6);
+      });
       adZone.on('pointerup', async () => {
         adBtnText.setAlpha(1);
-        if (!adPressed) return;
+        if (!adPressed || adLoading) return;
         adPressed = false;
+
+        // 광고 로딩 시작 — 모든 버튼 입력 차단
+        adLoading = true;
+        adBtnText.setAlpha(0.4);
+        giveUpText.setAlpha(0.4);
 
         // 광고 재생 중 타임아웃 발동 방지 (광고는 보통 15~30초 소요)
         if (timeoutEvent) timeoutEvent.remove(false);
@@ -611,10 +623,14 @@ export default class GameScene extends Phaser.Scene {
           // 게임 재개
           this.isPaused = false;
           this.physics.resume();
+        } else {
+          // 광고 실패/취소 — 버튼 입력 다시 허용
+          adLoading = false;
+          adBtnText.setAlpha(1);
+          giveUpText.setAlpha(1);
         }
-        // rewarded: false → 팝업 유지 (사용자가 직접 포기 선택)
       });
-      adZone.on('pointerout', () => { adPressed = false; adBtnText.setAlpha(1); });
+      adZone.on('pointerout', () => { adPressed = false; adBtnText.setAlpha(adLoading ? 0.4 : 1); });
     }
 
     // 포기 버튼 인터랙션
@@ -623,10 +639,14 @@ export default class GameScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     let giveUpPressed = false;
-    giveUpZone.on('pointerdown', () => { giveUpPressed = true; giveUpText.setAlpha(0.6); });
+    giveUpZone.on('pointerdown', () => {
+      if (adLoading) return;
+      giveUpPressed = true;
+      giveUpText.setAlpha(0.6);
+    });
     giveUpZone.on('pointerup', () => {
-      giveUpText.setAlpha(1);
-      if (giveUpPressed) onGiveUp();
+      giveUpText.setAlpha(adLoading ? 0.4 : 1);
+      if (giveUpPressed && !adLoading) onGiveUp();
       giveUpPressed = false;
     });
     giveUpZone.on('pointerout', () => { giveUpPressed = false; giveUpText.setAlpha(1); });
