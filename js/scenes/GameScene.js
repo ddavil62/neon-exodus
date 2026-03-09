@@ -819,8 +819,17 @@ export default class GameScene extends Phaser.Scene {
           weaponEvolutions: this.weaponEvolutions,
         });
       } else {
+        // 일반 모드 포기 — 결과 화면으로 이동하여 크레딧 정산
         this._cleanup();
-        this.scene.start('MenuScene');
+        this.scene.start('ResultScene', {
+          victory: false,
+          killCount: this.killCount,
+          runTime: this.runTime,
+          creditsEarned: this.creditsEarned,
+          level: this.player.level,
+          weaponSlotsFilled: this.weaponSystem.weapons.length,
+          weaponEvolutions: this.weaponEvolutions,
+        });
       }
     });
   }
