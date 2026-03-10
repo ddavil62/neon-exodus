@@ -426,6 +426,20 @@ const TRANSLATIONS = {
     'autoHunt.purchaseSuccess': '자동 사냥 해금 완료!',
     'autoHunt.purchaseFail': '구매에 실패했습니다.',
     'autoHunt.restored': '자동 사냥 복원 완료!',
+
+    // ── 소모성 아이템 ──
+    'consumable.nano_repair.name': '나노 수리킷',
+    'consumable.nano_repair.desc': 'HP를 30 즉시 회복한다.',
+    'consumable.mag_pulse.name': '자기 펄스',
+    'consumable.mag_pulse.desc': '맵 전체 XP 보석을 즉시 흡수한다.',
+    'consumable.emp_bomb.name': 'EMP 폭탄',
+    'consumable.emp_bomb.desc': '화면 내 일반 적 즉사, 보스에게 HP 20% 대미지.',
+    'consumable.credit_chip.name': '크레딧 칩',
+    'consumable.credit_chip.desc': '크레딧 5~15를 즉시 획득한다.',
+    'consumable.overclock.name': '오버클럭 모듈',
+    'consumable.overclock.desc': '5초간 이동속도 +50%, 공격속도 +30%.',
+    'consumable.shield_battery.name': '쉴드 배터리',
+    'consumable.shield_battery.desc': '30초간 완전 무적 + 접촉 적에게 5 대미지.',
   },
 
   en: {
@@ -848,6 +862,20 @@ const TRANSLATIONS = {
     'autoHunt.purchaseSuccess': 'Auto Hunt unlocked!',
     'autoHunt.purchaseFail': 'Purchase failed.',
     'autoHunt.restored': 'Auto Hunt restored!',
+
+    // ── Consumable Items ──
+    'consumable.nano_repair.name': 'Nano Repair Kit',
+    'consumable.nano_repair.desc': 'Instantly restores 30 HP.',
+    'consumable.mag_pulse.name': 'Magnetic Pulse',
+    'consumable.mag_pulse.desc': 'Instantly absorb all XP gems on the map.',
+    'consumable.emp_bomb.name': 'EMP Bomb',
+    'consumable.emp_bomb.desc': 'Instantly kills normal enemies on screen, deals 20% HP to bosses.',
+    'consumable.credit_chip.name': 'Credit Chip',
+    'consumable.credit_chip.desc': 'Instantly gain 5~15 credits.',
+    'consumable.overclock.name': 'Overclock Module',
+    'consumable.overclock.desc': '+50% move speed, +30% attack speed for 5 seconds.',
+    'consumable.shield_battery.name': 'Shield Battery',
+    'consumable.shield_battery.desc': 'Full invincibility + 5 contact damage for 30 seconds.',
   },
 };
 

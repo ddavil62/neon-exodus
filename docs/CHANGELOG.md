@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-03-10 -- 소모성 아이템(Consumable) 6종
+
+### 추가
+- 소모성 아이템 데이터 파일 (`js/data/consumables.js`): CONSUMABLES 배열 6종, CONSUMABLE_MAP ID 맵. 아이템별 dropChance(normal/normalLowHp/miniboss/boss), textureKey, tintColor 정의
+- 소모성 아이템 엔티티 (`js/entities/Consumable.js`): Phaser.Physics.Arcade.Sprite 상속, ObjectPool 패턴. spawn/update/collect/_deactivate 생명주기. 수명 10초, 마지막 3초 깜빡임(alpha 1->0.3, 150ms yoyo tween). 자석 흡수 없음(직접 밟아서 수집)
+- 스프라이트 생성 스크립트 (`scripts/generate-consumable-sprites.js`): GPT Image API(gpt-image-1)로 6종 24x24 아이콘 PNG 생성
+- 소모성 아이템 스프라이트 6종 (`assets/sprites/items/`): consumable_nano_repair.png, consumable_mag_pulse.png, consumable_emp_bomb.png, consumable_credit_chip.png, consumable_overclock.png, consumable_shield_battery.png (각 24x24)
+- config.js 소모성 아이템 상수 12개: CONSUMABLE_LIFETIME(10), CONSUMABLE_BLINK_DURATION(3), CONSUMABLE_HEAL_AMOUNT(30), CONSUMABLE_CREDIT_MIN(5)/MAX(15), OVERCLOCK_DURATION(5000ms)/SPEED_MULT(1.5)/COOLDOWN_MULT(0.7), SHIELD_DURATION(30000ms)/REFLECT_DAMAGE(5), EMP_BOSS_DAMAGE_RATIO(0.2)/SCREEN_MARGIN(50)
+- GameScene consumablePool(초기 20개), overlap 충돌, spawnConsumable(), _onCollectConsumable()(6종 효과 핸들러), _applyEMPEffect(), 쉴드 접촉 반사 로직, consumablePool update/destroy (`js/scenes/GameScene.js`)
+- Enemy._dropConsumable(): 적 사망 시 CONSUMABLES 배열 순서대로 드롭 판정. 등급별(잡몹/미니보스/보스) 확률 분기, 잡몹 HP<=50% 시 nano_repair 확률 상승(3%->8%), 한 적에서 최대 1개만 드롭 (`js/entities/Enemy.js`)
+- Player 버프 관리: _overclockTimer, _shieldTimer, shieldActive 필드, applyOverclock()(이속x1.5 쿨다운x0.7, 5초), applyShield()(30초 무적 + 보라색 틴트), reflectShieldDamage()(접촉 적에게 5 대미지), _updateBuffs()(매 프레임 타이머 갱신, 만료 시 복원) (`js/entities/Player.js`)
+- VFXSystem.consumableCollect(): 아이템별 색상 파티클 수집 이펙트. VFXSystem.empBlast(): EMP 화면 클리어 파티클 + 카메라 플래시 (`js/systems/VFXSystem.js`)
+- BootScene: 6종 스프라이트 preload(load.image) + 6종 플레이스홀더 텍스처 생성 (`js/scenes/BootScene.js`)
+- i18n: 6종 아이템 이름+설명 ko/en 24키 추가 (`js/i18n.js`)
+- Playwright 테스트 (`tests/consumables.spec.js`): 34개 테스트
+
+### 참고
+- 스펙: `.claude/specs/2026-03-10-neon-exodus-consumables.md`
+- 구현 리포트: `.claude/specs/2026-03-10-neon-exodus-consumables-report.md`
+- QA: `.claude/specs/2026-03-10-neon-exodus-consumables-qa.md`
+- QA 결과: 수용기준 19/19 PASS, 예외 시나리오 12/12 PASS, Playwright 34/34 전체 통과. 시각적 검증 스크린샷 3건 확인
+- 버프 중복 방지: 오버클럭/쉴드 활성 중 재수집 시 스탯 이중 적용 없이 타이머만 리셋 (연장 불허)
+- 드롭 순서: CONSUMABLES 배열 순서대로 판정 (nano_repair 우선). 하나 성공 시 나머지 스킵
+- 잠재적 이슈(MEDIUM): 오버클럭 활성 중 _applyPassiveEffects() 호출(레벨업 등) 시 _preOverclockSpeed/_preOverclockCooldown 값이 무효화될 수 있음. 현재는 레벨업 UI에서 게임 일시정지되므로 실질적 영향 없음
+
 ## 2026-03-10 -- 플레이어 8방향 걷기 애니메이션
 
 ### 추가

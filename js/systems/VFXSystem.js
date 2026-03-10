@@ -129,4 +129,48 @@ export default class VFXSystem {
     emitter.explode(6);
     scene.time.delayedCall(250, () => emitter.destroy());
   }
+
+  /**
+   * 소모성 아이템 수집 이펙트. 아이템별 색상, 12입자, 300ms.
+   * @param {Phaser.Scene} scene - 씬 참조
+   * @param {number} x - 아이템 X 좌표
+   * @param {number} y - 아이템 Y 좌표
+   * @param {number} color - 아이템 테마 색상 (16진수)
+   */
+  static consumableCollect(scene, x, y, color) {
+    const emitter = scene.add.particles(x, y, 'particle', {
+      speed: { min: 40, max: 120 },
+      scale: { start: 1.2, end: 0 },
+      lifespan: 300,
+      tint: [color, 0xFFFFFF],
+      quantity: 12,
+      emitting: false,
+    });
+    emitter.setDepth(20);
+    emitter.explode(12);
+    scene.time.delayedCall(400, () => emitter.destroy());
+  }
+
+  /**
+   * EMP 폭탄 전체 화면 클리어 이펙트. 일렉트릭 블루, 80입자, 600ms.
+   * @param {Phaser.Scene} scene - 씬 참조
+   * @param {number} x - 플레이어 X 좌표
+   * @param {number} y - 플레이어 Y 좌표
+   */
+  static empBlast(scene, x, y) {
+    const emitter = scene.add.particles(x, y, 'particle', {
+      speed: { min: 100, max: 300 },
+      scale: { start: 2.5, end: 0 },
+      lifespan: 600,
+      tint: [0x4488FF, 0xFFFFFF],
+      quantity: 80,
+      emitting: false,
+    });
+    emitter.setDepth(20);
+    emitter.explode(80);
+    scene.time.delayedCall(700, () => emitter.destroy());
+
+    // 카메라 플래시 (일렉트릭 블루)
+    scene.cameras.main.flash(300, 68, 136, 255, false);
+  }
 }

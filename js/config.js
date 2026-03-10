@@ -104,6 +104,44 @@ export const CREDIT_DROP_CHANCE = 0.1;
 /** 크레딧 드랍 기본 량 */
 export const CREDIT_DROP_AMOUNT = 1;
 
+// ── 소모성 아이템 설정 ──
+
+/** 소모성 아이템 수명 (초) */
+export const CONSUMABLE_LIFETIME = 10;
+
+/** 소모성 아이템 소멸 전 깜빡임 구간 (초) */
+export const CONSUMABLE_BLINK_DURATION = 3;
+
+/** 나노 수리킷 HP 회복량 */
+export const CONSUMABLE_HEAL_AMOUNT = 30;
+
+/** 크레딧 칩 최소 크레딧 */
+export const CONSUMABLE_CREDIT_MIN = 5;
+
+/** 크레딧 칩 최대 크레딧 */
+export const CONSUMABLE_CREDIT_MAX = 15;
+
+/** 오버클럭 지속 시간 (ms) */
+export const OVERCLOCK_DURATION = 5000;
+
+/** 오버클럭 이동속도 배수 (+50%) */
+export const OVERCLOCK_SPEED_MULT = 1.5;
+
+/** 오버클럭 쿨다운 배수 (0.7 = 30% 감소) */
+export const OVERCLOCK_COOLDOWN_MULT = 0.7;
+
+/** 쉴드 배터리 지속 시간 (ms) */
+export const SHIELD_DURATION = 30000;
+
+/** 쉴드 접촉 반사 대미지 */
+export const SHIELD_REFLECT_DAMAGE = 5;
+
+/** EMP 폭탄 미니보스/보스 피해 비율 */
+export const EMP_BOSS_DAMAGE_RATIO = 0.2;
+
+/** EMP 화면 내 판정 여유 마진 (px) */
+export const EMP_SCREEN_MARGIN = 50;
+
 // ── 세이브 설정 ──
 
 /** 로컬스토리지 세이브 키 */

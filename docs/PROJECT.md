@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-10 (플레이어 8방향 걷기 애니메이션)
+> 최종 업데이트: 2026-03-10 (소모성 아이템 6종)
 
 ## 프로젝트 개요
 
@@ -67,6 +67,7 @@ neon-exodus/
 │   │   ├── Enemy.js               # 적 기본 클래스 (초기화, 이동, 데미지, 사망)
 │   │   ├── EnemyTypes.js          # 적 유형별 AI 15종
 │   │   ├── Projectile.js          # 투사체 (발사, 피격, 관통)
+│   │   ├── Consumable.js          # 소모성 아이템 (6종, ObjectPool, 10초 수명, 직접 밟아 수집)
 │   │   └── XPGem.js               # XP 보석 (소/중/대, 자석 흡수, 소멸)
 │   ├── systems/
 │   │   ├── ObjectPool.js          # Phaser Group 기반 오브젝트 풀
@@ -87,6 +88,7 @@ neon-exodus/
 │       ├── passives.js            # 패시브 아이템 10종
 │       ├── waves.js               # 스폰 테이블 6구간 + 미니보스/보스 스케줄
 │       ├── upgrades.js            # 영구 업그레이드 22종
+│       ├── consumables.js          # 소모성 아이템 6종 (드롭률, 텍스처, 색상)
 │       ├── characters.js          # 캐릭터 6종
 │       └── achievements.js        # 도전과제 13종
 ├── assets/
@@ -112,16 +114,23 @@ neon-exodus/
 │       │   ├── commander_drone.png# 128x128 (보스)
 │       │   ├── siege_titan.png    # 128x128 (보스)
 │       │   └── core_processor.png # 128x128 (보스)
-│       └── items/                 # XP 보석 3종 정적 이미지
+│       └── items/                 # XP 보석 3종 + 소모성 아이템 6종 정적 이미지
 │           ├── xp_gem_s.png       # 12x12
 │           ├── xp_gem_m.png       # 20x20
-│           └── xp_gem_l.png       # 28x28
+│           ├── xp_gem_l.png       # 28x28
+│           ├── consumable_nano_repair.png    # 24x24 (녹색 십자)
+│           ├── consumable_mag_pulse.png      # 24x24 (시안 자석)
+│           ├── consumable_emp_bomb.png       # 24x24 (블루 원형)
+│           ├── consumable_credit_chip.png    # 24x24 (골드 칩)
+│           ├── consumable_overclock.png      # 24x24 (오렌지 번개)
+│           └── consumable_shield_battery.png # 24x24 (퍼플 방패)
 ├── scripts/
 │   ├── build.js                   # www/ 디렉토리 빌드 스크립트
 │   ├── generate-sprites.js        # (레거시) Phase 1 DALL-E 3 스프라이트 생성 스크립트
 │   ├── generate-sprites-phase2.js # (레거시) Phase 2 보스/미니보스 스프라이트 생성 스크립트
 │   ├── generate-vector-sprites.js # 하이브리드 20종 벡터 PNG 생성 스크립트 (GPT Image API 17종 + SVG 직접 생성 3종, 현행)
-│   └── generate-walk-anim.js      # 플레이어 걷기 애니메이션 스프라이트시트 생성 스크립트 (GPT Image API 5방향x4프레임, 현행)
+│   ├── generate-walk-anim.js      # 플레이어 걷기 애니메이션 스프라이트시트 생성 스크립트 (GPT Image API 5방향x4프레임, 현행)
+│   └── generate-consumable-sprites.js # 소모성 아이템 6종 24x24 아이콘 생성 스크립트 (GPT Image API)
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
@@ -133,7 +142,8 @@ neon-exodus/
 │   ├── weapon-report.spec.js     # 무기별 결과 리포트 테스트 (28개)
 │   ├── weapon-report-layout.spec.js # 무기 리포트 레이아웃 테스트 (11개)
 │   ├── sprite-scale.spec.js       # 스프라이트 2x 스케일 테스트 (21개)
-│   └── walk-anim.spec.js          # 걷기 애니메이션 테스트 (24개)
+│   ├── walk-anim.spec.js          # 걷기 애니메이션 테스트 (24개)
+│   └── consumables.spec.js        # 소모성 아이템 테스트 (34개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -155,14 +165,14 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE=1 일괄 관리 |
-| 다국어 | `js/i18n.js` | ko/en 351키, `t()` 함수로 참조 |
-| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지 |
-| 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영 |
-| 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴 |
+| 다국어 | `js/i18n.js` | ko/en 375키, `t()` 함수로 참조 |
+| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 소모성 아이템 풀/수집/효과 |
+| 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리 |
+| 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위), 치명타 판정, 무기 진화, 드론 AI |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
 | 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡 |
-| VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 6종 |
+| VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 8종 (기존 6종 + consumableCollect + empBlast) |
 | 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장, 크레딧/통계/도감 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
@@ -193,6 +203,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | XP Gem (small) | 12x12 | circle(3, offset=3) | - |
 | XP Gem (medium) | 20x20 | circle(5, offset=5) | - |
 | XP Gem (large) | 28x28 | circle(7, offset=7) | - |
+| Consumable | 24x24 | circle(8, offset=4) | - |
 
 - 충돌체 오프셋 공식: `bodyOffset = frameW / 2 - bodyRadius` (SPRITE_SCALE=1이므로 scale 나눗셈 없음)
 - tween 공통: `yoyo: true, repeat: -1, ease: 'Sine.easeInOut'`
@@ -205,6 +216,82 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - 구현 일자: 2026-03-10 (GPT Image API 벡터 전환 + XP 보석 SVG 직접 생성), 이전: 2026-03-10 (SVG 코드 벡터), 이전: 2026-03-09 (픽셀아트 SPRITE_SCALE=2)
 - 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`, `.claude/specs/2026-03-10-neon-exodus-gpt-image-art.md`
 - XP 보석 수정 QA: `.claude/specs/2026-03-10-neon-exodus-gpt-image-art-qa-xpfix.md`
+
+### 소모성 아이템 시스템
+
+적 처치 시 확률적으로 드롭되는 소모성 아이템 6종. 플레이어가 직접 밟아 수집하면 즉시 효과가 발동된다. 자석 흡수 없음.
+
+#### 아이템 6종
+
+| ID | 이름(ko) | 효과 | 색상 | 텍스처 크기 |
+|---|---|---|---|---|
+| nano_repair | 나노 수리킷 | HP +30 즉시 회복 | 녹색(0x39FF14) | 24x24 |
+| mag_pulse | 자기 펄스 | 맵 전체 XP 보석 즉시 흡수 | 시안(0x00FFFF) | 24x24 |
+| emp_bomb | EMP 폭탄 | 화면 내 일반 적 즉사, 미니보스/보스 HP 20% 대미지 | 블루(0x4488FF) | 24x24 |
+| credit_chip | 크레딧 칩 | 크레딧 5~15 즉시 획득 | 골드(0xFFDD00) | 24x24 |
+| overclock | 오버클럭 모듈 | 5초간 이속 x1.5, 쿨다운 x0.7 | 오렌지(0xFF6600) | 24x24 |
+| shield_battery | 쉴드 배터리 | 30초간 완전 무적 + 접촉 적에게 반사 대미지 5 | 퍼플(0xAA44FF) | 24x24 |
+
+#### 드롭률
+
+| ID | 잡몹 | 잡몹(HP<=50%) | 미니보스 | 보스 |
+|---|---|---|---|---|
+| nano_repair | 3% | 8% | 50% | 100% |
+| mag_pulse | 0.5% | 0.5% | 100% | 100% |
+| emp_bomb | 0.3% | 0.3% | 10% | 50% |
+| credit_chip | 1% | 1% | 30% | 100% |
+| overclock | 1.5% | 1.5% | 20% | 30% |
+| shield_battery | 0.8% | 0.8% | 15% | 30% |
+
+- 드롭 판정: CONSUMABLES 배열 순서대로 판정 (nano_repair 우선), 하나 성공 시 나머지 스킵
+- 저체력 판정: 플레이어 HP 비율 <= 50% 시 nano_repair만 normalLowHp 확률 적용
+
+#### Consumable 엔티티 생명주기
+
+```
+spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate()
+                                    ↑
+                          플레이어 overlap -> collect() -> _deactivate()
+```
+
+- 수명: 10초 (`CONSUMABLE_LIFETIME`)
+- 깜빡임: 마지막 3초 (alpha 1->0.3, 150ms yoyo tween)
+- 충돌체: circle(8, offset=4), depth=5
+- ObjectPool 초기 크기: 20개, 자동 확장 지원
+- 스폰 시 랜덤 분산: +-10px
+
+#### 버프 시스템 (Player.js)
+
+**오버클럭 모듈**:
+- applyOverclock(): 비활성 시 현재 speedMultiplier/cooldownMultiplier 저장 후 x1.5/x0.7 적용, 타이머 5000ms 설정
+- 활성 중 재수집: 스탯 이중 적용 없음, 타이머만 5000ms 리셋
+- 만료 시: 저장된 원래 값으로 speedMultiplier/cooldownMultiplier 복원
+
+**쉴드 배터리**:
+- applyShield(): shieldActive=true, invincible=true, 타이머 30000ms, 보라색 틴트(0xAA44FF)
+- 활성 중 재수집: 타이머만 30000ms 리셋
+- 활성 중: 매 프레임 invincible=true 강제 (피격 무적 타이머와 독립)
+- 만료 시: shieldActive=false, invincible=false, invincibleTimer=0, clearTint()
+- reflectShieldDamage(enemy): shieldActive 시 접촉 적에게 SHIELD_REFLECT_DAMAGE(5) 대미지
+
+**동시 활성**: 오버클럭과 쉴드는 독립적으로 관리. 오버클럭만 만료 시 속도 복원, 쉴드/무적은 유지.
+
+#### EMP 폭탄 효과 (GameScene._applyEMPEffect)
+- 카메라 뷰포트 + EMP_SCREEN_MARGIN(50px) 범위 내 적 판정
+- 일반 적(isBoss/isMiniBoss 아님): 즉사 (enemy.takeDamage(enemy.maxHp))
+- 미니보스/보스: maxHp * EMP_BOSS_DAMAGE_RATIO(0.2) 대미지
+
+#### 수집 VFX
+- consumableCollect(scene, x, y, color): 아이템별 tintColor 파티클 버스트
+- empBlast(): 화면 클리어 파티클 + 카메라 플래시
+
+#### 에셋 생성
+- 실행: `node scripts/generate-consumable-sprites.js` (루트 .env에 OPENAI_API_KEY 필요)
+- GPT Image API(gpt-image-1)로 6종 1024x1024 생성 후 24x24 리사이즈
+
+- 관련 파일: `js/data/consumables.js`, `js/entities/Consumable.js`, `js/config.js`, `js/scenes/GameScene.js`, `js/entities/Enemy.js`, `js/entities/Player.js`, `js/systems/VFXSystem.js`, `js/scenes/BootScene.js`, `js/i18n.js`, `scripts/generate-consumable-sprites.js`
+- 구현 일자: 2026-03-10
+- 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-consumables.md`
 
 ### 플레이어 걷기 애니메이션
 
@@ -633,6 +720,8 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | levelUpBurst | gold, 40입자, 600ms | 레벨업 버스트 |
 | empBurst | electric blue, 60입자, 500ms | EMP 파동 |
 | xpCollect | green, 6입자, 150ms | XP 수집 반짝 |
+| consumableCollect | 아이템별 tintColor, 파티클 버스트 | 소모성 아이템 수집 |
+| empBlast | electric blue, 파티클 + 카메라 플래시 | EMP 폭탄 화면 클리어 |
 
 - BootScene에서 4x4 흰색 particle 텍스처 생성, 추가 에셋 로드 없음
 - 모든 VFX는 emitter.explode() 방식 1회 버스트 후 자동 파괴
@@ -902,7 +991,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] ResultScene._renderWeaponReport() 구현 (무기명, 킬 수, DPS, 데미지 비율 바, 최대 6개)
 - [x] 하단 버튼 동적 Y좌표 계산 (레이아웃 겹침 수정)
 - [x] _goToResult(), 일시정지 포기 (일반/엔들리스) 3개 경로에서 weaponReport 전달
-- [x] i18n 3키 추가 (result.weaponReport/weaponKills/weaponDps, ko/en 총 351키)
+- [x] i18n 3키 추가 (result.weaponReport/weaponKills/weaponDps, ko/en 총 351키 -> 375키)
 
 ### 아트 Phase 1 (DALL-E 픽셀아트) -- 대체됨 (2026-03-10 글로우 벡터로 전면 교체)
 - [x] *(대체됨)* DALL-E 3 픽셀아트 15종 -> 글로우 벡터 20종으로 전면 교체
@@ -954,3 +1043,24 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] player_walk 미존재 시 플레이스홀더 폴백 동작
 - [x] AutoPilot 모드 호환 (dirX/dirY 공유)
 - [x] Playwright 24/24 테스트 전체 통과
+
+### 소모성 아이템(Consumable) 6종 -- 완료 (2026-03-10)
+- [x] 소모성 아이템 6종 데이터 정의 (`js/data/consumables.js`): CONSUMABLES 배열, CONSUMABLE_MAP
+- [x] Consumable 엔티티 (`js/entities/Consumable.js`): ObjectPool 패턴, 10초 수명, 3초 깜빡임
+- [x] config.js 소모성 아이템 상수 12개 추가
+- [x] 적 사망 시 등급별(잡몹/미니보스/보스) 드롭률 적용 (`js/entities/Enemy.js`)
+- [x] 잡몹 HP<=50% 시 나노 수리킷 드롭률 상승 (3%->8%)
+- [x] 한 적에서 최대 1개만 드롭 (CONSUMABLES 배열 순서 판정, 성공 시 return)
+- [x] nano_repair: HP +30 즉시 회복
+- [x] mag_pulse: 맵 전체 XP 보석 즉시 흡수
+- [x] emp_bomb: 화면 내(+50px 마진) 일반 적 즉사, 미니보스/보스 HP 20% 대미지
+- [x] credit_chip: 크레딧 5~15 즉시 획득 (GameScene.addCredits + SaveManager.addCredits)
+- [x] overclock: 5초간 이속 x1.5, 쿨다운 x0.7 (Player.applyOverclock)
+- [x] shield_battery: 30초간 완전 무적 + 접촉 반사 대미지 5 (Player.applyShield)
+- [x] 버프 중복 방지: 오버클럭/쉴드 활성 중 재수집 시 타이머만 리셋 (연장 불허, 스탯 이중 적용 없음)
+- [x] 수집 VFX: 아이템별 색상 파티클 (VFXSystem.consumableCollect), EMP 화면 클리어 (VFXSystem.empBlast + 카메라 플래시)
+- [x] BootScene: 6종 스프라이트 preload + 6종 플레이스홀더 텍스처
+- [x] GameScene: consumablePool(초기 20개) 생성/overlap/update/destroy
+- [x] i18n: 6종 이름+설명 ko/en 24키 추가 (총 375키)
+- [x] 스프라이트 생성 스크립트 (`scripts/generate-consumable-sprites.js`) + 6종 PNG 생성 완료
+- [x] Playwright 34/34 테스트 전체 통과

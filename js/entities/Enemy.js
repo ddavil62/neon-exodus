@@ -10,6 +10,7 @@
 import { COLORS, CREDIT_DROP_CHANCE, CREDIT_DROP_AMOUNT, SPRITE_SCALE } from '../config.js';
 import { ENEMIES, MINI_BOSSES, BOSSES } from '../data/enemies.js';
 import { ENEMY_BEHAVIORS } from './EnemyTypes.js';
+import { CONSUMABLES } from '../data/consumables.js';
 
 // ── 데이터 조회용 인덱스 (배열 → ID 맵 변환) ──
 
@@ -329,6 +330,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.scene.addCredits(CREDIT_DROP_AMOUNT);
     }
 
+    // 소모성 아이템 드랍 (확률)
+    this._dropConsumable();
+
     // 킬 카운트 증가
     if (this.scene.player) {
       this.scene.player.kills++;
@@ -378,6 +382,43 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnXPGem(this.x, this.y, 'medium');
       } else {
         this.scene.spawnXPGem(this.x, this.y, 'small');
+      }
+    }
+  }
+
+  /**
+   * 소모성 아이템 드랍을 시도한다.
+   * 적 등급(잡몹/미니보스/보스)에 따라 각 아이템별 드롭 확률을 판정하고,
+   * 성공 시 scene.spawnConsumable()을 호출한다.
+   * @private
+   */
+  _dropConsumable() {
+    if (!this.scene || !this.scene.spawnConsumable) return;
+
+    // 플레이어 HP 비율 확인 (저체력 시 나노 수리킷 확률 상승)
+    const player = this.scene.player;
+    const isLowHp = player && player.active && (player.currentHp / player.maxHp) <= 0.5;
+
+    for (const item of CONSUMABLES) {
+      let chance = 0;
+
+      if (this.isBoss) {
+        chance = item.dropChance.boss;
+      } else if (this.isMiniBoss) {
+        chance = item.dropChance.miniboss;
+      } else {
+        // 잡몹: 저체력 시 나노 수리킷만 확률 상승
+        if (isLowHp && item.id === 'nano_repair') {
+          chance = item.dropChance.normalLowHp;
+        } else {
+          chance = item.dropChance.normal;
+        }
+      }
+
+      if (chance > 0 && Math.random() < chance) {
+        this.scene.spawnConsumable(this.x, this.y, item.id);
+        // 한 번에 하나의 아이템만 드랍 (보스/미니보스도 동일)
+        return;
       }
     }
   }

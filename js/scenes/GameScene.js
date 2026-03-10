@@ -20,6 +20,11 @@ import {
   ENDLESS_SCALE_INTERVAL,
   ADMOB_UNITS,
   AD_LIMITS,
+  CONSUMABLE_HEAL_AMOUNT,
+  CONSUMABLE_CREDIT_MIN,
+  CONSUMABLE_CREDIT_MAX,
+  EMP_BOSS_DAMAGE_RATIO,
+  EMP_SCREEN_MARGIN,
 } from '../config.js';
 import { t } from '../i18n.js';
 import Player from '../entities/Player.js';
@@ -28,6 +33,8 @@ import WeaponSystem from '../systems/WeaponSystem.js';
 import WaveSystem from '../systems/WaveSystem.js';
 import ObjectPool from '../systems/ObjectPool.js';
 import XPGem from '../entities/XPGem.js';
+import Consumable from '../entities/Consumable.js';
+import { CONSUMABLE_MAP } from '../data/consumables.js';
 import { MetaManager } from '../managers/MetaManager.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { WEAPON_EVOLUTIONS } from '../data/weapons.js';
@@ -93,6 +100,9 @@ export default class GameScene extends Phaser.Scene {
 
     // ── XP 보석 오브젝트 풀 ──
     this.xpGemPool = new ObjectPool(this, XPGem, 100);
+
+    // ── 소모성 아이템 오브젝트 풀 ──
+    this.consumablePool = new ObjectPool(this, Consumable, 20);
 
     // ── 플레이어 ──
     this.player = new Player(this, WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
@@ -212,6 +222,15 @@ export default class GameScene extends Phaser.Scene {
       this
     );
 
+    // 플레이어 ↔ 소모성 아이템
+    this.physics.add.overlap(
+      this.player,
+      this.consumablePool.group,
+      this._onCollectConsumable,
+      null,
+      this
+    );
+
     // ── 게임 상태 ──
     /** 런 경과 시간 (초) */
     this.runTime = 0;
@@ -277,6 +296,11 @@ export default class GameScene extends Phaser.Scene {
     // XP 보석 업데이트
     this.xpGemPool.forEach((gem) => {
       gem.update(time, delta);
+    });
+
+    // 소모성 아이템 업데이트
+    this.consumablePool.forEach((item) => {
+      item.update(time, delta);
     });
 
     // HUD 갱신
@@ -476,6 +500,19 @@ export default class GameScene extends Phaser.Scene {
    */
   addCredits(amount) {
     this.creditsEarned += amount;
+  }
+
+  /**
+   * 소모성 아이템을 스폰한다.
+   * @param {number} x - X 좌표
+   * @param {number} y - Y 좌표
+   * @param {string} typeId - 아이템 타입 ID
+   */
+  spawnConsumable(x, y, typeId) {
+    const item = this.consumablePool.get(x, y);
+    if (item) {
+      item.spawn(x, y, typeId);
+    }
   }
 
   /**
@@ -840,6 +877,13 @@ export default class GameScene extends Phaser.Scene {
     if (now - lastContact < CONTACT_DAMAGE_COOLDOWN) return;
 
     this._contactCooldowns.set(enemy, now);
+
+    // 쉴드 활성 시 접촉 대미지를 적에게 반사
+    if (player.shieldActive) {
+      player.reflectShieldDamage(enemy);
+      return;
+    }
+
     player.takeDamage(enemy.contactDamage);
 
     // 플레이어 피격 VFX/SFX
@@ -861,6 +905,103 @@ export default class GameScene extends Phaser.Scene {
     VFXSystem.xpCollect(this, gem.x, gem.y);
 
     gem.collect();
+  }
+
+  /**
+   * 플레이어가 소모성 아이템을 수집했을 때 처리한다.
+   * 아이템 종류에 따라 즉시 효과를 적용한다.
+   * @param {import('../entities/Player.js').default} player - 플레이어
+   * @param {import('../entities/Consumable.js').default} item - 소모성 아이템
+   * @private
+   */
+  _onCollectConsumable(player, item) {
+    if (!player.active || !item.active) return;
+
+    const itemId = item.collect();
+    const data = CONSUMABLE_MAP[itemId];
+
+    // 수집 VFX/SFX
+    if (data) {
+      VFXSystem.consumableCollect(this, item.x, item.y, data.tintColor);
+    }
+    SoundSystem.play('xp_collect'); // 수집 SFX 재사용
+
+    // 아이템별 효과 적용
+    switch (itemId) {
+      case 'nano_repair':
+        // 나노 수리킷: HP 즉시 회복
+        player.heal(CONSUMABLE_HEAL_AMOUNT);
+        break;
+
+      case 'mag_pulse':
+        // 자기 펄스: 전체 XP 보석 즉시 흡수
+        this.xpGemPool.forEach((gem) => {
+          if (gem.active) {
+            gem.collect();
+          }
+        });
+        break;
+
+      case 'emp_bomb':
+        // EMP 폭탄: 화면 내 일반 적 즉사 / 미니보스/보스 HP 20% 대미지
+        VFXSystem.empBlast(this, player.x, player.y);
+        this._applyEMPEffect();
+        break;
+
+      case 'credit_chip':
+        // 크레딧 칩: 랜덤 크레딧 즉시 획득
+        {
+          const amount = Phaser.Math.Between(CONSUMABLE_CREDIT_MIN, CONSUMABLE_CREDIT_MAX);
+          this.addCredits(amount);
+          SaveManager.addCredits(amount);
+        }
+        break;
+
+      case 'overclock':
+        // 오버클럭 모듈: 이동속도 +50%, 공격속도 +30% 버프
+        player.applyOverclock();
+        break;
+
+      case 'shield_battery':
+        // 쉴드 배터리: 30초 무적 + 접촉 반사 대미지
+        player.applyShield();
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  /**
+   * EMP 폭탄 효과를 적용한다.
+   * 카메라 뷰포트 + 여유 마진 범위 내의 적에게 효과를 적용한다.
+   * - 일반 적: 즉사 (현재 HP 만큼 대미지)
+   * - 미니보스/보스: 최대 HP의 20% 대미지
+   * @private
+   */
+  _applyEMPEffect() {
+    const cam = this.cameras.main;
+    const camLeft = cam.scrollX - EMP_SCREEN_MARGIN;
+    const camRight = cam.scrollX + cam.width + EMP_SCREEN_MARGIN;
+    const camTop = cam.scrollY - EMP_SCREEN_MARGIN;
+    const camBottom = cam.scrollY + cam.height + EMP_SCREEN_MARGIN;
+
+    this.waveSystem.enemyPool.forEach((enemy) => {
+      if (!enemy.active) return;
+
+      // 화면 내 판정
+      if (enemy.x < camLeft || enemy.x > camRight ||
+          enemy.y < camTop || enemy.y > camBottom) return;
+
+      if (enemy.isBoss || enemy.isMiniBoss) {
+        // 미니보스/보스: 최대 HP 20% 대미지
+        const empDmg = Math.floor(enemy.maxHp * EMP_BOSS_DAMAGE_RATIO);
+        enemy.takeDamage(empDmg, false);
+      } else {
+        // 일반 적: 즉사 (현재 HP 만큼 대미지)
+        enemy.takeDamage(enemy.currentHp, false);
+      }
+    });
   }
 
   // ── 엔들리스 모드 ──
@@ -1395,6 +1536,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.weaponSystem) this.weaponSystem.destroy();
     if (this.waveSystem) this.waveSystem.destroy();
     if (this.xpGemPool) this.xpGemPool.destroy();
+    if (this.consumablePool) this.consumablePool.destroy();
     this._contactCooldowns.clear();
 
     // destroy 후 참조를 null로 설정하여 use-after-destroy 방지
@@ -1403,6 +1545,7 @@ export default class GameScene extends Phaser.Scene {
     this.weaponSystem = null;
     this.waveSystem = null;
     this.xpGemPool = null;
+    this.consumablePool = null;
     this.player = null;
   }
 }

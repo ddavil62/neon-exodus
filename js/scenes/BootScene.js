@@ -92,6 +92,19 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('xp_gem_m', 'assets/sprites/items/xp_gem_m.png');
     this.load.image('xp_gem_l', 'assets/sprites/items/xp_gem_l.png');
 
+    // 소모성 아이템 6종 정적 이미지 (24x24)
+    const consumableAssets = [
+      { key: 'consumable_nano_repair',    file: 'items/nano_repair.png' },
+      { key: 'consumable_mag_pulse',      file: 'items/magnetic_pulse.png' },
+      { key: 'consumable_emp_bomb',       file: 'items/emp_bomb.png' },
+      { key: 'consumable_credit_chip',    file: 'items/credit_chip.png' },
+      { key: 'consumable_overclock',      file: 'items/overclock.png' },
+      { key: 'consumable_shield_battery', file: 'items/shield_battery.png' },
+    ];
+    for (const c of consumableAssets) {
+      this.load.image(c.key, 'assets/sprites/' + c.file);
+    }
+
     // 미니보스 2종 정적 이미지 (80x80)
     this.load.image('enemy_guardian_drone', 'assets/sprites/bosses/guardian_drone.png');
     this.load.image('enemy_assault_mech', 'assets/sprites/bosses/assault_mech.png');
@@ -408,6 +421,39 @@ export default class BootScene extends Phaser.Scene {
           { x: 0, y: half },
         ], true);
         gfx.generateTexture(key, size, size);
+      }
+    }
+
+    // ── 소모성 아이템 6종: 24x24 ──
+    const consumablePlaceholders = {
+      consumable_nano_repair:    { color: 0x39FF14, symbol: 'cross' },
+      consumable_mag_pulse:      { color: 0x00FFFF, symbol: 'circle' },
+      consumable_emp_bomb:       { color: 0x4488FF, symbol: 'circle' },
+      consumable_credit_chip:    { color: 0xFFDD00, symbol: 'diamond' },
+      consumable_overclock:      { color: 0xFF6600, symbol: 'circle' },
+      consumable_shield_battery: { color: 0xAA44FF, symbol: 'circle' },
+    };
+    for (const [texKey, cfg] of Object.entries(consumablePlaceholders)) {
+      if (!this.textures.exists(texKey)) {
+        gfx.clear();
+        gfx.fillStyle(cfg.color, 1);
+        if (cfg.symbol === 'cross') {
+          // 십자: 중앙 가로줄 + 세로줄
+          gfx.fillRect(4, 9, 16, 6);
+          gfx.fillRect(9, 4, 6, 16);
+        } else if (cfg.symbol === 'diamond') {
+          // 다이아몬드
+          gfx.fillPoints([
+            { x: 12, y: 2 },
+            { x: 22, y: 12 },
+            { x: 12, y: 22 },
+            { x: 2, y: 12 },
+          ], true);
+        } else {
+          // 원형
+          gfx.fillCircle(12, 12, 10);
+        }
+        gfx.generateTexture(texKey, 24, 24);
       }
     }
 

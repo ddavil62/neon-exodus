@@ -17,6 +17,11 @@ import {
   WORLD_WIDTH,
   WORLD_HEIGHT,
   SPRITE_SCALE,
+  OVERCLOCK_DURATION,
+  OVERCLOCK_SPEED_MULT,
+  OVERCLOCK_COOLDOWN_MULT,
+  SHIELD_DURATION,
+  SHIELD_REFLECT_DAMAGE,
 } from '../config.js';
 import { getPassiveById } from '../data/passives.js';
 
@@ -141,6 +146,23 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // ── 리젠 타이머 ──
     this._regenTimer = 0;
 
+    // ── 소모성 아이템 버프 상태 ──
+
+    /** 오버클럭 잔여 시간 (ms). 0이면 비활성 */
+    this._overclockTimer = 0;
+
+    /** 오버클럭 적용 전 원래 speedMultiplier */
+    this._preOverclockSpeed = 1.0;
+
+    /** 오버클럭 적용 전 원래 cooldownMultiplier */
+    this._preOverclockCooldown = 1.0;
+
+    /** 쉴드 배터리 잔여 시간 (ms). 0이면 비활성 */
+    this._shieldTimer = 0;
+
+    /** 쉴드 활성 여부 */
+    this.shieldActive = false;
+
     // ── 패시브 아이템 ──
 
     /** 보유 패시브 목록 { passiveId: level } */
@@ -184,6 +206,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 3. HP 리젠 적용
     this._updateRegen(delta);
+
+    // 4. 소모성 아이템 버프 타이머 갱신
+    this._updateBuffs(delta);
   }
 
   /**
@@ -380,6 +405,80 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
           this.cooldownMultiplier = Math.max(0.3, 1 - totalEffect);
           break;
         // projectileRange, creditDropBonus: 외부 시스템에서 처리
+      }
+    }
+  }
+
+  // ── 소모성 아이템 버프 ──
+
+  /**
+   * 오버클럭 버프를 적용한다.
+   * 이미 활성 중이면 타이머만 리셋한다 (중복 연장 불허).
+   */
+  applyOverclock() {
+    if (this._overclockTimer <= 0) {
+      // 최초 적용: 현재 값 저장 후 버프 적용
+      this._preOverclockSpeed = this.speedMultiplier;
+      this._preOverclockCooldown = this.cooldownMultiplier;
+      this.speedMultiplier *= OVERCLOCK_SPEED_MULT;
+      this.cooldownMultiplier *= OVERCLOCK_COOLDOWN_MULT;
+    }
+    // 타이머 리셋 (활성 중 재수집 시에도 타이머만 초기화)
+    this._overclockTimer = OVERCLOCK_DURATION;
+  }
+
+  /**
+   * 쉴드 배터리 버프를 적용한다.
+   * 이미 활성 중이면 타이머만 리셋한다 (중복 연장 불허).
+   */
+  applyShield() {
+    this.shieldActive = true;
+    this.invincible = true;
+    // 타이머 리셋 (쉴드는 전용 타이머로 무적 관리)
+    this._shieldTimer = SHIELD_DURATION;
+    // 시각 표시: 보라색 틴트
+    this.setTint(0xAA44FF);
+  }
+
+  /**
+   * 쉴드 활성 시 접촉한 적에게 반사 대미지를 가한다.
+   * @param {import('./Enemy.js').default} enemy - 접촉한 적
+   */
+  reflectShieldDamage(enemy) {
+    if (this.shieldActive && enemy && enemy.active) {
+      enemy.takeDamage(SHIELD_REFLECT_DAMAGE, false);
+    }
+  }
+
+  /**
+   * 소모성 아이템 버프 타이머를 갱신한다.
+   * 만료 시 원래 값으로 복원한다.
+   * @param {number} delta - 프레임 간격 (ms)
+   * @private
+   */
+  _updateBuffs(delta) {
+    // ── 오버클럭 타이머 ──
+    if (this._overclockTimer > 0) {
+      this._overclockTimer -= delta;
+      if (this._overclockTimer <= 0) {
+        this._overclockTimer = 0;
+        // 원래 값 복원
+        this.speedMultiplier = this._preOverclockSpeed;
+        this.cooldownMultiplier = this._preOverclockCooldown;
+      }
+    }
+
+    // ── 쉴드 타이머 ──
+    if (this._shieldTimer > 0) {
+      this._shieldTimer -= delta;
+      // 쉴드 중에는 무적 유지 (피격 무적 타이머와 별개)
+      this.invincible = true;
+      if (this._shieldTimer <= 0) {
+        this._shieldTimer = 0;
+        this.shieldActive = false;
+        this.invincible = false;
+        this.invincibleTimer = 0;
+        this.clearTint();
       }
     }
   }
