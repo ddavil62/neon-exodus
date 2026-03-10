@@ -54,6 +54,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     /** 이전 걷기 방향 섹터 인덱스 (0~7, 히스테리시스용) — -1이면 미설정 */
     this._lastWalkSector = -1;
 
+    /** 방향 벡터 스무딩용 EMA 값 (미세 진동 필터링) */
+    this._smoothDirX = 0;
+    this._smoothDirY = 0;
+
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -547,17 +551,25 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
    * @private
    */
   _playWalkAnim(dirX, dirY) {
-    // 처음 이동 시작: idle tween 일시 정지 + 스케일 정상화
+    // 처음 이동 시작: idle tween 일시 정지 + 스케일 정상화 + 스무딩 초기화
     if (!this._isMoving) {
       this._isMoving = true;
       this._lastWalkSector = -1;
+      this._smoothDirX = dirX;
+      this._smoothDirY = dirY;
       if (this._idleTween) this._idleTween.pause();
       this.setScale(SPRITE_SCALE);
     }
 
-    // atan2로 0~360도 각도 계산
+    // 방향 벡터 지수이동평균(EMA) 스무딩 — 미세 진동 필터링
+    // 계수 0.65: 이전 값 65% + 현재 값 35%, 약 2~3프레임 지연 (60fps 기준 ~40ms)
+    const SMOOTH = 0.65;
+    this._smoothDirX = this._smoothDirX * SMOOTH + dirX * (1 - SMOOTH);
+    this._smoothDirY = this._smoothDirY * SMOOTH + dirY * (1 - SMOOTH);
+
+    // 스무딩된 방향 벡터로 각도 계산
     // atan2(y, x): 0=오른쪽(East), Phaser Y축 아래 양수 기준 시계방향 증가
-    const angle = Math.atan2(dirY, dirX);
+    const angle = Math.atan2(this._smoothDirY, this._smoothDirX);
     const deg = (angle * 180 / Math.PI + 360) % 360;
 
     // 8방향 섹터 중심 각도 (인덱스 0~7)
@@ -576,12 +588,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // 히스테리시스: 이전 섹터에서 30도 이상 벗어나야 방향 전환 (경계 진동 방지)
+    // 히스테리시스: 이전 섹터 중심에서 38도 이상 벗어나야 방향 전환 (경계 진동 방지)
+    // 스무딩과 함께 이중 방어: 스무딩이 미세 진동을 필터링하고,
+    // 히스테리시스가 잔여 경계 진동을 방지한다
     if (this._lastWalkSector >= 0 && this._lastWalkSector !== bestSector) {
       const lastCenter = SECTOR_CENTERS[this._lastWalkSector];
       let distFromLast = Math.abs(deg - lastCenter);
       if (distFromLast > 180) distFromLast = 360 - distFromLast;
-      if (distFromLast < 30) {
+      if (distFromLast < 38) {
         bestSector = this._lastWalkSector;
       }
     }
