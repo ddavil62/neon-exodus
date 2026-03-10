@@ -3,12 +3,11 @@
  *
  * 적 처치 시 드롭되며, 플레이어가 자석 반경에 들어오면 끌려와 자동 수집된다.
  * XPGem과 동일한 자석 흡수 메커니즘을 사용한다.
- * 10초 수명, 마지막 3초 깜빡임 후 소멸. 오브젝트 풀에서 관리된다.
+ * 수명 제한 없음 — 수집되거나 씬이 끝날 때까지 바닥에 유지된다.
+ * 오브젝트 풀에서 관리된다.
  */
 
 import {
-  CONSUMABLE_LIFETIME,
-  CONSUMABLE_BLINK_DURATION,
   XP_MAGNET_RADIUS,
   SPRITE_SCALE,
 } from '../config.js';
@@ -33,18 +32,6 @@ export default class Consumable extends Phaser.Physics.Arcade.Sprite {
 
     /** @type {string} 아이템 ID (수집 시 효과 처리용) */
     this.itemId = '';
-
-    /** @type {number} 스폰 후 경과 시간 (ms) */
-    this.aliveTime = 0;
-
-    /** @type {number} 수명 (ms) */
-    this.lifetime = CONSUMABLE_LIFETIME * 1000;
-
-    /** @type {number} 깜빡임 시작 시점 (ms) */
-    this.blinkStart = (CONSUMABLE_LIFETIME - CONSUMABLE_BLINK_DURATION) * 1000;
-
-    /** @type {Phaser.Tweens.Tween|null} 깜빡임 tween 참조 */
-    this._blinkTween = null;
 
     /** @type {boolean} 자석 흡수 중 여부 */
     this.beingMagnetized = false;
@@ -74,9 +61,7 @@ export default class Consumable extends Phaser.Physics.Arcade.Sprite {
    */
   spawn(x, y, itemId) {
     this.itemId = itemId;
-    this.aliveTime = 0;
     this.beingMagnetized = false;
-    this._blinkTween = null;
 
     // 약간의 랜덤 분산 (+-10px)
     const offsetX = Phaser.Math.Between(-10, 10);
@@ -99,16 +84,14 @@ export default class Consumable extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * 매 프레임 호출. 수명 관리 및 깜빡임을 처리한다.
+   * 매 프레임 호출. 자석 흡수 체크 및 이동을 처리한다.
    * @param {number} time - 전체 경과 시간 (ms)
    * @param {number} delta - 프레임 간격 (ms)
    */
   update(time, delta) {
     if (!this.active) return;
 
-    this.aliveTime += delta;
-
-    // 자석 흡수 중이면 소멸 타이머 동작하지 않음
+    // 자석 흡수 중이면 플레이어 방향으로 이동
     if (this.beingMagnetized) {
       this._moveToPlayer(delta);
       return;
@@ -116,23 +99,6 @@ export default class Consumable extends Phaser.Physics.Arcade.Sprite {
 
     // 플레이어와의 거리 체크 (자석 반경)
     this._checkMagnet();
-
-    // 수명 종료 시 비활성화
-    if (this.aliveTime >= this.lifetime) {
-      this._deactivate();
-      return;
-    }
-
-    // 깜빡임 시작 (마지막 3초)
-    if (this.aliveTime >= this.blinkStart && this._blinkTween === null) {
-      this._blinkTween = this.scene.tweens.add({
-        targets: this,
-        alpha: { from: 1, to: 0.3 },
-        duration: 150,
-        yoyo: true,
-        repeat: -1,
-      });
-    }
   }
 
   /**
@@ -201,13 +167,6 @@ export default class Consumable extends Phaser.Physics.Arcade.Sprite {
    * @private
    */
   _deactivate() {
-    // 깜빡임 tween 정리
-    if (this._blinkTween) {
-      this._blinkTween.stop();
-      this._blinkTween = null;
-    }
-
-    this.setAlpha(1);
     this.setActive(false);
     this.setVisible(false);
 
