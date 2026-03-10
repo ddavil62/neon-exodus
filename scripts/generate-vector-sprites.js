@@ -174,29 +174,98 @@ const ASSETS = [
     prompt: 'AI crystal core processor boss, diamond-shaped crystalline body, three layers of orbital rings rotating at different angles, magenta (#FF00FF) and white pulsating energy core, four energy nodes at cardinal points, transcendent AI entity design',
   },
 
-  // ── XP 보석 3종 ──
+  // ── XP 보석 3종 (SVG 직접 생성 — GPT Image API 1024px 축소 시 디테일 소실 방지) ──
   {
     key: 'xp_gem_s',
     outputPath: 'items/xp_gem_s.png',
     finalW: 12,
     finalH: 12,
-    prompt: 'Tiny diamond-shaped gem pickup item, small rhombus shape, cyan (#00FFFF) glowing crystal, simple clean jewel design, collectible data fragment',
+    svgOverride: true,
+    prompt: '',
   },
   {
     key: 'xp_gem_m',
     outputPath: 'items/xp_gem_m.png',
     finalW: 20,
     finalH: 20,
-    prompt: 'Medium diamond-shaped gem pickup item, rhombus shape, cyan-to-green (#00FFFF to #39FF14) gradient glow, slightly larger crystal with more defined facets, collectible data fragment',
+    svgOverride: true,
+    prompt: '',
   },
   {
     key: 'xp_gem_l',
     outputPath: 'items/xp_gem_l.png',
     finalW: 28,
     finalH: 28,
-    prompt: 'Large diamond-shaped gem pickup item, rhombus shape, multi-layered glow effect with cyan core and green outer glow, prominent faceted crystal with bright highlights, collectible data fragment',
+    svgOverride: true,
+    prompt: '',
   },
 ];
+
+// ── SVG 직접 생성 (XP 보석용) ──
+
+/**
+ * 지정 크기의 다이아몬드형 XP 보석 SVG 문자열을 생성한다.
+ *
+ * GPT Image API로 1024x1024 이미지를 12~28px로 축소하면 디테일이 소실되어
+ * 거의 투명한 이미지가 되는 문제를 우회하기 위해 SVG로 직접 렌더링한다.
+ * 밝은 시안 다이아몬드 형태에 네온 글로우 효과를 적용한다.
+ *
+ * @param {number} size - SVG 캔버스 크기 (정사각형, 픽셀)
+ * @returns {string} SVG 문자열
+ */
+function createGemSVG(size) {
+  const half = size / 2;
+  const coreColor = '#00FFFF';
+  const innerColor = '#FFFFFF';
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="${Math.max(1, size * 0.08)}" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <polygon points="${half},${size * 0.1} ${size * 0.9},${half} ${half},${size * 0.9} ${size * 0.1},${half}"
+           fill="${coreColor}" filter="url(#glow)" opacity="0.9"/>
+  <polygon points="${half},${size * 0.25} ${size * 0.75},${half} ${half},${size * 0.75} ${size * 0.25},${half}"
+           fill="${innerColor}" opacity="0.7"/>
+</svg>`;
+}
+
+/**
+ * SVG 코드로 XP 보석 PNG를 직접 생성하여 파일로 저장한다.
+ *
+ * sharp를 사용하여 SVG 문자열을 PNG로 변환한다.
+ * viewBox가 이미 최종 크기이므로 리사이즈 불필요.
+ *
+ * @param {Object} asset - 에셋 정의 객체 (svgOverride: true)
+ * @returns {Promise<boolean>} 생성 성공 여부
+ */
+async function generateGemSprite(asset) {
+  console.log(`  [${asset.key}] SVG 직접 생성 중... (${asset.finalW}x${asset.finalH})`);
+
+  const svgString = createGemSVG(asset.finalW);
+  const svgBuffer = Buffer.from(svgString);
+
+  // 출력 디렉토리 생성
+  const outputFullPath = path.join(SPRITES_ROOT, asset.outputPath);
+  const dir = path.dirname(outputFullPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  // SVG → PNG 변환 (viewBox가 최종 크기이므로 리사이즈 불필요)
+  await sharp(svgBuffer)
+    .png()
+    .toFile(outputFullPath);
+
+  console.log(`  [${asset.key}] SVG→PNG 저장 완료: ${asset.outputPath} (${asset.finalW}x${asset.finalH})`);
+  return true;
+}
 
 // ── 유틸리티 함수 ──
 
@@ -354,7 +423,10 @@ async function main() {
     const asset = ASSETS[i];
 
     try {
-      const ok = await generateSprite(asset);
+      // SVG 직접 생성 대상(XP 보석)은 GPT API를 호출하지 않는다
+      const ok = asset.svgOverride
+        ? await generateGemSprite(asset)
+        : await generateSprite(asset);
       if (ok) successCount++;
     } catch (err) {
       failCount++;
@@ -362,8 +434,8 @@ async function main() {
       console.error(`  [${asset.key}] 생성 실패 (기존 PNG 보존): ${err.message}`);
     }
 
-    // Rate limit 대응: 마지막 호출이 아니면 1초 대기
-    if (i < ASSETS.length - 1) {
+    // Rate limit 대응: GPT API 호출 에셋만 대기 (SVG 직접 생성은 대기 불필요)
+    if (!asset.svgOverride && i < ASSETS.length - 1) {
       await sleep(1000);
     }
   }

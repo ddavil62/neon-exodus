@@ -1,10 +1,11 @@
 # Changelog
 
-## 2026-03-10 -- 글로우 벡터 아트 Phase 1: 20종 벡터 스프라이트 전면 교체
+## 2026-03-10 -- GPT Image API 벡터 아트 전환: 20종 스프라이트 고품질 재생성
 
 ### 추가
-- SVG 벡터 스프라이트 생성 스크립트 (`scripts/generate-vector-sprites.js`): 20종 엔티티의 SVG 문자열을 코드로 생성하고 sharp로 PNG 변환. ART_CONCEPT.md 색상 팔레트(시안 아군/레드-오렌지 잡몹/마젠타 보스) 및 글로우 필터(feGaussianBlur stdDeviation: 소형 1.5, 중대형 2, 미니보스 2.5, 보스 3) 표준 준수. ESM 방식, 실행 시간 ~200ms
-- 벡터 PNG 에셋 20종 (`assets/sprites/`): player.png(48x48), projectile.png(12x12), 잡몹 10종(32~48px), 미니보스 2종(80x80), 보스 3종(128x128), XP 보석 3종(12/20/28px). 모든 에셋이 최종 표시 크기로 직접 생성된 정적 이미지
+- GPT Image API(gpt-image-1) 기반 스프라이트 생성 스크립트로 전면 재작성 (`scripts/generate-vector-sprites.js`): 기존 SVG 코드 생성 방식을 OpenAI GPT Image API 호출 방식으로 교체. 에셋별 개별 프롬프트 + 공통 사이버펑크 네온 스타일 프롬프트 조합. API 1024x1024 고품질 생성 후 sharp 리사이즈. dotenv/openai/sharp 의존성 사용. ESM 방식
+- 투명 배경 폴백 시스템 (`scripts/generate-vector-sprites.js`): `hasTransparentBackground()` 함수로 투명 픽셀 비율 10% 기준 검증 + `removeBackground()` 함수로 밝기 임계값 40 이하 픽셀 투명화 폴백
+- 벡터 PNG 에셋 20종 재생성 (`assets/sprites/`): player.png(48x48), projectile.png(12x12), 잡몹 10종(32~48px), 미니보스 2종(80x80), 보스 3종(128x128), XP 보석 3종(12/20/28px). GPT Image API로 생성된 클린 벡터 + 네온 글로우 스타일. 모든 에셋 투명 배경 RGBA 4채널
 - Player.js tween 아이들 맥동 (`js/entities/Player.js` L38-46): scaleX 1.0->1.05, scaleY 1.0->0.95, duration 800ms, yoyo, repeat:-1, Sine.easeInOut
 - Enemy.js tween 아이들 맥동 (`js/entities/Enemy.js` L161-172): 보스 600ms, 미니보스 700ms, 잡몹 900ms. init()에서 killTweensOf 선행 후 추가
 - Playwright 테스트 (`tests/vector-art-phase1.spec.js`): 14개 테스트
@@ -22,9 +23,15 @@
 - XPGem.js (`js/entities/XPGem.js` L59-60, L101-103): constructor 초기 offset `12/2 - 3 = 3`, spawn() texSizes를 `{ small: 12, medium: 20, large: 28 }`로 갱신
 
 ### 참고
-- 스펙: `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`
-- QA: `.claude/specs/2026-03-10-neon-exodus-art-phase1-qa.md`
-- QA 결과: 수용기준 14/14 PASS, 예외 시나리오 10/10 PASS, Playwright 14/14 전체 통과. 시각적 검증 스크린샷 11건 확인. 20종 PNG 크기/채널(RGBA) 전수 검증 PASS
+- 스펙 (SVG 벡터): `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`
+- QA (SVG 벡터): `.claude/specs/2026-03-10-neon-exodus-art-phase1-qa.md`
+- 스펙 (GPT Image API 전환): `.claude/specs/2026-03-10-neon-exodus-gpt-image-art.md`
+- 구현 리포트 (GPT Image API 전환): `.claude/specs/2026-03-10-neon-exodus-gpt-image-art-report.md`
+- QA (GPT Image API 전환): `.claude/specs/2026-03-10-neon-exodus-gpt-image-art-qa.md`
+- GPT Image API QA 결과: 수용기준 15/15 PASS, Playwright 15/15 전체 통과. 20종 PNG 크기/채널(RGBA)/투명배경 전수 검증 PASS. 시각적 검증 스크린샷 4건 확인
+- SVG 벡터 QA 결과: 수용기준 14/14 PASS, 예외 시나리오 10/10 PASS, Playwright 14/14 전체 통과. 시각적 검증 스크린샷 11건 확인
+- 에셋 생성 파이프라인: SVG 코드 생성 -> GPT Image API(gpt-image-1) 호출로 전환. 기존 SVG 생성 코드 전체 제거
+- 게임 소스 코드 변경 없음 (BootScene, Player, Enemy, Projectile, XPGem 무변경)
 - 기존 DALL-E 생성 스크립트(generate-sprites.js, generate-sprites-phase2.js)는 수정하지 않고 레거시로 유지
 - 이번 변경으로 기존 "아트 Phase 1 스프라이트 에셋 전환", "스프라이트 2x 스케일 적용", "아트 Phase 2 보스/미니보스 스프라이트" 3개 항목이 모두 글로우 벡터로 대체됨
 

@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-10 (글로우 벡터 아트 Phase 1 - 20종 벡터 스프라이트 전면 교체)
+> 최종 업데이트: 2026-03-10 (GPT Image API 벡터 아트 전환 - 20종 스프라이트 고품질 재생성)
 
 ## 프로젝트 개요
 
@@ -90,7 +90,7 @@ neon-exodus/
 │       ├── characters.js          # 캐릭터 6종
 │       └── achievements.js        # 도전과제 13종
 ├── assets/
-│   └── sprites/                   # 벡터 PNG 에셋 (SVG 코드 생성 → sharp PNG 변환)
+│   └── sprites/                   # 벡터 PNG 에셋 (GPT Image API → sharp 리사이즈)
 │       ├── player.png             # 플레이어 정적 이미지 (48x48)
 │       ├── projectile.png         # 투사체 정적 이미지 (12x12)
 │       ├── enemies/               # 잡몹 10종 정적 이미지
@@ -118,7 +118,7 @@ neon-exodus/
 │   ├── build.js                   # www/ 디렉토리 빌드 스크립트
 │   ├── generate-sprites.js        # (레거시) Phase 1 DALL-E 3 스프라이트 생성 스크립트
 │   ├── generate-sprites-phase2.js # (레거시) Phase 2 보스/미니보스 스프라이트 생성 스크립트
-│   └── generate-vector-sprites.js # 20종 SVG 벡터 PNG 생성 스크립트 (현행)
+│   └── generate-vector-sprites.js # GPT Image API(gpt-image-1) 기반 20종 벡터 PNG 생성 스크립트 (현행)
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
@@ -171,7 +171,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 ### 아트 스타일 및 스프라이트 스케일
 
-**아트 스타일**: SVG 벡터 + 네온 글로우(Glow) + 사이버펑크 그라데이션. Node.js SVG 코드 생성 -> sharp PNG 변환 방식. 에셋을 최종 표시 크기로 직접 생성하므로 스케일 배율 불필요 (`SPRITE_SCALE = 1`).
+**아트 스타일**: GPT Image API(gpt-image-1) 벡터 아트 + 네온 글로우(Glow) + 사이버펑크. OpenAI GPT Image API로 1024x1024 고품질 이미지 생성 후 sharp로 목표 크기 리사이즈. 투명 배경 지원(API `background: 'transparent'` + 폴백 투명화). 에셋을 최종 표시 크기로 직접 생성하므로 스케일 배율 불필요 (`SPRITE_SCALE = 1`).
 
 **Phaser 렌더 설정**: `pixelArt: false`, `antialias: true` -- 벡터 에셋의 매끄러운 외곽선 렌더링.
 
@@ -194,11 +194,11 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - tween 공통: `yoyo: true, repeat: -1, ease: 'Sine.easeInOut'`
 - 오브젝트 풀 재사용: Enemy.init()에서 `killTweensOf(this)` 선행 호출 후 새 tween 부여. `_deactivate()`에서도 `killTweensOf(this)` 호출
 - 에셋 미존재 시 Graphics 플레이스홀더 폴백 유지 (`textures.exists()` 가드)
-- 에셋 생성: `node scripts/generate-vector-sprites.js` (20종 PNG, ~200ms)
+- 에셋 생성: `node scripts/generate-vector-sprites.js` (GPT Image API로 20종 PNG 생성, API 키 필요)
 - 아트 컨셉: `docs/ART_CONCEPT.md`
 - 관련 파일: `js/config.js`, `js/main.js`, `js/scenes/BootScene.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`, `scripts/generate-vector-sprites.js`
-- 구현 일자: 2026-03-10 (글로우 벡터 전환), 이전: 2026-03-09 (픽셀아트 SPRITE_SCALE=2)
-- 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`
+- 구현 일자: 2026-03-10 (GPT Image API 벡터 전환), 이전: 2026-03-10 (SVG 코드 벡터), 이전: 2026-03-09 (픽셀아트 SPRITE_SCALE=2)
+- 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`, `.claude/specs/2026-03-10-neon-exodus-gpt-image-art.md`
 
 ### 조작 시스템
 
@@ -860,7 +860,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] *(대체됨)* DALL-E 3 보스/미니보스 스프라이트시트 -> 글로우 벡터 정적 이미지로 전면 교체
 
 ### 글로우 벡터 아트 Phase 1: 20종 벡터 스프라이트 전면 교체 -- 완료 (2026-03-10)
-- [x] SVG 스프라이트 생성 스크립트 (`scripts/generate-vector-sprites.js`) 신규 작성
+- [x] GPT Image API(gpt-image-1) 스프라이트 생성 스크립트 (`scripts/generate-vector-sprites.js`) 재작성 *(초기 SVG 코드 생성 방식에서 GPT Image API 호출 방식으로 전환)*
 - [x] 20종 엔티티 벡터 PNG 생성: player(48x48), projectile(12x12), 잡몹 10종(32~48px), 미니보스 2종(80x80), 보스 3종(128x128), XP 보석 3종(12/20/28px)
 - [x] Phaser render 설정 변경: `pixelArt: false`, `antialias: true` (`js/main.js`)
 - [x] `SPRITE_SCALE = 1`로 변경 (`js/config.js`)
@@ -872,3 +872,5 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] XPGem.js: texSizes 갱신 (12/20/28px), body offset 재계산
 - [x] 에셋 미존재 시 Graphics 플레이스홀더 폴백 동작 유지
 - [x] ART_CONCEPT.md 색상 팔레트 및 글로우 필터 표준 준수
+- [x] GPT Image API 투명 배경 지원 (`background: 'transparent'`) + 미지원 시 폴백 투명화(밝기 임계값 40)
+- [x] API 호출 간 1초 대기(Rate Limit 대응), 개별 에셋 실패 시 스킵(기존 PNG 보존)
