@@ -55,14 +55,14 @@ export const LASER_GUN_LEVELS = [
  * @type {Array<{level: number, orbCount: number, tickDamage: number, orbRadius: number, angularSpeed: number, tickInterval: number}>}
  */
 export const PLASMA_ORB_LEVELS = [
-  { level: 1, orbCount: 1, tickDamage: 6,  orbRadius: 55, angularSpeed: 2.0, tickInterval: 500 },
-  { level: 2, orbCount: 1, tickDamage: 9,  orbRadius: 58, angularSpeed: 2.2, tickInterval: 480 },
-  { level: 3, orbCount: 2, tickDamage: 12, orbRadius: 60, angularSpeed: 2.4, tickInterval: 460 },
-  { level: 4, orbCount: 2, tickDamage: 15, orbRadius: 63, angularSpeed: 2.6, tickInterval: 440 },
-  { level: 5, orbCount: 2, tickDamage: 18, orbRadius: 66, angularSpeed: 2.8, tickInterval: 420 },
-  { level: 6, orbCount: 3, tickDamage: 22, orbRadius: 70, angularSpeed: 3.0, tickInterval: 390 },
-  { level: 7, orbCount: 3, tickDamage: 27, orbRadius: 78, angularSpeed: 3.2, tickInterval: 350 },
-  { level: 8, orbCount: 4, tickDamage: 32, orbRadius: 90, angularSpeed: 3.5, tickInterval: 300 },
+  { level: 1, orbCount: 1, tickDamage: 6,  orbRadius: 55, angularSpeed: 4.0,  tickInterval: 500 },
+  { level: 2, orbCount: 1, tickDamage: 9,  orbRadius: 58, angularSpeed: 5.4,  tickInterval: 480 },
+  { level: 3, orbCount: 2, tickDamage: 12, orbRadius: 60, angularSpeed: 6.9,  tickInterval: 460 },
+  { level: 4, orbCount: 2, tickDamage: 15, orbRadius: 63, angularSpeed: 8.3,  tickInterval: 440 },
+  { level: 5, orbCount: 2, tickDamage: 18, orbRadius: 66, angularSpeed: 9.7,  tickInterval: 420 },
+  { level: 6, orbCount: 3, tickDamage: 22, orbRadius: 70, angularSpeed: 11.1, tickInterval: 390 },
+  { level: 7, orbCount: 3, tickDamage: 27, orbRadius: 78, angularSpeed: 12.6, tickInterval: 350 },
+  { level: 8, orbCount: 4, tickDamage: 32, orbRadius: 90, angularSpeed: 14.0, tickInterval: 300 },
 ];
 
 /** 플라즈마 오브 공전 반경 (플레이어 중심으로부터의 거리, px) */
