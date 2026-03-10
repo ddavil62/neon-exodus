@@ -1,15 +1,19 @@
 /**
- * @fileoverview 캐릭터별 8방향 걷기 애니메이션 스프라이트시트 생성 스크립트.
+ * @fileoverview 캐릭터별 8방향 걷기 애니메이션 스프라이트시트 생성 스크립트 (v2).
  *
- * GPT Image API(gpt-image-1)로 idle(1장) + walk(5방향 x 4프레임 = 20장) PNG를 개별 생성하고,
+ * GPT Image API(gpt-image-1)로 idle(1장) + walk(5방향 x 3유니크프레임 = 15장) PNG를 개별 생성하고,
  * sharp로 idle은 48x48, walk은 240x192 스프라이트시트로 합성한다.
- * 나머지 3방향(down-left, left, up-left)은 Player.js에서 flipX로 처리한다.
  *
- * agent는 기존 에셋(player.png / player_walk.png)을 재사용하므로 기본 생성 대상에서 제외한다.
+ * v2 개선점:
+ * - agent 포함 6종 전체 생성 (기존: agent 제외 5종)
+ * - 프레임 0/2 중복 제거: neutral 포즈 1회 생성 → 프레임 0, 2에 복사 (일관성 보장)
+ * - 방향 프롬프트 강화: 캐릭터 체형·시선·바디 앵글을 구체적으로 제약
+ * - 나머지 3방향(down-left, left, up-left)은 Player.js에서 flipX로 처리
  *
  * 실행:
- *   node scripts/generate-walk-anim.js            # 5종 전체 생성 (agent 제외)
- *   node scripts/generate-walk-anim.js --char sniper   # 특정 캐릭터만 생성
+ *   node scripts/generate-walk-anim.js               # 6종 전체 생성
+ *   node scripts/generate-walk-anim.js --char sniper  # 특정 캐릭터만 생성
+ *   node scripts/generate-walk-anim.js --char agent   # agent만 생성
  *
  * 필요: 루트 .env 파일에 OPENAI_API_KEY 설정
  */
@@ -37,71 +41,98 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // ── 공통 스타일 프롬프트 ──
 
 /**
- * 모든 캐릭터에 공통 적용되는 벡터 아트 스타일 지시문.
+ * 모든 캐릭터에 공통 적용되는 기본 스타일 지시문.
  * @type {string}
  */
-const COMMON_STYLE = `Clean vector art game sprite, top-down view, cyberpunk neon style, smooth outlines, modern 2D game aesthetic, dark transparent background, single character centered, no text, no UI elements, vibrant neon glow effects.`;
+const BASE_STYLE = `Single game character sprite, top-down 3/4 perspective view, cyberpunk neon style, clean vector art with smooth outlines, dark transparent background, character centered in frame, full body visible, no text, no UI elements, no extra objects.`;
 
-// ── 캐릭터별 정의 (agent 제외) ──
+// ── 캐릭터별 정의 (agent 포함 6종) ──
 
 /**
  * 캐릭터별 스프라이트 생성 정의.
- * agent는 기존 에셋을 재사용하므로 포함하지 않는다.
- * @type {Object<string, {idlePrompt: string, walkStylePrompt: string, color: string}>}
+ * spriteKey: idle 텍스처 저장명, walkKey: walk 스프라이트시트 저장명.
+ * @type {Object<string, Object>}
  */
 const CHARACTER_DEFS = {
+  agent: {
+    charDesc: `Neon cyan (#00FFFF) cyber soldier. Medium athletic build. Sleek futuristic combat helmet with glowing cyan T-shaped visor. Compact tactical armor with cyan energy lines on chest and shoulders. Short armored boots. Cyan (#00FFFF) primary color, white secondary highlights, dark grey armor base.`,
+    color: '#00FFFF',
+    spriteKey: 'player',
+    walkKey: 'player_walk',
+  },
   sniper: {
-    idlePrompt: `${COMMON_STYLE}\nNeon green (#39FF14) sniper character, sleek slim build, long-range scope helmet with single glowing eye lens, lightweight tactical combat suit with long coat trailing edges, green (#39FF14) primary color with white highlights, futuristic sniper soldier, standing idle pose facing down.`,
-    walkStylePrompt: `${COMMON_STYLE}\nNeon green (#39FF14) sniper character, sleek slim build, long-range scope helmet with single glowing eye lens, lightweight tactical combat suit with long coat trailing edges, green (#39FF14) primary color with white highlights.`,
+    charDesc: `Neon green (#39FF14) sniper. Slim tall build. Long-range scope helmet with single glowing green eye lens on right side. Lightweight tactical coat with trailing edges. Slender legs with knee guards. Green (#39FF14) primary color, white highlights.`,
     color: '#39FF14',
+    spriteKey: 'sniper',
+    walkKey: 'sniper_walk',
   },
   engineer: {
-    idlePrompt: `${COMMON_STYLE}\nYellow (#FFD700) engineer character, stocky build with large tech backpack and antenna array, engineer goggles with HUD display, utility belt with pouches, yellow (#FFD700) primary color with white highlights, futuristic technician, standing idle pose facing down.`,
-    walkStylePrompt: `${COMMON_STYLE}\nYellow (#FFD700) engineer character, stocky build with large tech backpack and antenna array, engineer goggles with HUD display, utility belt with pouches, yellow (#FFD700) primary color with white highlights.`,
+    charDesc: `Yellow (#FFD700) engineer. Stocky wide build with large tech backpack and antenna on back. Engineer goggles with orange HUD glow. Utility belt with tool pouches around waist. Heavy boots. Yellow (#FFD700) primary color, white highlights.`,
     color: '#FFD700',
+    spriteKey: 'engineer',
+    walkKey: 'engineer_walk',
   },
   berserker: {
-    idlePrompt: `${COMMON_STYLE}\nRed (#FF3333) berserker character, massive broad-shouldered build, thick heavy combat armor with spiked shoulder pads, horned helmet with red glowing visor, chunky melee fighter silhouette, red (#FF3333) primary color with white highlights, futuristic rage warrior, standing idle pose facing down.`,
-    walkStylePrompt: `${COMMON_STYLE}\nRed (#FF3333) berserker character, massive broad-shouldered build, thick heavy combat armor with spiked shoulder pads, horned helmet with red glowing visor, chunky melee fighter silhouette, red (#FF3333) primary color with white highlights.`,
+    charDesc: `Red (#FF3333) berserker. Massive broad-shouldered build, largest of all characters. Thick heavy combat armor with spiked shoulder pads. Horned helmet with red glowing visor slit. Huge gauntlets on both hands. Red (#FF3333) primary color, white highlights.`,
     color: '#FF3333',
+    spriteKey: 'berserker',
+    walkKey: 'berserker_walk',
   },
   medic: {
-    idlePrompt: `${COMMON_STYLE}\nWhite and neon green (#00FF88) medic character, slim build, medical cross (+) symbol on chest armor, medical equipment backpack with syringes and heal packs, lightweight agile armor with green glow accents, white and green (#00FF88) primary colors with white highlights, futuristic field medic, standing idle pose facing down.`,
-    walkStylePrompt: `${COMMON_STYLE}\nWhite and neon green (#00FF88) medic character, slim build, medical cross (+) symbol on chest armor, medical equipment backpack with syringes and heal packs, lightweight agile armor with green glow accents, white and green (#00FF88) primary colors.`,
+    charDesc: `White and green (#00FF88) medic. Slim agile build. White armor with medical cross (+) symbol on chest plate. Small medical backpack with green glow. Lightweight leg armor. White primary color, neon green (#00FF88) accent glow.`,
     color: '#00FF88',
+    spriteKey: 'medic',
+    walkKey: 'medic_walk',
   },
   hidden: {
-    idlePrompt: `${COMMON_STYLE}\nPurple (#AA00FF) mysterious hidden character, flowing hooded cloak completely concealing face, ethereal purple glow emanating from body edges, dark silhouette with only glowing purple eyes visible under hood, mysterious floating cloak effect, purple (#AA00FF) primary color with deep violet shadows, futuristic phantom, standing idle pose facing down.`,
-    walkStylePrompt: `${COMMON_STYLE}\nPurple (#AA00FF) mysterious hidden character, flowing hooded cloak completely concealing face, ethereal purple glow emanating from body edges, only glowing purple eyes visible under hood, purple (#AA00FF) primary color with deep violet shadows.`,
+    charDesc: `Purple (#AA00FF) phantom. Medium build concealed under flowing hooded cloak. Only glowing purple eyes visible under deep hood. Cloak drapes to mid-calf with ethereal purple edge glow. No visible limbs except feet. Purple (#AA00FF) primary color, deep violet shadows.`,
     color: '#AA00FF',
+    spriteKey: 'hidden',
+    walkKey: 'hidden_walk',
   },
 };
 
-// ── 5방향 정의 ──
+// ── 5방향 정의 (강화된 앵글 설명) ──
 
 /**
- * 5방향별 프롬프트 보조 텍스트.
+ * 5방향별 세부 앵글 프롬프트.
+ * bodyAngle로 캐릭터의 정확한 체형 방향을 강제한다.
  * @type {Array<{name: string, dirPrompt: string}>}
  */
 const DIRECTIONS = [
-  { name: 'down',       dirPrompt: 'facing down toward viewer, front view, character moving downward' },
-  { name: 'down_right', dirPrompt: 'facing down-right diagonal, three-quarter front view, character moving down-right' },
-  { name: 'right',      dirPrompt: 'facing right, side profile view, character moving right' },
-  { name: 'up_right',   dirPrompt: 'facing up-right diagonal, three-quarter back view, character moving up-right' },
-  { name: 'up',         dirPrompt: 'facing up away from viewer, back view, character moving upward' },
+  {
+    name: 'down',
+    dirPrompt: `Character faces DIRECTLY DOWN toward the viewer. Front view - viewer sees the character's face/visor, chest, and front of legs. Body oriented at 0 degrees (straight toward camera). Both shoulders equally visible. Symmetrical front-facing pose.`,
+  },
+  {
+    name: 'down_right',
+    dirPrompt: `Character faces DOWN-RIGHT at 45 degree angle. Three-quarter front view - viewer sees mostly the character's front-left side. Left shoulder closer to viewer, right shoulder further away. Head/visor turned toward bottom-right corner. Body rotated 45 degrees clockwise from front view.`,
+  },
+  {
+    name: 'right',
+    dirPrompt: `Character faces DIRECTLY RIGHT. Perfect side profile view - viewer sees only the character's left side. Head pointing right. One arm and one leg visible. Body oriented at 90 degrees (perpendicular to camera, facing right).`,
+  },
+  {
+    name: 'up_right',
+    dirPrompt: `Character faces UP-RIGHT at 45 degree angle. Three-quarter BACK view - viewer sees mostly the character's back-left side. Character's back partially visible. Head/visor turned toward top-right corner. Body rotated 45 degrees showing back.`,
+  },
+  {
+    name: 'up',
+    dirPrompt: `Character faces DIRECTLY UP away from the viewer. Full back view - viewer sees the character's back, back of helmet, and back of legs. Body oriented at 180 degrees (facing away from camera). Both shoulders equally visible from behind.`,
+  },
 ];
 
+// ── 3종 유니크 프레임 포즈 ──
+
 /**
- * 4프레임 걷기 사이클 포즈 프롬프트.
- * neutral -> left-step -> neutral -> right-step 패턴.
- * @type {string[]}
+ * 3종 유니크 걷기 포즈. 프레임 0/2는 neutral(동일), 1은 left-step, 3은 right-step.
+ * @type {Object<string, string>}
  */
-const FRAME_POSES = [
-  'walking pose neutral stance, both feet on ground',
-  'walking pose left foot forward, slight lean, mid-stride',
-  'walking pose neutral stance, both feet on ground',
-  'walking pose right foot forward, slight lean, mid-stride',
-];
+const UNIQUE_POSES = {
+  neutral: `Standing neutral pose. Both feet flat on ground, shoulder-width apart. Arms at sides, relaxed. Weight evenly distributed. Stable balanced stance.`,
+  leftStep: `Walking mid-stride pose. LEFT foot stepped forward, right foot behind. Left arm swings back, right arm swings forward. Slight forward lean. Character in motion.`,
+  rightStep: `Walking mid-stride pose. RIGHT foot stepped forward, left foot behind. Right arm swings back, left arm swings forward. Slight forward lean. Character in motion.`,
+};
 
 // ── 유틸리티 함수 ──
 
@@ -116,7 +147,6 @@ function sleep(ms) {
 
 /**
  * 어두운 픽셀(밝기 임계값 이하)을 투명화한다.
- * gpt-image-1 API에서 투명 배경이 제대로 적용되지 않는 경우의 폴백 처리.
  * @param {Buffer} inputBuffer - 입력 PNG 버퍼
  * @param {number} [threshold=40] - 밝기 임계값 (0~255)
  * @returns {Promise<Buffer>} 투명화 처리된 PNG 버퍼
@@ -147,8 +177,7 @@ async function removeBackground(inputBuffer, threshold = 40) {
 }
 
 /**
- * 이미지에 실질적인 투명 배경이 적용되었는지 확인한다.
- * 투명 픽셀(alpha < 10) 비율이 10% 미만이면 투명 배경이 없는 것으로 판단.
+ * 이미지에 투명 배경이 적용되었는지 확인한다.
  * @param {Buffer} imgBuffer - PNG 이미지 버퍼
  * @returns {Promise<boolean>} 투명 배경 존재 여부
  */
@@ -170,35 +199,19 @@ async function hasTransparentBackground(imgBuffer) {
   return (transparentCount / totalPixels) >= 0.10;
 }
 
-// ── --char 옵션 파싱 ──
-
 /**
- * CLI --char 옵션에서 대상 캐릭터 ID를 파싱한다.
- * @returns {string|null} 지정된 캐릭터 ID 또는 null(전체 생성)
- */
-function parseCharOption() {
-  const idx = process.argv.indexOf('--char');
-  if (idx === -1 || idx + 1 >= process.argv.length) return null;
-  return process.argv[idx + 1];
-}
-
-// ── idle 스프라이트 생성 ──
-
-/**
- * GPT Image API로 캐릭터 idle 스프라이트를 생성하고 48x48 PNG로 저장한다.
- *
- * @param {string} charId - 캐릭터 ID (예: 'sniper')
- * @param {Object} charDef - CHARACTER_DEFS에서 가져온 캐릭터 정의
+ * GPT Image API를 호출하고 투명 배경 처리 후 48x48 PNG로 저장한다.
+ * @param {string} prompt - 이미지 생성 프롬프트
+ * @param {string} outputPath - 출력 파일 경로
+ * @param {string} label - 로그용 라벨
  * @returns {Promise<string>} 저장된 파일 경로
  */
-async function generateIdleSprite(charId, charDef) {
-  const outputPath = path.join(SPRITES_ROOT, `${charId}.png`);
-
-  console.log(`  [${charId}] idle 스프라이트 GPT Image API 호출 중...`);
+async function generateAndSave(prompt, outputPath, label) {
+  console.log(`  [${label}] GPT Image API 호출 중...`);
 
   const response = await openai.images.generate({
     model: 'gpt-image-1',
-    prompt: charDef.idlePrompt,
+    prompt,
     n: 1,
     size: '1024x1024',
     quality: 'high',
@@ -211,7 +224,7 @@ async function generateIdleSprite(charId, charDef) {
   // 투명 배경 확인 및 폴백 처리
   const isTransparent = await hasTransparentBackground(imgBuffer);
   if (!isTransparent) {
-    console.log(`  [${charId}] idle 투명 배경 미감지, 폴백 투명화 적용...`);
+    console.log(`  [${label}] 투명 배경 미감지, 폴백 투명화 적용...`);
     imgBuffer = await removeBackground(imgBuffer);
   }
 
@@ -224,95 +237,44 @@ async function generateIdleSprite(charId, charDef) {
     .png()
     .toFile(outputPath);
 
-  console.log(`  [${charId}] idle 저장 완료: assets/sprites/${charId}.png`);
+  console.log(`  [${label}] 저장 완료`);
   return outputPath;
 }
 
-// ── 프레임 생성 함수 ──
+// ── --char 옵션 파싱 ──
 
 /**
- * GPT Image API로 단일 걷기 프레임을 생성하고 48x48 PNG 파일로 저장한다.
- *
- * 1. gpt-image-1 모델로 1024x1024 이미지를 생성한다.
- * 2. 투명 배경 확인 -> 필요시 폴백 투명화 적용.
- * 3. sharp로 48x48로 리사이즈하여 저장한다.
- *
- * @param {string} charId - 캐릭터 ID (예: 'sniper')
- * @param {string} walkStylePrompt - 캐릭터별 걷기 스타일 프롬프트
- * @param {string} dirName - 방향 이름 (예: 'down', 'right')
- * @param {string} dirPrompt - 방향별 프롬프트 보조 텍스트
- * @param {number} frameIndex - 프레임 인덱스 (0~3)
- * @returns {Promise<string>} 저장된 파일 경로
+ * CLI --char 옵션에서 대상 캐릭터 ID를 파싱한다.
+ * @returns {string|null} 지정된 캐릭터 ID 또는 null(전체 생성)
  */
-async function generateFrame(charId, walkStylePrompt, dirName, dirPrompt, frameIndex) {
-  const framePose = FRAME_POSES[frameIndex];
-  const fullPrompt = `${walkStylePrompt}\n${dirPrompt}, ${framePose}`;
-  const fileName = `${dirName}_${frameIndex}.png`;
-  const charFramesDir = path.join(FRAMES_DIR, charId);
-  const filePath = path.join(charFramesDir, fileName);
-
-  // 캐릭터별 프레임 디렉토리 생성
-  if (!fs.existsSync(charFramesDir)) {
-    fs.mkdirSync(charFramesDir, { recursive: true });
-  }
-
-  console.log(`  [${charId}/${dirName}_${frameIndex}] GPT Image API 호출 중...`);
-
-  const response = await openai.images.generate({
-    model: 'gpt-image-1',
-    prompt: fullPrompt,
-    n: 1,
-    size: '1024x1024',
-    quality: 'high',
-    background: 'transparent',
-  });
-
-  const base64 = response.data[0].b64_json;
-  let imgBuffer = Buffer.from(base64, 'base64');
-
-  // 투명 배경 확인 및 폴백 처리
-  const isTransparent = await hasTransparentBackground(imgBuffer);
-  if (!isTransparent) {
-    console.log(`  [${charId}/${dirName}_${frameIndex}] 투명 배경 미감지, 폴백 투명화 적용...`);
-    imgBuffer = await removeBackground(imgBuffer);
-  }
-
-  // 48x48로 리사이즈하여 저장
-  await sharp(imgBuffer)
-    .resize(48, 48, {
-      fit: 'contain',
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .png()
-    .toFile(filePath);
-
-  console.log(`  [${charId}/${dirName}_${frameIndex}] 저장 완료: walk_frames/${charId}/${fileName}`);
-  return filePath;
+function parseCharOption() {
+  const idx = process.argv.indexOf('--char');
+  if (idx === -1 || idx + 1 >= process.argv.length) return null;
+  return process.argv[idx + 1];
 }
 
 // ── 스프라이트시트 합성 ──
 
 /**
- * 20개 개별 프레임을 240x192 스프라이트시트로 합성한다.
+ * 20개 프레임 파일을 240x192 스프라이트시트로 합성한다.
  *
  * 레이아웃: 5열(방향) x 4행(프레임)
  * - 열(col) = 방향 인덱스 (0=down, 1=down_right, 2=right, 3=up_right, 4=up)
  * - 행(row) = 프레임 인덱스 (0~3)
  *
- * Phaser 프레임 번호 = row * 5 + col
- *
  * @param {string} charId - 캐릭터 ID
+ * @param {string} walkKey - 출력 파일명 (확장자 제외)
  * @param {string[][]} framePaths - framePaths[방향인덱스][프레임인덱스] = 파일 경로
  * @returns {Promise<void>}
  */
-async function composeSpritesheet(charId, framePaths) {
-  const outputPath = path.join(SPRITES_ROOT, `${charId}_walk.png`);
+async function composeSpritesheet(charId, walkKey, framePaths) {
+  const outputPath = path.join(SPRITES_ROOT, `${walkKey}.png`);
 
   console.log(`\n[${charId}] 스프라이트시트 합성 중...`);
 
   const compositeInputs = [];
-  for (let row = 0; row < 4; row++) {       // 프레임 인덱스 (0~3)
-    for (let col = 0; col < 5; col++) {     // 방향 인덱스 (0~4)
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 5; col++) {
       compositeInputs.push({
         input: framePaths[col][row],
         left: col * 48,
@@ -333,7 +295,7 @@ async function composeSpritesheet(charId, framePaths) {
     .png()
     .toFile(outputPath);
 
-  console.log(`[${charId}] 스프라이트시트 저장 완료: assets/sprites/${charId}_walk.png (240x192)`);
+  console.log(`[${charId}] 스프라이트시트 저장: assets/sprites/${walkKey}.png (240x192)`);
 }
 
 // ── 단일 캐릭터 전체 생성 ──
@@ -341,93 +303,155 @@ async function composeSpritesheet(charId, framePaths) {
 /**
  * 지정 캐릭터의 idle + walk 프레임 + 스프라이트시트를 순차 생성한다.
  *
+ * v2 전략:
+ * - 각 방향마다 3종 유니크 프레임만 생성 (neutral, leftStep, rightStep)
+ * - 프레임 0 = neutral, 프레임 1 = leftStep, 프레임 2 = neutral(복사), 프레임 3 = rightStep
+ * - 이로써 프레임 0/2가 픽셀 동일 → 깜빡임 절반 제거
+ *
  * @param {string} charId - 캐릭터 ID
  * @param {Object} charDef - CHARACTER_DEFS의 캐릭터 정의
- * @returns {Promise<{success: number, fail: number, failed: string[]}>} 결과 통계
+ * @returns {Promise<{success: number, fail: number, failed: string[]}>}
  */
 async function generateCharacter(charId, charDef) {
-  console.log(`\n=== [${charId}] 캐릭터 에셋 생성 시작 ===`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`[${charId}] 캐릭터 에셋 생성 시작 (색상: ${charDef.color})`);
+  console.log(`${'='.repeat(60)}`);
 
   let successCount = 0;
   let failCount = 0;
   const failedFrames = [];
 
-  // ── 1. idle 스프라이트 생성 ──
-  try {
-    await generateIdleSprite(charId, charDef);
-    successCount++;
-  } catch (err) {
-    failCount++;
-    failedFrames.push(`${charId}_idle`);
-    console.error(`  [${charId}] idle 생성 실패: ${err.message}`);
-  }
-
-  await sleep(1000);
-
-  // ── 2. walk 프레임 20개 생성 ──
-  const charFramesDir = path.join(FRAMES_DIR, charId);
+  const charFramesDir = path.join(FRAMES_DIR, charId === 'agent' ? '' : charId);
   if (!fs.existsSync(charFramesDir)) {
     fs.mkdirSync(charFramesDir, { recursive: true });
   }
 
-  const framePaths = [];
+  // ── 1. idle 스프라이트 생성 ──
+  const idlePath = path.join(SPRITES_ROOT, `${charDef.spriteKey}.png`);
+  const idlePrompt = `${BASE_STYLE}\n${charDef.charDesc}\nCharacter faces DIRECTLY DOWN toward the viewer. Front view. Standing idle pose, relaxed, arms at sides.`;
+
+  try {
+    await generateAndSave(idlePrompt, idlePath, `${charId}/idle`);
+    successCount++;
+  } catch (err) {
+    failCount++;
+    failedFrames.push(`${charId}_idle`);
+    console.error(`  [${charId}/idle] 생성 실패: ${err.message}`);
+  }
+
+  await sleep(1500);
+
+  // ── 2. walk 프레임 생성 (방향당 3유니크 → 4프레임) ──
+  const framePaths = []; // framePaths[dirIdx][frameIdx]
 
   for (let dirIdx = 0; dirIdx < DIRECTIONS.length; dirIdx++) {
     const dir = DIRECTIONS[dirIdx];
-    const dirFramePaths = [];
+    const dirFramePaths = []; // 4개 프레임 경로
 
-    for (let frameIdx = 0; frameIdx < 4; frameIdx++) {
-      try {
-        const filePath = await generateFrame(charId, charDef.walkStylePrompt, dir.name, dir.dirPrompt, frameIdx);
-        dirFramePaths.push(filePath);
-        successCount++;
-      } catch (err) {
-        const frameName = `${charId}/${dir.name}_${frameIdx}`;
-        failCount++;
-        failedFrames.push(frameName);
-        console.error(`  [${frameName}] 생성 실패: ${err.message}`);
-        // 실패 시 빈 48x48 투명 PNG를 생성하여 스프라이트시트 합성이 깨지지 않도록 함
-        const fallbackPath = path.join(charFramesDir, `${dir.name}_${frameIdx}.png`);
-        await sharp({
-          create: {
-            width: 48,
-            height: 48,
-            channels: 4,
-            background: { r: 0, g: 0, b: 0, alpha: 128 },
-          },
-        })
-          .png()
-          .toFile(fallbackPath);
-        dirFramePaths.push(fallbackPath);
-      }
+    console.log(`\n[${charId}] 방향: ${dir.name} (${dirIdx + 1}/5)`);
 
-      // Rate limit 대응: 마지막 프레임이 아니면 1초 대기
-      const isLast = dirIdx === DIRECTIONS.length - 1 && frameIdx === 3;
-      if (!isLast) {
-        await sleep(1000);
-      }
+    // 프레임 0 (neutral) 생성
+    const neutralPath = path.join(charFramesDir, `${dir.name}_0.png`);
+    const neutralPrompt = `${BASE_STYLE}\n${charDef.charDesc}\n${dir.dirPrompt}\n${UNIQUE_POSES.neutral}`;
+
+    try {
+      await generateAndSave(neutralPrompt, neutralPath, `${charId}/${dir.name}_0 (neutral)`);
+      successCount++;
+    } catch (err) {
+      failCount++;
+      failedFrames.push(`${charId}/${dir.name}_0`);
+      console.error(`  [${charId}/${dir.name}_0] 생성 실패: ${err.message}`);
+      await _writeFallback(neutralPath);
     }
+    dirFramePaths.push(neutralPath);
+
+    await sleep(1500);
+
+    // 프레임 1 (leftStep) 생성
+    const leftStepPath = path.join(charFramesDir, `${dir.name}_1.png`);
+    const leftStepPrompt = `${BASE_STYLE}\n${charDef.charDesc}\n${dir.dirPrompt}\n${UNIQUE_POSES.leftStep}`;
+
+    try {
+      await generateAndSave(leftStepPrompt, leftStepPath, `${charId}/${dir.name}_1 (leftStep)`);
+      successCount++;
+    } catch (err) {
+      failCount++;
+      failedFrames.push(`${charId}/${dir.name}_1`);
+      console.error(`  [${charId}/${dir.name}_1] 생성 실패: ${err.message}`);
+      await _writeFallback(leftStepPath);
+    }
+    dirFramePaths.push(leftStepPath);
+
+    await sleep(1500);
+
+    // 프레임 2 = 프레임 0 복사 (neutral, 픽셀 동일)
+    const frame2Path = path.join(charFramesDir, `${dir.name}_2.png`);
+    try {
+      fs.copyFileSync(neutralPath, frame2Path);
+      console.log(`  [${charId}/${dir.name}_2] = 프레임 0 복사 (neutral 동일)`);
+      // 복사이므로 API 호출 없음, 성공 카운트 증가하지 않음
+    } catch (err) {
+      console.error(`  [${charId}/${dir.name}_2] 복사 실패: ${err.message}`);
+      await _writeFallback(frame2Path);
+    }
+    dirFramePaths.push(frame2Path);
+
+    // 프레임 3 (rightStep) 생성
+    const rightStepPath = path.join(charFramesDir, `${dir.name}_3.png`);
+    const rightStepPrompt = `${BASE_STYLE}\n${charDef.charDesc}\n${dir.dirPrompt}\n${UNIQUE_POSES.rightStep}`;
+
+    try {
+      await generateAndSave(rightStepPrompt, rightStepPath, `${charId}/${dir.name}_3 (rightStep)`);
+      successCount++;
+    } catch (err) {
+      failCount++;
+      failedFrames.push(`${charId}/${dir.name}_3`);
+      console.error(`  [${charId}/${dir.name}_3] 생성 실패: ${err.message}`);
+      await _writeFallback(rightStepPath);
+    }
+    dirFramePaths.push(rightStepPath);
+
+    await sleep(1500);
 
     framePaths.push(dirFramePaths);
   }
 
   // ── 3. 스프라이트시트 합성 ──
   try {
-    await composeSpritesheet(charId, framePaths);
+    await composeSpritesheet(charId, charDef.walkKey, framePaths);
   } catch (err) {
     console.error(`[${charId}] 스프라이트시트 합성 실패:`, err.message);
   }
 
-  console.log(`\n=== [${charId}] 완료: 성공 ${successCount} / 실패 ${failCount} (idle 1 + walk 20 = 21) ===`);
+  const totalUnique = 1 + (5 * 3); // idle 1 + 방향5 × 유니크3
+  console.log(`\n[${charId}] 완료: API 성공 ${successCount} / 실패 ${failCount} (유니크 ${totalUnique}장, 복사 5장)`);
 
   return { success: successCount, fail: failCount, failed: failedFrames };
+}
+
+/**
+ * 실패 시 48x48 투명 폴백 PNG를 생성한다.
+ * @param {string} filePath - 출력 경로
+ * @private
+ */
+async function _writeFallback(filePath) {
+  await sharp({
+    create: {
+      width: 48,
+      height: 48,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 128 },
+    },
+  })
+    .png()
+    .toFile(filePath);
 }
 
 // ── 메인 실행 ──
 
 /**
- * --char 옵션으로 단일 캐릭터 또는 전체 5종(agent 제외)을 순차 생성한다.
- * API Rate Limit 대응으로 호출 간 1초, 캐릭터 간 2초 대기한다.
+ * --char 옵션으로 단일 캐릭터 또는 전체 6종을 순차 생성한다.
+ * API Rate Limit 대응으로 호출 간 1.5초, 캐릭터 간 3초 대기한다.
  */
 async function main() {
   if (!process.env.OPENAI_API_KEY) {
@@ -445,10 +469,6 @@ async function main() {
   // 대상 캐릭터 결정
   let charEntries;
   if (targetChar) {
-    if (targetChar === 'agent') {
-      console.log('agent는 기존 에셋(player.png / player_walk.png)을 재사용합니다. 생성을 건너뜁니다.');
-      process.exit(0);
-    }
     if (!CHARACTER_DEFS[targetChar]) {
       console.error(`알 수 없는 캐릭터: ${targetChar}. 사용 가능: ${Object.keys(CHARACTER_DEFS).join(', ')}`);
       process.exit(1);
@@ -459,11 +479,13 @@ async function main() {
   }
 
   const totalChars = charEntries.length;
-  const totalImages = totalChars * 21; // idle 1 + walk 20
+  const apiCallsPerChar = 1 + (5 * 3); // idle 1 + 방향5 × 유니크프레임3
+  const totalApiCalls = totalChars * apiCallsPerChar;
 
-  console.log('=== NEON EXODUS 캐릭터 스프라이트 생성 시작 ===');
+  console.log('=== NEON EXODUS 캐릭터 스프라이트 생성 v2 ===');
   console.log(`대상 캐릭터: ${charEntries.map(([id]) => id).join(', ')}`);
-  console.log(`예상 GPT Image API 호출: ${totalImages}회 (${totalChars}캐릭터 x 21이미지)\n`);
+  console.log(`예상 GPT Image API 호출: ${totalApiCalls}회 (${totalChars}캐릭터 x ${apiCallsPerChar}유니크)`);
+  console.log(`프레임 0/2 중복 제거 적용: 프레임 0 = 프레임 2 (neutral 포즈 복사)\n`);
 
   let totalSuccess = 0;
   let totalFail = 0;
@@ -476,22 +498,24 @@ async function main() {
     totalFail += result.fail;
     allFailed.push(...result.failed);
 
-    // 캐릭터 간 2초 추가 대기 (마지막 캐릭터 제외)
+    // 캐릭터 간 3초 추가 대기
     if (i < charEntries.length - 1) {
-      console.log('\n캐릭터 간 2초 대기...');
-      await sleep(2000);
+      console.log('\n캐릭터 간 3초 대기...');
+      await sleep(3000);
     }
   }
 
   // 최종 결과 요약
-  console.log('\n=== 전체 스프라이트 생성 완료 ===');
-  console.log(`성공: ${totalSuccess} / 실패: ${totalFail} / 전체: ${totalImages}`);
+  console.log('\n' + '='.repeat(60));
+  console.log('전체 스프라이트 생성 완료');
+  console.log('='.repeat(60));
+  console.log(`API 호출 성공: ${totalSuccess} / 실패: ${totalFail} / 예상: ${totalApiCalls}`);
 
   if (allFailed.length > 0) {
     console.log(`실패 목록: ${allFailed.join(', ')}`);
   }
 
-  console.log('\n임시 프레임 파일은 디버깅용으로 보존됩니다: assets/sprites/walk_frames/{charId}/');
+  console.log('\n임시 프레임 파일 보존: assets/sprites/walk_frames/{charId}/');
 }
 
 main().catch((err) => {
