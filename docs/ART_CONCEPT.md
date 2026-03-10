@@ -1,19 +1,20 @@
 # NEON EXODUS 아트 컨셉 문서
 
-## 아트 방향: 글로우 벡터
+## 아트 방향: GPT Image API 벡터 아트
 
-**스타일 키워드**: SVG 벡터 + 네온 발광(Glow) + 사이버펑크 그라데이션
+**스타일 키워드**: GPT Image API + 클린 벡터 + 네온 발광(Glow) + 사이버펑크
 
-기존 네온 팔레트와 사이버펑크 감성을 유지하면서, **SVG 기반 벡터 그래픽**으로 전환한다. 픽셀아트의 도트 느낌 대신 매끄러운 외곽선과 네온 글로우 효과로 세련된 사이버펑크 분위기를 극대화한다.
+OpenAI gpt-image-1 모델을 활용하여 클린 벡터 스타일의 사이버펑크 스프라이트를 생성한다. 매끄러운 외곽선과 네온 글로우 효과로 세련된 2D 게임 분위기를 극대화한다.
 
 ### 이전 방식 (폐기)
-- DALL-E 3 API + sharp 후처리 → 미니멀 픽셀아트 PNG
-- `pixelArt: true`, `antialias: false`, `SPRITE_SCALE = 2`
+1. DALL-E 3 API + sharp 후처리 → 미니멀 픽셀아트 PNG (`pixelArt: true`)
+2. Node.js SVG 코드 생성 → sharp PNG 변환 (기하학적 도형 조합)
 
-### 새 방식
-- **Node.js SVG 코드 생성 → PNG 변환**
+### 현재 방식
+- **OpenAI GPT Image API (gpt-image-1) → 투명 배경 PNG → sharp 리사이즈**
 - `pixelArt: false`, `antialias: true`, `SPRITE_SCALE = 1`
-- 에셋을 최종 표시 크기로 직접 렌더링 (스케일 불필요)
+- API에서 1024x1024 고품질 이미지 생성 후 목표 크기로 축소
+- 투명 배경 지원 (background: 'transparent'), 미지원 시 자동 폴백 투명화
 
 ---
 
@@ -25,13 +26,13 @@
 
 ### 2. 네온 컬러 코드
 - 아군 = 시안/그린 계열, 적 = 레드/오렌지 계열, 보스 = 마젠타
-- 모든 엔티티에 1~3px 네온 글로우(SVG feGaussianBlur) 적용
+- 모든 엔티티에 네온 글로우 효과 적용 (프롬프트에서 지시)
 
 ### 3. 글로우 레이어 구조
-모든 SVG 에셋은 3개 레이어로 구성:
-1. **코어 (Core)**: 밝은 중심부 — 불투명 도형, 주 색상
-2. **바디 (Body)**: 중간 톤 — 그라데이션 + 반투명
-3. **글로우 (Glow)**: 외곽 발광 — feGaussianBlur 필터, 낮은 opacity
+모든 에셋은 시각적으로 3개 레이어를 포함:
+1. **코어 (Core)**: 밝은 중심부 — 주 색상
+2. **바디 (Body)**: 중간 톤 — 그라데이션
+3. **글로우 (Glow)**: 외곽 발광 — 네온 글로우 효과
 
 ### 4. 애니메이션 전략
 - 프레임 기반 스프라이트시트 **제거** → **정적 이미지 1장**
@@ -191,8 +192,8 @@
 
 ## 제작 Phase
 
-### Phase 1: 전체 캐릭터 + 적 + 수집물 (20종 — 벡터 완전 교체) -- 완료 (2026-03-10)
-> **완료** — 기존 DALL-E 픽셀 에셋 20종을 SVG 벡터로 전면 교체
+### Phase 1: 전체 캐릭터 + 적 + 수집물 (20종 — GPT Image API로 재생성) -- 완료 (2026-03-10)
+> **완료** — 기존 SVG 기하학 에셋 20종을 GPT Image API(gpt-image-1) 생성 벡터 아트로 교체
 
 - [x] 플레이어 스프라이트 (48x48, 정적 PNG)
 - [x] 잡몹 10종 스프라이트 (32~48px, 정적 PNG)
@@ -207,7 +208,7 @@
 - [x] Enemy.js, Player.js 등: 스케일/바디 오프셋 재계산
 
 **산출물**: `assets/sprites/` 전체 PNG 교체 (20종), `scripts/generate-vector-sprites.js`
-**생성 방식**: Node.js SVG 코드 생성 -> sharp PNG 변환
+**생성 방식**: OpenAI GPT Image API (gpt-image-1) -> sharp 리사이즈 -> PNG 저장
 
 ### Phase 2: UI + 배경 (폴리싱)
 > 전체적인 완성도를 높이는 단계
@@ -300,19 +301,19 @@ export const SPRITE_SCALE = 1;
 - `_generatePlaceholderTextures()` 유지 — 벡터 PNG 미존재 시 기존 Graphics 폴백 동작
 - `this.textures.exists(key)` 가드 그대로 유지
 
-### SVG → PNG 생성 파이프라인
+### GPT Image API → PNG 생성 파이프라인
 
 ```
 scripts/generate-vector-sprites.js
   │
-  ├── SVG 문자열 생성 (각 엔티티별 함수)
-  │   ├── createPlayerSVG(width, height)
-  │   ├── createEnemySVG(type, width, height)
-  │   ├── createBossSVG(type, width, height)
-  │   └── createGemSVG(size)
+  ├── OpenAI GPT Image API 호출 (gpt-image-1, 1024x1024, 투명 배경)
+  │   ├── 공통 스타일 프롬프트 + 개별 에셋 프롬프트 조합
+  │   └── base64 응답 디코딩 → Buffer
   │
-  ├── SVG → PNG 변환 (sharp 또는 @resvg/resvg-js)
-  │   └── sharp(Buffer.from(svgString)).png().toFile(outputPath)
+  ├── 투명 배경 확인 (폴백: 어두운 픽셀 임계값 투명화)
+  │
+  ├── sharp 리사이즈 (목표 크기, fit: contain, 투명 배경)
+  │   └── sharp(imgBuffer).resize(finalW, finalH).png().toFile(outputPath)
   │
   └── assets/sprites/ 디렉토리에 저장
 ```
@@ -384,7 +385,7 @@ assets/
 | Phase 1 | 20종 | **완료** (2026-03-10) | 전체 캐릭터/적/수집물 벡터 교체 |
 | Phase 2 | ~25종 | 미착수 | UI + 배경 |
 | Phase 3 | ~10종 | 미착수 | 무기 이펙트 |
-| **합계** | **~55종** | - | SVG 코드 생성이므로 빠른 반복 가능 |
+| **합계** | **~55종** | - | GPT Image API로 고품질 생성 가능 |
 
 ---
 
