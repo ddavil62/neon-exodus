@@ -252,4 +252,17 @@ export const AUTO_HUNT = {
   dangerRadius: 120,
   /** XP 보석 탐색 반경 (px) */
   xpSearchRadius: 200,
+
+  /** 소모품 탐색 반경 (px) */
+  consumableSearchRadius: 300,
+  /** 무기 드롭 탐색 반경 (px) */
+  weaponDropSearchRadius: 400,
+  /** 무기 드롭 긴급 수집 임계 수명 (ms) — 이 이하면 위험 무시하고 수집 */
+  weaponDropUrgentLifetime: 4000,
+  /** 무기 드롭 점수 가중치 배수 */
+  weaponDropScoreMultiplier: 10,
+  /** 소모품 점수 가중치 배수 */
+  consumableScoreMultiplier: 5,
+  /** XP 보석 점수 가중치 배수 */
+  xpGemScoreMultiplier: 1,
 };

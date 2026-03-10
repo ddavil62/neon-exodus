@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-03-11 -- AutoPilot 아이템 수집 가중치 강화
+
+### 추가
+- config.js AUTO_HUNT 블록 신규 설정값 6개 (`js/config.js`): consumableSearchRadius(300), weaponDropSearchRadius(400), weaponDropUrgentLifetime(4000), weaponDropScoreMultiplier(10), consumableScoreMultiplier(5), xpGemScoreMultiplier(1)
+- AutoPilotSystem 신규 메서드 4개 (`js/systems/AutoPilotSystem.js`): _evaluateWeaponDropUrgent()(수명 임박 무기 긴급 수집, x3 보정), _evaluateWeaponDrop()(무기 드롭 일반 수집), _evaluateConsumable()(소모품 수집), _hasCriticalDanger()(CRITICAL 위험 판별)
+- Playwright 테스트 (`tests/auto-move-item-weight.spec.js`): 29개 테스트
+
+### 변경
+- AutoPilotSystem AI 행동 우선순위 재편 (`js/systems/AutoPilotSystem.js` update()): 기존 4단계(위험 회피 > XP 수집 > 적 접근 > 방랑)에서 7단계(긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)로 확장
+- AutoPilotSystem 하드코딩 상수 제거 (`js/systems/AutoPilotSystem.js`): DANGER_RADIUS(120), XP_SEARCH_RADIUS(200), DIRECTION_CHANGE_INTERVAL(150), CRITICAL_DANGER_RADIUS(60) 4개 로컬 상수 삭제. config.js AUTO_HUNT 객체에서 런타임 참조로 전환
+- AutoPilotSystem CRITICAL_DANGER_RADIUS 동적 계산 (`js/systems/AutoPilotSystem.js`): 하드코딩 60px에서 `AUTO_HUNT.dangerRadius / 2`(=60px)로 변경. config 변경 시 연동
+- AutoPilotSystem _evaluateXPCollection() 리팩토링 (`js/systems/AutoPilotSystem.js`): 하드코딩 XP_SEARCH_RADIUS -> AUTO_HUNT.xpSearchRadius, 점수 공식에 AUTO_HUNT.xpGemScoreMultiplier 가중치 적용
+- AutoPilotSystem _evaluateDanger() config 연동 (`js/systems/AutoPilotSystem.js`): 하드코딩 DANGER_RADIUS -> AUTO_HUNT.dangerRadius
+
+### 참고
+- 스펙: `.claude/specs/2026-03-11-auto-move-item-weight.md`
+- 구현 리포트: `.claude/specs/2026-03-11-auto-move-item-weight-report.md`
+- QA: `.claude/specs/2026-03-11-auto-move-item-weight-qa.md`
+- QA 결과: 수용기준 6/6 PASS, 예외 시나리오 11/11 PASS, Playwright 29/29 전체 통과. 시각적 검증 스크린샷 5건 확인
+- 기존 제약사항 #9(AUTO_HUNT import 미사용) 해결됨
+- REACTION_MISS_CHANCE(0.05), IMPERFECTION_ANGLE(0.3) 미변경 (의도적 불완전성 보존)
+
 ## 2026-03-10 -- 캐릭터별 고유 스프라이트 + 8방향 걷기 애니메이션
 
 ### 추가

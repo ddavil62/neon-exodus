@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-10 (멀티 스테이지 시스템 + 스테이지별 신규 무기 해금)
+> 최종 업데이트: 2026-03-11 (AutoPilot 아이템 수집 가중치 강화)
 
 ## 프로젝트 개요
 
@@ -79,7 +79,7 @@ neon-exodus/
 │   │   ├── SoundSystem.js         # AudioContext 프로그래매틱 SFX 9종 + BGM 2곡
 │   │   ├── VFXSystem.js           # Phaser Particles 기반 VFX 6종
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
-│   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (위험 회피 > XP 수집 > 적 접근 > 방랑)
+│   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
 │   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
@@ -190,7 +190,8 @@ neon-exodus/
 │   ├── consumables.spec.js        # 소모성 아이템 테스트 (34개)
 │   ├── char-sprites.spec.js       # 캐릭터별 고유 스프라이트 테스트 (46개)
 │   ├── art-phase2.spec.js         # 아트 Phase 2 UI/배경/아이콘 테스트 (36개)
-│   └── art-phase4-weapons.spec.js # 아트 Phase 4 무기 이펙트 테스트 (18개)
+│   ├── art-phase4-weapons.spec.js # 아트 Phase 4 무기 이펙트 테스트 (18개)
+│   └── auto-move-item-weight.spec.js # AutoPilot 아이템 수집 가중치 테스트 (29개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -231,7 +232,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/도전과제) |
-| 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (위험 회피 > XP 수집 > 적 접근 > 방랑) |
+| 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑) |
 | IAP 관리 | `js/managers/IAPManager.js` | Google Play IAP 구매/복원, Mock 모드 |
 
 ## 기능 명세
@@ -898,20 +899,37 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Play IAP로 영구 해금한다.
 
 #### AI 행동 우선순위
-1. **위험 회피** (evade): 반경 120px 내 적이 3마리 이상이거나, 60px 내 적이 있으면 반대 방향으로 회피. 거리 기반 가중 반발 벡터 사용.
-2. **XP 보석 수집** (collect): 200px 이내 XP 보석 중 (xpValue/거리) 점수가 가장 높은 보석 방향으로 이동. 자석 반경 내 보석은 무시.
-3. **적 접근** (approach): 가장 가까운 적이 150px 이상 떨어져 있으면 접근하여 무기 사거리를 유지.
-4. **방랑** (idle): 위 행동이 불필요하면 월드 중앙 경향 + 랜덤 방향 혼합 이동.
+1. **무기 드롭 긴급 수집** (collect): 비영구 무기 드롭의 수명이 4000ms 이하이고 CRITICAL 위험(60px) 내 적이 없으면 위험 회피보다도 우선하여 수집. 탐색 반경 400px, 긴급 보정 x3 적용.
+2. **위험 회피** (evade): 반경 120px 내 적이 3마리 이상이거나, 60px 내 적이 있으면 반대 방향으로 회피. 거리 기반 가중 반발 벡터 사용.
+3. **무기 드롭 일반 수집** (collect): 400px 이내 무기 드롭 중 점수가 가장 높은 아이템 방향으로 이동.
+4. **소모품 수집** (collect): 300px 이내 소모품 중 점수가 가장 높은 아이템 방향으로 이동.
+5. **XP 보석 수집** (collect): 200px 이내 XP 보석 중 점수가 가장 높은 보석 방향으로 이동. 자석 반경 내 보석은 무시.
+6. **적 접근** (approach): 가장 가까운 적이 150px 이상 떨어져 있으면 접근하여 무기 사거리를 유지.
+7. **방랑** (idle): 위 행동이 불필요하면 월드 중앙 경향 + 랜덤 방향 혼합 이동.
+
+#### 아이템 수집 점수 공식 (소스 코드 검증 기준)
+| 대상 | 점수 공식 | 탐색 반경 |
+|---|---|---|
+| 무기 드롭 긴급 | `weaponDropScoreMultiplier(10) * 3 * 1000 / (dist + 1)` | 400px |
+| 무기 드롭 일반 | `weaponDropScoreMultiplier(10) * 1000 / (dist + 1)` | 400px |
+| 소모품 | `consumableScoreMultiplier(5) * 100 / (dist + 1)` | 300px |
+| XP 보석 | `xpGemScoreMultiplier(1) * (xpValue \|\| 1) / (dist + 1)` | 200px |
 
 #### AI 파라미터 (소스 코드 검증 기준)
 | 파라미터 | 값 | 위치 |
 |---|---|---|
-| 위험 감지 반경 | 120px | `AutoPilotSystem.js` DANGER_RADIUS |
-| 심각한 위험 반경 | 60px | `AutoPilotSystem.js` CRITICAL_DANGER_RADIUS |
-| XP 보석 탐색 반경 | 200px | `AutoPilotSystem.js` XP_SEARCH_RADIUS |
+| 위험 감지 반경 | 120px | `config.js` AUTO_HUNT.dangerRadius |
+| 심각한 위험 반경 | 60px | `AUTO_HUNT.dangerRadius / 2` 동적 계산 |
+| XP 보석 탐색 반경 | 200px | `config.js` AUTO_HUNT.xpSearchRadius |
+| 소모품 탐색 반경 | 300px | `config.js` AUTO_HUNT.consumableSearchRadius |
+| 무기 드롭 탐색 반경 | 400px | `config.js` AUTO_HUNT.weaponDropSearchRadius |
+| 무기 드롭 긴급 임계 수명 | 4000ms | `config.js` AUTO_HUNT.weaponDropUrgentLifetime |
+| 무기 드롭 점수 가중치 | 10 | `config.js` AUTO_HUNT.weaponDropScoreMultiplier |
+| 소모품 점수 가중치 | 5 | `config.js` AUTO_HUNT.consumableScoreMultiplier |
+| XP 보석 점수 가중치 | 1 | `config.js` AUTO_HUNT.xpGemScoreMultiplier |
 | 적 접근 유지 거리 | 150px | `AutoPilotSystem.js` PREFERRED_ENEMY_DISTANCE |
 | 벽 회피 마진 | 80px | `AutoPilotSystem.js` WALL_MARGIN |
-| 방향 전환 간격 | 150ms | `AutoPilotSystem.js` DIRECTION_CHANGE_INTERVAL |
+| 방향 전환 간격 | 150ms | `config.js` AUTO_HUNT.directionInterval |
 | 랜덤 각도 변동 (jitter) | 0.3 rad | `AutoPilotSystem.js` IMPERFECTION_ANGLE |
 | 반응 누락 확률 | 5% (0.05) | `AutoPilotSystem.js` REACTION_MISS_CHANCE |
 
@@ -936,9 +954,9 @@ AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Pl
 - player.active === false이면 direction을 (0,0)으로 초기화
 - 씬 정리 시 autoPilot.destroy() 호출
 
-- 관련 파일: `js/systems/AutoPilotSystem.js`, `js/scenes/GameScene.js`, `js/entities/Player.js`
-- 구현 일자: 2026-03-09
-- 스펙 문서: `.claude/specs/2026-03-09-auto-hunt.md`
+- 관련 파일: `js/systems/AutoPilotSystem.js`, `js/config.js`, `js/scenes/GameScene.js`, `js/entities/Player.js`
+- 구현 일자: 2026-03-09 (아이템 수집 가중치 강화: 2026-03-11)
+- 스펙 문서: `.claude/specs/2026-03-09-auto-hunt.md`, `.claude/specs/2026-03-11-auto-move-item-weight.md`
 
 ### IAP (인앱결제) 시스템
 
@@ -1062,7 +1080,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 6. **MetaManager/Player 이중 경로**: GameScene에서 MetaManager.getPlayerBonuses()와 SaveManager.getUpgradeLevel()을 별도로 호출. 동일 데이터 소스이므로 현재 문제 없으나, 보너스 계산 공식 변경 시 불일치 위험.
 7. **consecutiveClears 직접 조작**: SaveManager.updateStats() 로직에 맞지 않아 data.stats를 직접 조작. SaveManager에 setStats() 메서드 추가 권장.
 8. **오브 시각적 크기 고정**: 플라즈마 오브의 시각적 크기가 8px로 고정되어 orbRadius(55~90px)와 불일치. orbRadius는 데미지 판정 범위.
-9. **AutoPilotSystem AUTO_HUNT import 미사용**: config.js에서 AUTO_HUNT를 import하지만 내부 로컬 상수(DANGER_RADIUS 등)를 사용. 값은 동일하므로 기능 문제 없으나, config 변경 시 반영이 안 되는 리스크. import 제거 또는 로컬 상수 제거 권장.
+9. ~~**AutoPilotSystem AUTO_HUNT import 미사용**~~: **해결됨 (2026-03-11)**. 하드코딩 상수(DANGER_RADIUS, XP_SEARCH_RADIUS, DIRECTION_CHANGE_INTERVAL, CRITICAL_DANGER_RADIUS) 완전 제거, AUTO_HUNT 객체에서 런타임 참조로 전환.
 10. **AutoPilotSystem _wander() 벽 회피 미경유**: idle 모드에서 _applyDirection()을 거치지 않아 벽 회피와 jitter가 미적용. Phaser setCollideWorldBounds가 물리 레벨에서 보완하나, 벽 근처 AI 움직임이 부자연스러울 수 있음.
 11. **IAP 플러그인 미등록**: InAppPurchase Capacitor 플러그인이 package.json에 미등록. 네이티브 빌드 전 `@nicegram/capacitor-iap` 등 설치 필요. 웹 환경에서는 Mock 모드로 정상 동작.
 
@@ -1133,6 +1151,20 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 구매 복원 (BootScene에서 restorePurchases, 기기 변경 시 재구매 방지)
 - [x] SaveManager v3->v4 마이그레이션 (autoHuntUnlocked, autoHuntEnabled 필드 추가)
 - [x] i18n 확장 (autoHunt.* 10키 ko/en, 총 348키)
+
+### AutoPilot 아이템 수집 가중치 강화 -- 완료 (2026-03-11)
+- [x] 소모품(Consumable) AI 탐색 대상 추가 (scene.consumablePool, 탐색 반경 300px)
+- [x] 무기 드롭(WeaponDropItem) AI 탐색 대상 추가 (scene.weaponDropPool, 탐색 반경 400px)
+- [x] 아이템 우선순위 재편: 긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑
+- [x] 무기 드롭 긴급 수집: 비영구 드롭 수명 4000ms 이하 시 CRITICAL 위험(60px) 밖이면 위험 회피보다 우선
+- [x] 종류별 점수 가중치: 무기 드롭 x10, 소모품 x5, XP 보석 x1
+- [x] 하드코딩 상수 완전 제거: DANGER_RADIUS, XP_SEARCH_RADIUS, DIRECTION_CHANGE_INTERVAL, CRITICAL_DANGER_RADIUS -> config.js AUTO_HUNT 연동
+- [x] CRITICAL_DANGER_RADIUS를 AUTO_HUNT.dangerRadius / 2로 동적 계산
+- [x] config.js AUTO_HUNT 블록에 6개 신규 설정값 추가 (consumableSearchRadius, weaponDropSearchRadius, weaponDropUrgentLifetime, weaponDropScoreMultiplier, consumableScoreMultiplier, xpGemScoreMultiplier)
+- [x] 신규 메서드 4개: _evaluateWeaponDropUrgent(), _evaluateWeaponDrop(), _evaluateConsumable(), _hasCriticalDanger()
+- [x] 풀 undefined 시 null 반환으로 안전 처리 (4개 메서드 모두)
+- [x] REACTION_MISS_CHANCE, IMPERFECTION_ANGLE 미변경 (제약사항 준수)
+- [x] Playwright 29/29 테스트 전체 통과
 
 ### 무기별 결과 리포트 -- 완료 (2026-03-09)
 - [x] WeaponSystem.weaponStats Map으로 무기별 킬/데미지 추적
