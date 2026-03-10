@@ -152,6 +152,33 @@ export default class VFXSystem {
   }
 
   /**
+   * EMP 링 스프라이트 확장 이펙트.
+   * effect_emp_ring 텍스처를 scale tween으로 확장 후 페이드아웃.
+   * @param {Phaser.Scene} scene - 씬 참조
+   * @param {number} x - 중심 X 좌표
+   * @param {number} y - 중심 Y 좌표
+   * @param {number} radius - 목표 반경 (px)
+   */
+  static empRing(scene, x, y, radius) {
+    if (!scene.textures.exists('effect_emp_ring')) return;
+
+    const ring = scene.add.image(x, y, 'effect_emp_ring')
+      .setScale(0.1)
+      .setAlpha(0.9)
+      .setDepth(20);
+
+    scene.tweens.add({
+      targets: ring,
+      scaleX: radius / 32,
+      scaleY: radius / 32,
+      alpha: 0,
+      duration: 400,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy(),
+    });
+  }
+
+  /**
    * EMP 폭탄 전체 화면 클리어 이펙트. 일렉트릭 블루, 80입자, 600ms.
    * @param {Phaser.Scene} scene - 씬 참조
    * @param {number} x - 플레이어 X 좌표

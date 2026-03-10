@@ -17,7 +17,9 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
    * @param {number} y - 초기 Y 좌표
    */
   constructor(scene, x, y) {
-    super(scene, x, y, 'projectile');
+    // 이펙트 스프라이트가 있으면 사용, 없으면 기존 projectile 텍스처 폴백
+    const texKey = scene.textures.exists('effect_projectile') ? 'effect_projectile' : 'projectile';
+    super(scene, x, y, texKey);
 
     scene.add.existing(this);
     scene.physics.add.existing(this);

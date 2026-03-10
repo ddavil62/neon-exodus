@@ -162,6 +162,13 @@ export default class BootScene extends Phaser.Scene {
     for (const id of UPGRADE_ICON_IDS) {
       this.load.image('icon_upgrade_' + id, 'assets/ui/icons/upgrade_' + id + '.png');
     }
+
+    // ── Phase 4 이펙트 스프라이트 10종 ──
+    const EFFECT_IDS = ['projectile', 'plasma_orb', 'missile', 'explosion',
+      'drone', 'emp_ring', 'force_slash', 'nano_cloud', 'vortex', 'reaper_blade'];
+    for (const id of EFFECT_IDS) {
+      this.load.image('effect_' + id, 'assets/sprites/effects/' + id + '.png');
+    }
   }
 
   /**
@@ -573,6 +580,36 @@ export default class BootScene extends Phaser.Scene {
       gfx.fillCircle(32, 32, 32);
       gfx.generateTexture('joystick_thumb', 64, 64);
     }
+
+    // ── Phase 4 이펙트 스프라이트 폴백 (10종) ──
+    const effectFallbacks = {
+      effect_projectile:    { color: 0x00FFFF, dim: 16, shape: 'circle' },
+      effect_plasma_orb:   { color: 0xFF00FF, dim: 24, shape: 'circle' },
+      effect_missile:      { color: 0xFF6600, dim: 20, shape: 'rect' },
+      effect_explosion:    { color: 0xFF6600, dim: 64, shape: 'circle' },
+      effect_drone:        { color: 0x00FFFF, dim: 24, shape: 'circle' },
+      effect_emp_ring:     { color: 0x4488FF, dim: 64, shape: 'circle' },
+      effect_force_slash:  { color: 0x00FFFF, dim: 48, shape: 'rect' },
+      effect_nano_cloud:   { color: 0x39FF14, dim: 48, shape: 'circle' },
+      effect_vortex:       { color: 0xFF00FF, dim: 48, shape: 'circle' },
+      effect_reaper_blade: { color: 0xFF3333, dim: 32, shape: 'rect' },
+    };
+
+    const gfx2 = this.add.graphics();
+    for (const [texKey, cfg] of Object.entries(effectFallbacks)) {
+      if (!this.textures.exists(texKey)) {
+        gfx2.clear();
+        gfx2.fillStyle(cfg.color, 0.9);
+        const half = cfg.dim / 2;
+        if (cfg.shape === 'circle') {
+          gfx2.fillCircle(half, half, half - 2);
+        } else {
+          gfx2.fillRect(2, 2, cfg.dim - 4, cfg.dim - 4);
+        }
+        gfx2.generateTexture(texKey, cfg.dim, cfg.dim);
+      }
+    }
+    gfx2.destroy();
 
     gfx.destroy();
   }

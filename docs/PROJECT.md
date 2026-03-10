@@ -53,7 +53,7 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
@@ -145,6 +145,17 @@ neon-exodus/
 │       │   ├── siege_titan_mk2.png# 128x128 (보스, S2, Phase 3)
 │       │   ├── data_phantom.png   # 128x128 (보스, S3, Phase 3)
 │       │   └── omega_core.png     # 128x128 (보스, S4, Phase 3)
+│       ├── effects/               # 무기 이펙트 SVG 스프라이트 10종 (Phase 4 아트)
+│       │   ├── projectile.png    # 16x16 (시안 에너지 탄환, 블래스터)
+│       │   ├── plasma_orb.png    # 24x24 (마젠타 오브, 플라즈마 오브)
+│       │   ├── missile.png       # 20x20 (오렌지 로켓, 미사일)
+│       │   ├── explosion.png     # 64x64 (폭발 링, 미사일 폭발)
+│       │   ├── drone.png         # 24x24 (시안 미니 드론, 드론)
+│       │   ├── emp_ring.png      # 64x64 (블루 EMP 링, EMP 폭발)
+│       │   ├── force_slash.png   # 48x48 (시안 호 슬래시, 포스 블레이드)
+│       │   ├── nano_cloud.png    # 48x48 (그린 나노 구름, 나노스웜)
+│       │   ├── vortex.png        # 48x48 (마젠타-시안 소용돌이, 볼텍스 캐넌)
+│       │   └── reaper_blade.png  # 32x32 (레드 초승달 낫, 리퍼 필드)
 │       └── items/                 # XP 보석 3종 + 소모성 아이템 6종 정적 이미지
 │           ├── xp_gem_s.png       # 12x12
 │           ├── xp_gem_m.png       # 20x20
@@ -162,7 +173,8 @@ neon-exodus/
 │   ├── generate-vector-sprites.js # 하이브리드 20종 벡터 PNG 생성 스크립트 (GPT Image API 17종 + SVG 직접 생성 3종, 현행)
 │   ├── generate-walk-anim.js      # 캐릭터별 idle + 걷기 애니메이션 스프라이트시트 생성 스크립트 (GPT Image API, --char 옵션, 현행)
 │   ├── generate-consumable-sprites.js # (레거시) 소모성 아이템 6종 24x24 아이콘 생성 스크립트 (GPT Image API)
-│   └── generate-phase2-assets.js  # Phase 2 아트 에셋 31종 생성 스크립트 (GPT Image API 8종 + SVG 직접 생성 23종, 현행)
+│   ├── generate-phase2-assets.js  # Phase 2 아트 에셋 31종 생성 스크립트 (GPT Image API 8종 + SVG 직접 생성 23종, 현행)
+│   └── generate-phase4-assets.js  # Phase 4 무기 이펙트 에셋 10종 생성 스크립트 (SVG 직접 생성, 현행)
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
@@ -177,7 +189,8 @@ neon-exodus/
 │   ├── walk-anim.spec.js          # 걷기 애니메이션 테스트 (24개)
 │   ├── consumables.spec.js        # 소모성 아이템 테스트 (34개)
 │   ├── char-sprites.spec.js       # 캐릭터별 고유 스프라이트 테스트 (46개)
-│   └── art-phase2.spec.js         # 아트 Phase 2 UI/배경/아이콘 테스트 (36개)
+│   ├── art-phase2.spec.js         # 아트 Phase 2 UI/배경/아이콘 테스트 (36개)
+│   └── art-phase4-weapons.spec.js # 아트 Phase 4 무기 이펙트 테스트 (18개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -464,7 +477,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 지속시간 | 300ms | 500ms |
 | 사거리 | 300px | 450px |
 
-- 빔은 Phaser Graphics 선분으로 렌더링 (매 프레임 clear + 재그리기)
+- 빔은 Phaser Graphics 3-레이어 글로우로 렌더링 (매 프레임 clear + 재그리기): 외곽 글로우(8px cyan 20% opacity) + 메인 빔(4px cyan 80% opacity) + 코어(2px white 90% opacity) + 끝점 원형 글로우 + duration 중 width 맥동(+-1px)
 - 가장 가까운 적 방향으로 자동 조준 (적 없으면 상향)
 - duration 동안 사거리 내 모든 적에게 tickDamage를 1회 적용 (attackMultiplier 반영)
 - 빔 판정 범위: 선분으로부터 20px 이내
@@ -481,10 +494,10 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 공전 속도 | 2.0 rad/s | 3.5 rad/s |
 | 틱 간격 | 500ms | 300ms |
 
-- 오브는 Phaser Graphics 원으로 렌더링, 플레이어 중심으로 공전 (ORBIT_RADIUS = 70px 고정)
+- 오브는 `effect_plasma_orb` Image 스프라이트로 렌더링 (Graphics 원에서 전환), 플레이어 중심으로 공전 (ORBIT_RADIUS = 70px 고정) + 자체 회전
 - tickInterval마다 orbRadius 내 적에게 tickDamage 적용 (attackMultiplier 반영)
 - 레벨업으로 orbCount 증가 시 오브 배열 재구성
-- 시각적 오브 크기는 8px 고정 (orbRadius는 데미지 판정 범위)
+- orbRadius는 데미지 판정 범위
 - 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`
 - 구현 일자: 2026-03-09
 - 스펙 문서: `.claude/specs/2026-03-08-neon-exodus-phase2.md`
@@ -501,7 +514,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 가장 가까운 적을 초기 타격 후 체인 범위 내 다음 적으로 번개가 연쇄 전달
 - 체인마다 피해가 chainDecay 비율로 감소. 동일 적 중복 타격 방지 (hitSet)
 - 체인 히트마다 독립적 치명타 판정
-- 시각 효과: Phaser Graphics 지그재그 번개 선 (150ms 후 자동 파괴)
+- 시각 효과: Phaser Graphics 3-레이어 번개 선 (외곽 5px 글로우 + 메인 3px + 코어 1.5px, 체인 노드에 스파크 원 4px, 3개 중간점 지그재그, 150ms 후 자동 파괴)
 - 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`
 - 구현 일자: 2026-03-09
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase3.md`
@@ -519,7 +532,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 가장 가까운 적 방향으로 발사, 매 프레임 turnSpeed로 방향 보정하여 유도 추적
 - 적 충돌 또는 range 초과 시 explosionRadius 범위 내 전체 적에게 피해
 - 폭발 단위로 치명타 판정 (범위 내 모든 적에게 동일 적용)
-- 시각 효과: Phaser Graphics 원형 섬광 (200ms)
+- 시각 효과: `effect_missile` Image 스프라이트(rotation 적용) + 폭발 시 `effect_explosion` Image 스프라이트(scale tween + alpha fade, 200ms)
 - 오브젝트풀 최대 30개
 - 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`
 - 구현 일자: 2026-03-09

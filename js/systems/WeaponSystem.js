@@ -70,6 +70,15 @@ export default class WeaponSystem {
      * @type {Map<string, { kills: number, damage: number }>}
      */
     this.weaponStats = new Map();
+
+    /** 나노스웜 구름 활성 목록 (cloud 타입) */
+    this._clouds = [];
+
+    /** 볼텍스 캐넌 소용돌이 활성 목록 (gravity 타입) */
+    this._vortexes = [];
+
+    /** 리퍼 필드 블레이드 데이터 맵 (weaponId → { sprites, angle, tickTimer, currentBladeCount }) */
+    this._bladeData = new Map();
   }
 
   // ── 공개 메서드 ──
@@ -583,13 +592,27 @@ export default class WeaponSystem {
       const endX = px + state.dirX * stats.range;
       const endY = py + state.dirY * stats.range;
 
-      // 빔 렌더링 (네온 시안 색상)
-      this._beamGraphics.lineStyle(4, 0x00FFFF, 0.8);
+      // 빔 잔여 시간 비율로 미세 맥동 (duration 내 +-1px 너비 변화)
+      const progress = state.timer / stats.duration;
+      const pulse = Math.sin(progress * Math.PI * 4) * 1;
+
+      // 외곽 글로우: 8px cyan 20% opacity
+      this._beamGraphics.lineStyle(8 + pulse, 0x00FFFF, 0.2);
       this._beamGraphics.lineBetween(px, py, endX, endY);
 
-      // 빔 코어 (밝은 중심선)
-      this._beamGraphics.lineStyle(2, 0xFFFFFF, 0.6);
+      // 메인 빔: 4px cyan 80% opacity
+      this._beamGraphics.lineStyle(4 + pulse * 0.5, 0x00FFFF, 0.8);
       this._beamGraphics.lineBetween(px, py, endX, endY);
+
+      // 코어: 2px white 90% opacity
+      this._beamGraphics.lineStyle(2, 0xFFFFFF, 0.9);
+      this._beamGraphics.lineBetween(px, py, endX, endY);
+
+      // 빔 끝점에 밝은 원형 글로우
+      this._beamGraphics.fillStyle(0x00FFFF, 0.5);
+      this._beamGraphics.fillCircle(endX, endY, 6);
+      this._beamGraphics.fillStyle(0xFFFFFF, 0.4);
+      this._beamGraphics.fillCircle(endX, endY, 3);
     }
   }
 
@@ -633,18 +656,14 @@ export default class WeaponSystem {
     const py = this.player.y;
 
     for (let i = 0; i < orbInfo.graphics.length; i++) {
-      const gfx = orbInfo.graphics[i];
+      const sprite = orbInfo.graphics[i];
       const offsetAngle = orbInfo.angle + (i * (Math.PI * 2 / stats.orbCount));
       const orbX = px + Math.cos(offsetAngle) * ORBIT_RADIUS;
       const orbY = py + Math.sin(offsetAngle) * ORBIT_RADIUS;
 
-      // Graphics 위치 갱신 (clear 후 재그리기)
-      gfx.clear();
-      gfx.fillStyle(0xFF00FF, 0.7);
-      gfx.fillCircle(0, 0, 8);
-      gfx.lineStyle(1, 0xFF00FF, 0.9);
-      gfx.strokeCircle(0, 0, 10);
-      gfx.setPosition(orbX, orbY);
+      // 스프라이트 위치 + 자체 회전 갱신
+      sprite.setPosition(orbX, orbY);
+      sprite.rotation += stats.angularSpeed * deltaSec * 2;
     }
 
     // 데미지 틱 처리
@@ -665,20 +684,17 @@ export default class WeaponSystem {
   _rebuildOrbs(weapon, stats) {
     const orbInfo = this._orbData.get(weapon.id);
 
-    // 기존 Graphics 제거
-    for (const gfx of orbInfo.graphics) {
-      gfx.destroy();
+    // 기존 오브 제거
+    for (const sprite of orbInfo.graphics) {
+      sprite.destroy();
     }
     orbInfo.graphics = [];
 
-    // 새 오브 생성
+    // 새 오브 생성 (effect_plasma_orb 스프라이트 사용)
     for (let i = 0; i < stats.orbCount; i++) {
-      const gfx = this.scene.add.graphics().setDepth(9);
-      gfx.fillStyle(0xFF00FF, 0.7);
-      gfx.fillCircle(0, 0, 8);
-      gfx.lineStyle(1, 0xFF00FF, 0.9);
-      gfx.strokeCircle(0, 0, 10);
-      orbInfo.graphics.push(gfx);
+      const sprite = this.scene.add.image(0, 0, 'effect_plasma_orb').setDepth(9);
+      sprite.setAlpha(0.85);
+      orbInfo.graphics.push(sprite);
     }
 
     orbInfo.currentOrbCount = stats.orbCount;
@@ -827,27 +843,50 @@ export default class WeaponSystem {
     if (points.length < 2) return;
 
     const gfx = this.scene.add.graphics().setDepth(9);
-    gfx.lineStyle(3, 0x00FFFF, 0.9);
 
+    // 지그재그 중간점 3개를 미리 계산하여 저장
+    const segments = [];
     for (let i = 0; i < points.length - 1; i++) {
       const p1 = points[i];
       const p2 = points[i + 1];
 
-      // 지그재그 번개 효과: 중간점 2개를 랜덤 오프셋
-      const midX1 = p1.x + (p2.x - p1.x) * 0.33 + (Math.random() - 0.5) * 20;
-      const midY1 = p1.y + (p2.y - p1.y) * 0.33 + (Math.random() - 0.5) * 20;
-      const midX2 = p1.x + (p2.x - p1.x) * 0.66 + (Math.random() - 0.5) * 20;
-      const midY2 = p1.y + (p2.y - p1.y) * 0.66 + (Math.random() - 0.5) * 20;
-
-      gfx.lineBetween(p1.x, p1.y, midX1, midY1);
-      gfx.lineBetween(midX1, midY1, midX2, midY2);
-      gfx.lineBetween(midX2, midY2, p2.x, p2.y);
+      const m1x = p1.x + (p2.x - p1.x) * 0.25 + (Math.random() - 0.5) * 24;
+      const m1y = p1.y + (p2.y - p1.y) * 0.25 + (Math.random() - 0.5) * 24;
+      const m2x = p1.x + (p2.x - p1.x) * 0.50 + (Math.random() - 0.5) * 20;
+      const m2y = p1.y + (p2.y - p1.y) * 0.50 + (Math.random() - 0.5) * 20;
+      const m3x = p1.x + (p2.x - p1.x) * 0.75 + (Math.random() - 0.5) * 24;
+      const m3y = p1.y + (p2.y - p1.y) * 0.75 + (Math.random() - 0.5) * 24;
+      segments.push({ p1, p2, mids: [{ x: m1x, y: m1y }, { x: m2x, y: m2y }, { x: m3x, y: m3y }] });
     }
 
-    // 코어 라인 (밝은 중심)
-    gfx.lineStyle(1, 0xFFFFFF, 0.7);
+    // 레이어 1: 외곽 글로우 (5px cyan 30% opacity)
+    gfx.lineStyle(5, 0x00FFFF, 0.3);
+    for (const seg of segments) {
+      gfx.lineBetween(seg.p1.x, seg.p1.y, seg.mids[0].x, seg.mids[0].y);
+      gfx.lineBetween(seg.mids[0].x, seg.mids[0].y, seg.mids[1].x, seg.mids[1].y);
+      gfx.lineBetween(seg.mids[1].x, seg.mids[1].y, seg.mids[2].x, seg.mids[2].y);
+      gfx.lineBetween(seg.mids[2].x, seg.mids[2].y, seg.p2.x, seg.p2.y);
+    }
+
+    // 레이어 2: 메인 번개 (3px cyan 90% opacity)
+    gfx.lineStyle(3, 0x00FFFF, 0.9);
+    for (const seg of segments) {
+      gfx.lineBetween(seg.p1.x, seg.p1.y, seg.mids[0].x, seg.mids[0].y);
+      gfx.lineBetween(seg.mids[0].x, seg.mids[0].y, seg.mids[1].x, seg.mids[1].y);
+      gfx.lineBetween(seg.mids[1].x, seg.mids[1].y, seg.mids[2].x, seg.mids[2].y);
+      gfx.lineBetween(seg.mids[2].x, seg.mids[2].y, seg.p2.x, seg.p2.y);
+    }
+
+    // 레이어 3: 코어 직선 (1.5px white 95% opacity)
+    gfx.lineStyle(1.5, 0xFFFFFF, 0.95);
     for (let i = 0; i < points.length - 1; i++) {
       gfx.lineBetween(points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);
+    }
+
+    // 체인 노드(적 위치)에 스파크 원 — 첫 번째 점(플레이어)은 제외
+    for (let i = 1; i < points.length; i++) {
+      gfx.fillStyle(0xFFFF00, 0.7);
+      gfx.fillCircle(points[i].x, points[i].y, 4);
     }
 
     // 150ms 후 제거
@@ -903,16 +942,12 @@ export default class WeaponSystem {
     const dy = target.y - py;
     const angle = Math.atan2(dy, dx);
 
-    // 미사일 Graphics 생성
-    const gfx = this.scene.add.graphics().setDepth(9);
-    gfx.fillStyle(0xFF6600, 0.9);
-    gfx.fillCircle(0, 0, 4);
-    gfx.lineStyle(1, 0xFFFF00, 0.7);
-    gfx.strokeCircle(0, 0, 5);
-    gfx.setPosition(px, py);
+    // 미사일 스프라이트 생성 (effect_missile 텍스처)
+    const sprite = this.scene.add.image(px, py, 'effect_missile').setDepth(9);
+    sprite.setRotation(angle);
 
     this._missiles.push({
-      gfx,
+      gfx: sprite,
       x: px,
       y: py,
       angle,
@@ -970,6 +1005,7 @@ export default class WeaponSystem {
       m.y += moveY;
       m.distanceTraveled += Math.sqrt(moveX * moveX + moveY * moveY);
       m.gfx.setPosition(m.x, m.y);
+      m.gfx.setRotation(m.angle);
 
       // 적 충돌 판정 (가장 가까운 적과 15px 이내)
       let exploded = false;
@@ -1029,19 +1065,19 @@ export default class WeaponSystem {
       });
     }
 
-    // 폭발 시각 효과
-    const gfx = this.scene.add.graphics().setDepth(8);
-    gfx.fillStyle(0xFF6600, 0.4);
-    gfx.fillCircle(missile.x, missile.y, missile.explosionRadius);
-    gfx.lineStyle(2, 0xFFFF00, 0.8);
-    gfx.strokeCircle(missile.x, missile.y, missile.explosionRadius);
+    // 폭발 시각 효과: effect_explosion 스프라이트 + scale tween
+    const explSprite = this.scene.add.image(missile.x, missile.y, 'effect_explosion')
+      .setScale(missile.explosionRadius / 32)
+      .setAlpha(0.8)
+      .setDepth(8);
 
-    // 200ms 후 제거
     this.scene.tweens.add({
-      targets: gfx,
+      targets: explSprite,
       alpha: 0,
+      scaleX: explSprite.scaleX * 1.2,
+      scaleY: explSprite.scaleY * 1.2,
       duration: 200,
-      onComplete: () => gfx.destroy(),
+      onComplete: () => explSprite.destroy(),
     });
   }
 
@@ -1067,22 +1103,19 @@ export default class WeaponSystem {
 
     const toSpawn = targetCount - currentCount;
     for (let i = 0; i < toSpawn; i++) {
-      // Phaser Graphics로 드론 시각화 (반지름 8px, neonCyan)
-      const gfx = this.scene.add.graphics().setDepth(6);
-      gfx.fillStyle(0x00FFFF, 0.8);
-      gfx.fillCircle(0, 0, 8);
-      gfx.lineStyle(1, 0x00FFFF, 0.5);
-      gfx.strokeCircle(0, 0, 10);
-
-      // 플레이어 근처에 배치
+      // effect_drone 스프라이트로 드론 시각화
       const offsetAngle = Math.random() * Math.PI * 2;
       const startX = this.player.x + Math.cos(offsetAngle) * 40;
       const startY = this.player.y + Math.sin(offsetAngle) * 40;
-      gfx.setPosition(startX, startY);
+
+      const sprite = this.scene.add.image(startX, startY, 'effect_drone').setDepth(6);
 
       // Arcade Physics 동적 바디 등록
-      this.scene.physics.add.existing(gfx);
-      gfx.body.setCircle(8, -8, -8);
+      this.scene.physics.add.existing(sprite);
+      sprite.body.setCircle(8, 4, 4);
+
+      // gfx를 sprite로 매핑 (기존 API 호환)
+      const gfx = sprite;
 
       const drone = {
         gfx,
@@ -1157,6 +1190,9 @@ export default class WeaponSystem {
 
         drone.lastFired = 0;
       }
+
+      // 호버링 미세 회전 (스프라이트 흔들림)
+      gfx.rotation = Math.sin(time * 0.003 + drone.hoverOffset) * 0.2;
     }
   }
 
@@ -1260,9 +1296,449 @@ export default class WeaponSystem {
       }
     });
 
-    // VFX/SFX
+    // VFX/SFX — EMP 링 스프라이트 + 파티클
+    VFXSystem.empRing(this.scene, px, py, stats.radius);
     VFXSystem.empBurst(this.scene, px, py, stats.radius);
     SoundSystem.play('emp_blast');
+  }
+
+  // ── 근접(melee) 타입 업데이트 ──
+
+  /**
+   * 근접 타입 무기(포스 블레이드)를 업데이트한다.
+   * 주기적으로 플레이어 전방에 호(arc) 슬래시 → 범위 내 적 데미지 + 넉백.
+   * @param {Object} weapon - 무기 객체
+   * @param {number} time - 전체 경과 시간 (ms)
+   * @param {number} delta - 프레임 간격 (ms)
+   * @private
+   */
+  _updateMelee(weapon, time, delta) {
+    weapon.cooldownTimer -= delta;
+    if (weapon.cooldownTimer <= 0) {
+      const stats = this.getWeaponStats(weapon);
+      const effectiveCooldown = stats.cooldown * (this.player.cooldownMultiplier || 1);
+      this._triggerMeleeSlash(weapon.id, stats);
+      weapon.cooldownTimer = effectiveCooldown;
+    }
+  }
+
+  /**
+   * 근접 슬래시를 발동한다. 가장 가까운 적 방향으로 호 범위 데미지 + 넉백.
+   * @param {string} weaponId - 무기 ID
+   * @param {Object} stats - 무기 스탯
+   * @private
+   */
+  _triggerMeleeSlash(weaponId, stats) {
+    const px = this.player.x;
+    const py = this.player.y;
+
+    // 가장 가까운 적 방향으로 슬래시 (적 없으면 마지막 이동 방향)
+    const target = this.findClosestEnemy(px, py, stats.range * 1.5);
+    let slashAngle;
+    if (target) {
+      slashAngle = Math.atan2(target.y - py, target.x - px);
+    } else {
+      slashAngle = Math.atan2(this.player._smoothDirY || 0, this.player._smoothDirX || 1);
+    }
+
+    // arcAngle 범위 내 적에게 데미지 + 넉백
+    const halfArc = (stats.arcAngle * Math.PI / 180) / 2;
+    const enemyPool = this.scene.waveSystem?.enemyPool;
+    if (!enemyPool) return;
+
+    const atkMult = this.player.getEffectiveAttackMultiplier?.() || (this.player.attackMultiplier || 1);
+    const baseDamage = Math.floor(stats.damage * atkMult);
+
+    enemyPool.forEach(enemy => {
+      if (!enemy.active) return;
+      const dist = Phaser.Math.Distance.Between(px, py, enemy.x, enemy.y);
+      if (dist > stats.range) return;
+
+      const angleToEnemy = Math.atan2(enemy.y - py, enemy.x - px);
+      let angleDiff = angleToEnemy - slashAngle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+      if (Math.abs(angleDiff) <= halfArc) {
+        const { damage, isCrit } = this._rollCrit(baseDamage);
+        enemy.takeDamage(damage, true, null, weaponId);
+        this.recordDamage(weaponId, damage);
+        if (isCrit) this._showCritEffect(enemy.x, enemy.y);
+
+        // 넉백
+        const kbAngle = Math.atan2(enemy.y - py, enemy.x - px);
+        enemy.x += Math.cos(kbAngle) * stats.knockback;
+        enemy.y += Math.sin(kbAngle) * stats.knockback;
+      }
+    });
+
+    // 시각 효과: 슬래시 스프라이트
+    this._showSlashEffect(px, py, slashAngle, stats.range);
+    SoundSystem.play('shoot');
+  }
+
+  /**
+   * 슬래시 시각 효과를 표시한다.
+   * @param {number} px - 플레이어 X
+   * @param {number} py - 플레이어 Y
+   * @param {number} angle - 슬래시 방향 (라디안)
+   * @param {number} range - 슬래시 사거리
+   * @private
+   */
+  _showSlashEffect(px, py, angle, range) {
+    const offsetX = Math.cos(angle) * range / 2;
+    const offsetY = Math.sin(angle) * range / 2;
+
+    const sprite = this.scene.add.image(px + offsetX, py + offsetY, 'effect_force_slash')
+      .setRotation(angle)
+      .setScale(range / 48)
+      .setAlpha(0.9)
+      .setDepth(9);
+
+    this.scene.tweens.add({
+      targets: sprite,
+      alpha: 0,
+      duration: 200,
+      onComplete: () => sprite.destroy(),
+    });
+  }
+
+  // ── 구름(cloud) 타입 업데이트 ──
+
+  /**
+   * 구름 타입 무기(나노스웜)를 업데이트한다.
+   * 주기적으로 적 위치에 독 구름 생성 → 영역 내 적에게 DoT.
+   * @param {Object} weapon - 무기 객체
+   * @param {number} time - 전체 경과 시간 (ms)
+   * @param {number} delta - 프레임 간격 (ms)
+   * @private
+   */
+  _updateCloud(weapon, time, delta) {
+    const stats = this.getWeaponStats(weapon);
+
+    // 쿨다운 체크 → 새 구름 생성
+    weapon.cooldownTimer -= delta;
+    if (weapon.cooldownTimer <= 0) {
+      const activeCloudCount = this._clouds.filter(c => c.weaponId === weapon.id).length;
+      if (activeCloudCount < stats.cloudCount) {
+        const target = this.findClosestEnemy(this.player.x, this.player.y, 300);
+        if (target) {
+          this._spawnCloud(target.x, target.y, stats, weapon.id);
+        }
+      }
+      weapon.cooldownTimer = stats.cooldown * (this.player.cooldownMultiplier || 1);
+    }
+
+    // 활성 구름 업데이트
+    for (let i = this._clouds.length - 1; i >= 0; i--) {
+      const cloud = this._clouds[i];
+      if (cloud.weaponId !== weapon.id) continue;
+
+      cloud.lifetime -= delta;
+      cloud.tickTimer -= delta;
+
+      if (cloud.lifetime <= 0) {
+        cloud.sprite.destroy();
+        this._clouds.splice(i, 1);
+        continue;
+      }
+
+      // DoT 틱 (0.5초마다)
+      if (cloud.tickTimer <= 0) {
+        cloud.tickTimer = 500;
+        this._applyCloudDamage(cloud, weapon.id);
+      }
+
+      // alpha 맥동
+      cloud.sprite.setAlpha(0.5 + Math.sin(time * 0.005) * 0.2);
+
+      // 페이드 아웃 (마지막 1초)
+      if (cloud.lifetime < 1000) {
+        cloud.sprite.setAlpha(cloud.lifetime / 1000 * 0.7);
+      }
+    }
+  }
+
+  /**
+   * 나노 구름을 생성한다.
+   * @param {number} x - 배치 X
+   * @param {number} y - 배치 Y
+   * @param {Object} stats - 무기 스탯
+   * @param {string} weaponId - 무기 ID
+   * @private
+   */
+  _spawnCloud(x, y, stats, weaponId) {
+    const sprite = this.scene.add.image(x, y, 'effect_nano_cloud')
+      .setScale(stats.radius / 24)
+      .setAlpha(0.6)
+      .setDepth(5);
+
+    this._clouds.push({
+      sprite,
+      x,
+      y,
+      radius: stats.radius,
+      tickDamage: stats.tickDamage,
+      tickTimer: 500,
+      lifetime: stats.duration,
+      weaponId,
+      poisonStack: stats.poisonStack,
+    });
+  }
+
+  /**
+   * 구름 범위 내 적에게 독 데미지를 적용한다.
+   * @param {Object} cloud - 구름 데이터
+   * @param {string} weaponId - 무기 ID
+   * @private
+   */
+  _applyCloudDamage(cloud, weaponId) {
+    const enemyPool = this.scene.waveSystem?.enemyPool;
+    if (!enemyPool) return;
+
+    const atkMult = this.player.getEffectiveAttackMultiplier?.() || (this.player.attackMultiplier || 1);
+    // 기본 틱 데미지 + 독 스택 보너스 (스택당 3 추가)
+    const dmg = Math.floor((cloud.tickDamage + cloud.poisonStack * 3) * atkMult);
+
+    enemyPool.forEach(enemy => {
+      if (!enemy.active) return;
+      const dist = Phaser.Math.Distance.Between(cloud.x, cloud.y, enemy.x, enemy.y);
+      if (dist <= cloud.radius) {
+        enemy.takeDamage(dmg, false, null, weaponId);
+        this.recordDamage(weaponId, dmg);
+      }
+    });
+  }
+
+  // ── 중력(gravity) 타입 업데이트 ──
+
+  /**
+   * 중력 타입 무기(볼텍스 캐넌)를 업데이트한다.
+   * 적 위치에 소용돌이 발사 → 범위 내 적 끌어당기기 + DoT.
+   * @param {Object} weapon - 무기 객체
+   * @param {number} time - 전체 경과 시간 (ms)
+   * @param {number} delta - 프레임 간격 (ms)
+   * @private
+   */
+  _updateGravity(weapon, time, delta) {
+    const stats = this.getWeaponStats(weapon);
+
+    weapon.cooldownTimer -= delta;
+    if (weapon.cooldownTimer <= 0) {
+      const target = this.findClosestEnemy(this.player.x, this.player.y, 400);
+      if (target) {
+        this._spawnVortex(target.x, target.y, stats, weapon.id);
+        weapon.cooldownTimer = stats.cooldown * (this.player.cooldownMultiplier || 1);
+      } else {
+        weapon.cooldownTimer = 0;
+      }
+    }
+
+    // 활성 볼텍스 업데이트
+    const deltaSec = delta / 1000;
+    for (let i = this._vortexes.length - 1; i >= 0; i--) {
+      const vortex = this._vortexes[i];
+      if (vortex.weaponId !== weapon.id) continue;
+
+      vortex.lifetime -= delta;
+      vortex.tickTimer -= delta;
+
+      if (vortex.lifetime <= 0) {
+        vortex.sprite.destroy();
+        this._vortexes.splice(i, 1);
+        continue;
+      }
+
+      // 회전 애니메이션
+      vortex.sprite.rotation += 3.0 * deltaSec;
+
+      // 범위 내 적 끌어당기기 + DoT
+      const enemyPool = this.scene.waveSystem?.enemyPool;
+      if (enemyPool) {
+        enemyPool.forEach(enemy => {
+          if (!enemy.active) return;
+          const dist = Phaser.Math.Distance.Between(vortex.x, vortex.y, enemy.x, enemy.y);
+          if (dist > vortex.pullRadius || dist < 5) return;
+
+          // 끌어당기기
+          const angle = Math.atan2(vortex.y - enemy.y, vortex.x - enemy.x);
+          const pull = vortex.pullForce * deltaSec * (1 - dist / vortex.pullRadius);
+          enemy.x += Math.cos(angle) * pull;
+          enemy.y += Math.sin(angle) * pull;
+        });
+
+        // 데미지 틱 (0.5초마다)
+        if (vortex.tickTimer <= 0) {
+          vortex.tickTimer = 500;
+          const atkMult = this.player.getEffectiveAttackMultiplier?.() || 1;
+          const dmg = Math.floor(vortex.pullDamage * atkMult);
+          enemyPool.forEach(enemy => {
+            if (!enemy.active) return;
+            const dist = Phaser.Math.Distance.Between(vortex.x, vortex.y, enemy.x, enemy.y);
+            if (dist <= vortex.pullRadius) {
+              enemy.takeDamage(dmg, false, null, weapon.id);
+              this.recordDamage(weapon.id, dmg);
+            }
+          });
+        }
+      }
+
+      // 페이드 아웃 (마지막 0.5초)
+      if (vortex.lifetime < 500) {
+        vortex.sprite.setAlpha(vortex.lifetime / 500);
+      }
+    }
+  }
+
+  /**
+   * 볼텍스를 생성한다.
+   * @param {number} x - 배치 X
+   * @param {number} y - 배치 Y
+   * @param {Object} stats - 무기 스탯
+   * @param {string} weaponId - 무기 ID
+   * @private
+   */
+  _spawnVortex(x, y, stats, weaponId) {
+    const sprite = this.scene.add.image(x, y, 'effect_vortex')
+      .setScale(stats.pullRadius / 24)
+      .setAlpha(0.8)
+      .setDepth(5);
+
+    this._vortexes.push({
+      sprite,
+      x,
+      y,
+      pullRadius: stats.pullRadius,
+      pullDamage: stats.pullDamage,
+      lifetime: stats.vortexDuration,
+      tickTimer: 500,
+      weaponId,
+      pullForce: stats.pullForce,
+    });
+  }
+
+  // ── 회전 낫(rotating_blade) 타입 업데이트 ──
+
+  /**
+   * 회전 낫 타입 무기(리퍼 필드)를 업데이트한다.
+   * 플레이어 주위로 낫 날이 회전하며, 적 타격 시 저주 효과 부여.
+   * @param {Object} weapon - 무기 객체
+   * @param {number} time - 전체 경과 시간 (ms)
+   * @param {number} delta - 프레임 간격 (ms)
+   * @private
+   */
+  _updateRotatingBlade(weapon, time, delta) {
+    const stats = this.getWeaponStats(weapon);
+
+    if (!this._bladeData.has(weapon.id)) {
+      this._bladeData.set(weapon.id, {
+        sprites: [],
+        angle: 0,
+        tickTimer: 0,
+        currentBladeCount: 0,
+      });
+      this._rebuildBlades(weapon, stats);
+    }
+
+    const bladeInfo = this._bladeData.get(weapon.id);
+
+    // bladeCount 변경 시 재구성 (레벨업)
+    if (bladeInfo.currentBladeCount !== stats.bladeCount) {
+      this._rebuildBlades(weapon, stats);
+    }
+
+    // 회전 업데이트
+    const deltaSec = delta / 1000;
+    bladeInfo.angle += stats.angularSpeed * deltaSec;
+
+    const px = this.player.x;
+    const py = this.player.y;
+
+    for (let i = 0; i < bladeInfo.sprites.length; i++) {
+      const sprite = bladeInfo.sprites[i];
+      const offsetAngle = bladeInfo.angle + (i * (Math.PI * 2 / stats.bladeCount));
+      const bx = px + Math.cos(offsetAngle) * stats.orbitRadius;
+      const by = py + Math.sin(offsetAngle) * stats.orbitRadius;
+      sprite.setPosition(bx, by);
+      sprite.setRotation(offsetAngle + Math.PI / 2); // 접선 방향
+    }
+
+    // 데미지 틱
+    bladeInfo.tickTimer -= delta;
+    if (bladeInfo.tickTimer <= 0) {
+      bladeInfo.tickTimer = stats.tickInterval;
+      this._applyBladeDamage(weapon, stats, bladeInfo);
+    }
+  }
+
+  /**
+   * 블레이드 스프라이트를 재구성한다.
+   * @param {Object} weapon - 무기 객체
+   * @param {Object} stats - 무기 스탯
+   * @private
+   */
+  _rebuildBlades(weapon, stats) {
+    const bladeInfo = this._bladeData.get(weapon.id);
+
+    // 기존 블레이드 제거
+    for (const sprite of bladeInfo.sprites) {
+      sprite.destroy();
+    }
+    bladeInfo.sprites = [];
+
+    // 새 블레이드 생성
+    for (let i = 0; i < stats.bladeCount; i++) {
+      const sprite = this.scene.add.image(0, 0, 'effect_reaper_blade').setDepth(9);
+      sprite.setAlpha(0.9);
+      bladeInfo.sprites.push(sprite);
+    }
+
+    bladeInfo.currentBladeCount = stats.bladeCount;
+  }
+
+  /**
+   * 블레이드 근처 적에게 데미지 + 저주(속도 -30%)를 적용한다.
+   * @param {Object} weapon - 무기 객체
+   * @param {Object} stats - 무기 스탯
+   * @param {Object} bladeInfo - 블레이드 정보
+   * @private
+   */
+  _applyBladeDamage(weapon, stats, bladeInfo) {
+    const atkMult = this.player.getEffectiveAttackMultiplier?.() || 1;
+    const baseDamage = Math.floor(stats.damage * atkMult);
+    const enemyPool = this.scene.waveSystem?.enemyPool;
+    if (!enemyPool) return;
+
+    for (const sprite of bladeInfo.sprites) {
+      enemyPool.forEach(enemy => {
+        if (!enemy.active) return;
+        const dist = Phaser.Math.Distance.Between(sprite.x, sprite.y, enemy.x, enemy.y);
+        if (dist <= 30) { // 블레이드 히트 범위
+          const { damage, isCrit } = this._rollCrit(baseDamage);
+          enemy.takeDamage(damage, true, null, weapon.id);
+          this.recordDamage(weapon.id, damage);
+          if (isCrit) this._showCritEffect(enemy.x, enemy.y);
+
+          // 저주: 속도 -30%
+          if (!enemy._reaperCursed) {
+            enemy._reaperCursed = true;
+            enemy._originalSpeed = enemy._originalSpeed || enemy.speed;
+            enemy.speed *= 0.7;
+
+            // 저주 시각 효과: 적 tint 변경
+            enemy.setTint(0xFF3333);
+
+            this.scene.time.delayedCall(stats.curseDuration, () => {
+              if (enemy.active) {
+                enemy.speed = enemy._originalSpeed || enemy.speed / 0.7;
+                enemy._reaperCursed = false;
+                enemy.clearTint();
+              }
+            });
+          }
+        }
+      });
+    }
   }
 
   // ── 치명타(크리티컬) 판정 ──
@@ -1444,6 +1920,26 @@ export default class WeaponSystem {
       if (drone.gfx) drone.gfx.destroy();
     }
     this._drones = [];
+
+    // 구름 제거
+    for (const cloud of this._clouds) {
+      if (cloud.sprite) cloud.sprite.destroy();
+    }
+    this._clouds = [];
+
+    // 볼텍스 제거
+    for (const vortex of this._vortexes) {
+      if (vortex.sprite) vortex.sprite.destroy();
+    }
+    this._vortexes = [];
+
+    // 블레이드 데이터 제거
+    for (const [, bladeInfo] of this._bladeData) {
+      for (const sprite of bladeInfo.sprites) {
+        sprite.destroy();
+      }
+    }
+    this._bladeData.clear();
 
     this.weapons = [];
   }
