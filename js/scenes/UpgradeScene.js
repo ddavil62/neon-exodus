@@ -254,6 +254,14 @@ export default class UpgradeScene extends Phaser.Scene {
       return;
     }
 
+    // 카드 좌측 상단 카테고리 아이콘 (16x16, textures.exists 가드)
+    const iconKey = 'icon_upgrade_' + upgrade.category;
+    if (this.textures.exists(iconKey)) {
+      const icon = this.add.image(x - w / 2 + 12, y - h / 2 + 12, iconKey)
+        .setDisplaySize(16, 16);
+      this._cardElements.push(icon);
+    }
+
     // 이름
     const nameText = this.add.text(x, y - h / 2 + 14, t(upgrade.nameKey), {
       fontSize: '11px',

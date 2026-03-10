@@ -35,21 +35,33 @@ export default class VirtualJoystick {
 
     // ── 시각 요소 생성 ──
 
-    /** 조이스틱 바탕 원 (반투명 흰색) */
-    this.base = scene.add.graphics();
-    this.base.fillStyle(0xFFFFFF, 0.15);
-    this.base.fillCircle(0, 0, JOYSTICK_MAX_RADIUS);
-    this.base.setDepth(1000);
-    this.base.setScrollFactor(0);
-    this.base.setVisible(false);
+    // 조이스틱 베이스: PNG 텍스처 존재 시 Image, 없으면 Graphics 폴백
+    if (scene.textures.exists('joystick_base')) {
+      /** @type {Phaser.GameObjects.Image} 조이스틱 바탕 이미지 */
+      this.base = scene.add.image(0, 0, 'joystick_base')
+        .setDisplaySize(JOYSTICK_MAX_RADIUS * 2, JOYSTICK_MAX_RADIUS * 2)
+        .setAlpha(0.7);
+    } else {
+      /** @type {Phaser.GameObjects.Graphics} 조이스틱 바탕 (폴백) */
+      this.base = scene.add.graphics();
+      this.base.fillStyle(0xFFFFFF, 0.15);
+      this.base.fillCircle(0, 0, JOYSTICK_MAX_RADIUS);
+    }
+    this.base.setDepth(1000).setScrollFactor(0).setVisible(false);
 
-    /** 조이스틱 엄지 원 (네온 시안) */
-    this.thumb = scene.add.graphics();
-    this.thumb.fillStyle(COLORS.NEON_CYAN, 0.7);
-    this.thumb.fillCircle(0, 0, 20);
-    this.thumb.setDepth(1000);
-    this.thumb.setScrollFactor(0);
-    this.thumb.setVisible(false);
+    // 조이스틱 엄지: PNG 텍스처 존재 시 Image, 없으면 Graphics 폴백
+    if (scene.textures.exists('joystick_thumb')) {
+      /** @type {Phaser.GameObjects.Image} 조이스틱 엄지 이미지 */
+      this.thumb = scene.add.image(0, 0, 'joystick_thumb')
+        .setDisplaySize(40, 40)
+        .setAlpha(0.85);
+    } else {
+      /** @type {Phaser.GameObjects.Graphics} 조이스틱 엄지 (폴백) */
+      this.thumb = scene.add.graphics();
+      this.thumb.fillStyle(COLORS.NEON_CYAN, 0.7);
+      this.thumb.fillCircle(0, 0, 20);
+    }
+    this.thumb.setDepth(1000).setScrollFactor(0).setVisible(false);
 
     /** 터치 시작 좌표 */
     this._startX = 0;

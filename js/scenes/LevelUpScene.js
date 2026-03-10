@@ -484,11 +484,22 @@ export default class LevelUpScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(3);
     this._cardElements.push(labelText);
 
-    // 아이콘
-    const iconText = this.add.text(x, y - 35, choice.icon || '?', {
-      fontSize: '24px',
-    }).setOrigin(0.5).setDepth(3);
-    this._cardElements.push(iconText);
+    // 아이콘: 이미지 텍스처 우선, 없으면 이모지 폴백
+    const weaponTypes = ['weapon_upgrade', 'new_weapon'];
+    const iconKey = weaponTypes.includes(choice.type)
+      ? 'icon_weapon_' + choice.id
+      : 'icon_passive_' + choice.id;
+
+    if (this.textures.exists(iconKey)) {
+      const iconImg = this.add.image(x, y - 35, iconKey)
+        .setDisplaySize(28, 28).setOrigin(0.5).setDepth(3);
+      this._cardElements.push(iconImg);
+    } else {
+      const iconText = this.add.text(x, y - 35, choice.icon || '?', {
+        fontSize: '24px',
+      }).setOrigin(0.5).setDepth(3);
+      this._cardElements.push(iconText);
+    }
 
     // 이름
     const nameText = this.add.text(x, y - 5, choice.name || '', {

@@ -39,8 +39,8 @@ export default class Consumable extends Phaser.Physics.Arcade.Sprite {
     // 스프라이트 스케일 적용
     this.setScale(SPRITE_SCALE);
 
-    // 충돌체: 원형 (24x24 텍스처 기준, 반경 8, offset = 12 - 8 = 4)
-    this.body.setCircle(8, 4, 4);
+    // 충돌체: 원형 (48x48 텍스처 기준, 반경 16, offset = 24 - 16 = 8)
+    this.body.setCircle(16, 8, 8);
 
     // 렌더링 깊이 (XP 보석 위, 플레이어 아래)
     this.setDepth(5);

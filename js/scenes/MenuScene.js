@@ -30,6 +30,14 @@ export default class MenuScene extends Phaser.Scene {
     // ── 배경 ──
     this.cameras.main.setBackgroundColor(COLORS.BG);
 
+    // menu_bg 텍스처 존재 시 배경 이미지 렌더링 (Group B)
+    if (this.textures.exists('menu_bg')) {
+      this.add.image(centerX, GAME_HEIGHT / 2, 'menu_bg')
+        .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+        .setAlpha(0.85)
+        .setDepth(-1);
+    }
+
     // ── 타이틀 ──
     this.add.text(centerX, 150, t('menu.title'), {
       fontSize: '36px',

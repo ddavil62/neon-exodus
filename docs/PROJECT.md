@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-10 (캐릭터별 고유 스프라이트 + 8방향 걷기 애니메이션)
+> 최종 업데이트: 2026-03-10 (아트 Phase 2: UI + 배경 + 소모품 아이콘)
 
 ## 프로젝트 개요
 
@@ -53,13 +53,13 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과)
-│   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드)
+│   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드, 카테고리 아이콘)
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (13개, 진행률)
 │   │   └── CollectionScene.js     # 도감 화면 (4탭: 무기/패시브/적/도전과제)
 │   ├── entities/
@@ -76,6 +76,7 @@ neon-exodus/
 │   │   ├── WaveSystem.js          # 적 스폰 웨이브 관리, 엔들리스 모드 스케일링
 │   │   ├── SoundSystem.js         # AudioContext 프로그래매틱 SFX 9종 + BGM 2곡
 │   │   ├── VFXSystem.js           # Phaser Particles 기반 VFX 6종
+│   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (위험 회피 > XP 수집 > 적 접근 > 방랑)
 │   ├── managers/
 │   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드
@@ -92,6 +93,17 @@ neon-exodus/
 │       ├── characters.js          # 캐릭터 6종 (spriteKey 필드로 텍스처 매핑)
 │       └── achievements.js        # 도전과제 13종
 ├── assets/
+│   ├── backgrounds/               # 배경 에셋 (Phase 2 아트)
+│   │   ├── bg_tile.png            # 128x128 사이버 메탈 바닥 seamless 타일 (GPT Image API)
+│   │   └── menu_bg.png            # 360x640 사이버 도시 실루엣 배경 (GPT Image API)
+│   ├── ui/
+│   │   ├── joystick/              # 조이스틱 UI 이미지 (SVG 직접 생성)
+│   │   │   ├── base.png           # 128x128 홀로그램 동심원 베이스
+│   │   │   └── thumb.png          # 64x64 시안 글로우 엄지
+│   │   └── icons/                 # 무기/패시브/업그레이드 아이콘 (SVG 직접 생성, 32x32)
+│   │       ├── weapon_*.png       # 무기 아이콘 7종
+│   │       ├── passive_*.png      # 패시브 아이콘 10종
+│   │       └── upgrade_*.png      # 업그레이드 아이콘 4종
 │   └── sprites/                   # 벡터 PNG 에셋 (GPT Image API 17종 + SVG 직접 생성 3종) + 캐릭터 6종 idle/walk 스프라이트
 │       ├── player.png             # agent idle 정적 이미지 (48x48)
 │       ├── player_walk.png        # agent 걷기 스프라이트시트 (240x192, 5방향x4프레임, 48x48/프레임)
@@ -128,19 +140,20 @@ neon-exodus/
 │           ├── xp_gem_s.png       # 12x12
 │           ├── xp_gem_m.png       # 20x20
 │           ├── xp_gem_l.png       # 28x28
-│           ├── consumable_nano_repair.png    # 24x24 (녹색 십자)
-│           ├── consumable_mag_pulse.png      # 24x24 (시안 자석)
-│           ├── consumable_emp_bomb.png       # 24x24 (블루 원형)
-│           ├── consumable_credit_chip.png    # 24x24 (골드 칩)
-│           ├── consumable_overclock.png      # 24x24 (오렌지 번개)
-│           └── consumable_shield_battery.png # 24x24 (퍼플 방패)
+│           ├── nano_repair.png               # 48x48 (녹색 십자, Phase 2 업스케일)
+│           ├── magnetic_pulse.png           # 48x48 (시안 자석, Phase 2 업스케일)
+│           ├── emp_bomb.png                 # 48x48 (블루 원형, Phase 2 업스케일)
+│           ├── credit_chip.png              # 48x48 (골드 칩, Phase 2 업스케일)
+│           ├── overclock.png                # 48x48 (오렌지 번개, Phase 2 업스케일)
+│           └── shield_battery.png           # 48x48 (퍼플 방패, Phase 2 업스케일)
 ├── scripts/
 │   ├── build.js                   # www/ 디렉토리 빌드 스크립트
 │   ├── generate-sprites.js        # (레거시) Phase 1 DALL-E 3 스프라이트 생성 스크립트
 │   ├── generate-sprites-phase2.js # (레거시) Phase 2 보스/미니보스 스프라이트 생성 스크립트
 │   ├── generate-vector-sprites.js # 하이브리드 20종 벡터 PNG 생성 스크립트 (GPT Image API 17종 + SVG 직접 생성 3종, 현행)
 │   ├── generate-walk-anim.js      # 캐릭터별 idle + 걷기 애니메이션 스프라이트시트 생성 스크립트 (GPT Image API, --char 옵션, 현행)
-│   └── generate-consumable-sprites.js # 소모성 아이템 6종 24x24 아이콘 생성 스크립트 (GPT Image API)
+│   ├── generate-consumable-sprites.js # (레거시) 소모성 아이템 6종 24x24 아이콘 생성 스크립트 (GPT Image API)
+│   └── generate-phase2-assets.js  # Phase 2 아트 에셋 31종 생성 스크립트 (GPT Image API 8종 + SVG 직접 생성 23종, 현행)
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
@@ -154,7 +167,8 @@ neon-exodus/
 │   ├── sprite-scale.spec.js       # 스프라이트 2x 스케일 테스트 (21개)
 │   ├── walk-anim.spec.js          # 걷기 애니메이션 테스트 (24개)
 │   ├── consumables.spec.js        # 소모성 아이템 테스트 (34개)
-│   └── char-sprites.spec.js       # 캐릭터별 고유 스프라이트 테스트 (46개)
+│   ├── char-sprites.spec.js       # 캐릭터별 고유 스프라이트 테스트 (46개)
+│   └── art-phase2.spec.js         # 아트 Phase 2 UI/배경/아이콘 테스트 (36개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -185,7 +199,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 8종 (기존 6종 + consumableCollect + empBlast) |
 | 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장, 크레딧/통계/도감 관리 |
-| 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI |
+| 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/도전과제) |
@@ -196,7 +210,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 ### 아트 스타일 및 스프라이트 스케일
 
-**아트 스타일**: GPT Image API(gpt-image-1) 벡터 아트 + 네온 글로우(Glow) + 사이버펑크. 하이브리드 생성 방식: 대형 에셋(32px 이상, 17종)은 OpenAI GPT Image API로 1024x1024 고품질 이미지 생성 후 sharp로 목표 크기 리사이즈. 소형 에셋(12~28px XP 보석 3종)은 GPT Image API 다운스케일 시 디테일 소실 문제로 SVG 코드 직접 생성(`createGemSVG()` -> sharp -> PNG). 투명 배경 지원(API `background: 'transparent'` + 폴백 투명화). 에셋을 최종 표시 크기로 직접 생성하므로 스케일 배율 불필요 (`SPRITE_SCALE = 1`).
+**아트 스타일**: GPT Image API(gpt-image-1) 벡터 아트 + 네온 글로우(Glow) + 사이버펑크. 하이브리드 생성 방식: 대형 에셋(32px 이상)은 OpenAI GPT Image API로 1024x1024 고품질 이미지 생성 후 sharp로 목표 크기 리사이즈. 소형 에셋(12~32px)은 GPT Image API 다운스케일 시 디테일 소실 문제로 SVG 코드 직접 생성 후 sharp로 PNG 변환. 투명 배경 지원(API `background: 'transparent'` + 폴백 투명화). 에셋을 최종 표시 크기로 직접 생성하므로 스케일 배율 불필요 (`SPRITE_SCALE = 1`).
 
 **Phaser 렌더 설정**: `pixelArt: false`, `antialias: true` -- 벡터 에셋의 매끄러운 외곽선 렌더링.
 
@@ -214,7 +228,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | XP Gem (small) | 12x12 | circle(3, offset=3) | - |
 | XP Gem (medium) | 20x20 | circle(5, offset=5) | - |
 | XP Gem (large) | 28x28 | circle(7, offset=7) | - |
-| Consumable | 24x24 | circle(8, offset=4) | - |
+| Consumable | 48x48 | circle(16, offset=8) | - |
 
 - 충돌체 오프셋 공식: `bodyOffset = frameW / 2 - bodyRadius` (SPRITE_SCALE=1이므로 scale 나눗셈 없음)
 - tween 공통: `yoyo: true, repeat: -1, ease: 'Sine.easeInOut'`
@@ -222,6 +236,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - 에셋 미존재 시 Graphics 플레이스홀더 폴백 유지 (`textures.exists()` 가드)
 - 에셋 생성 (정적): `node scripts/generate-vector-sprites.js` (GPT Image API 17종 + SVG 직접 생성 3종 = 20종 PNG 생성, API 키 필요)
 - 에셋 생성 (캐릭터 스프라이트): `node scripts/generate-walk-anim.js` (5종 캐릭터 idle + walk 일괄 생성), `node scripts/generate-walk-anim.js --char sniper` (특정 캐릭터만), API 키 필요
+- 에셋 생성 (UI/배경/아이콘): `node scripts/generate-phase2-assets.js` (GPT Image API 8종 + SVG 직접 생성 23종 = 31종 PNG 생성, API 키 필요)
 - 아트 컨셉: `docs/ART_CONCEPT.md`
 - 관련 파일: `js/config.js`, `js/main.js`, `js/scenes/BootScene.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`, `js/data/characters.js`, `scripts/generate-vector-sprites.js`, `scripts/generate-walk-anim.js`
 - 구현 일자: 2026-03-10 (GPT Image API 벡터 전환 + XP 보석 SVG 직접 생성), 이전: 2026-03-10 (SVG 코드 벡터), 이전: 2026-03-09 (픽셀아트 SPRITE_SCALE=2)
@@ -236,12 +251,12 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 | ID | 이름(ko) | 효과 | 색상 | 텍스처 크기 |
 |---|---|---|---|---|
-| nano_repair | 나노 수리킷 | HP +30 즉시 회복 | 녹색(0x39FF14) | 24x24 |
-| mag_pulse | 자기 펄스 | 맵 전체 XP 보석 즉시 흡수 | 시안(0x00FFFF) | 24x24 |
-| emp_bomb | EMP 폭탄 | 화면 내 일반 적 즉사, 미니보스/보스 HP 20% 대미지 | 블루(0x4488FF) | 24x24 |
-| credit_chip | 크레딧 칩 | 크레딧 5~15 즉시 획득 | 골드(0xFFDD00) | 24x24 |
-| overclock | 오버클럭 모듈 | 5초간 이속 x1.5, 쿨다운 x0.7 | 오렌지(0xFF6600) | 24x24 |
-| shield_battery | 쉴드 배터리 | 30초간 완전 무적 + 접촉 적에게 반사 대미지 5 | 퍼플(0xAA44FF) | 24x24 |
+| nano_repair | 나노 수리킷 | HP +30 즉시 회복 | 녹색(0x39FF14) | 48x48 |
+| mag_pulse | 자기 펄스 | 맵 전체 XP 보석 즉시 흡수 | 시안(0x00FFFF) | 48x48 |
+| emp_bomb | EMP 폭탄 | 화면 내 일반 적 즉사, 미니보스/보스 HP 20% 대미지 | 블루(0x4488FF) | 48x48 |
+| credit_chip | 크레딧 칩 | 크레딧 5~15 즉시 획득 | 골드(0xFFDD00) | 48x48 |
+| overclock | 오버클럭 모듈 | 5초간 이속 x1.5, 쿨다운 x0.7 | 오렌지(0xFF6600) | 48x48 |
+| shield_battery | 쉴드 배터리 | 30초간 완전 무적 + 접촉 적에게 반사 대미지 5 | 퍼플(0xAA44FF) | 48x48 |
 
 #### 드롭률
 
@@ -267,7 +282,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 
 - 수명: 10초 (`CONSUMABLE_LIFETIME`)
 - 깜빡임: 마지막 3초 (alpha 1->0.3, 150ms yoyo tween)
-- 충돌체: circle(8, offset=4), depth=5
+- 충돌체: circle(16, offset=8), depth=5
 - ObjectPool 초기 크기: 20개, 자동 확장 지원
 - 스폰 시 랜덤 분산: +-10px
 
@@ -297,10 +312,11 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - empBlast(): 화면 클리어 파티클 + 카메라 플래시
 
 #### 에셋 생성
-- 실행: `node scripts/generate-consumable-sprites.js` (루트 .env에 OPENAI_API_KEY 필요)
-- GPT Image API(gpt-image-1)로 6종 1024x1024 생성 후 24x24 리사이즈
+- 실행: `node scripts/generate-phase2-assets.js` (루트 .env에 OPENAI_API_KEY 필요)
+- GPT Image API(gpt-image-1)로 6종 1024x1024 생성 후 48x48 리사이즈 (Phase 2 아트에서 24x24 -> 48x48 업스케일)
+- (레거시) `scripts/generate-consumable-sprites.js`는 24x24 생성 스크립트로 Phase 2에서 대체됨
 
-- 관련 파일: `js/data/consumables.js`, `js/entities/Consumable.js`, `js/config.js`, `js/scenes/GameScene.js`, `js/entities/Enemy.js`, `js/entities/Player.js`, `js/systems/VFXSystem.js`, `js/scenes/BootScene.js`, `js/i18n.js`, `scripts/generate-consumable-sprites.js`
+- 관련 파일: `js/data/consumables.js`, `js/entities/Consumable.js`, `js/config.js`, `js/scenes/GameScene.js`, `js/entities/Enemy.js`, `js/entities/Player.js`, `js/systems/VFXSystem.js`, `js/scenes/BootScene.js`, `js/i18n.js`, `scripts/generate-phase2-assets.js`
 - 구현 일자: 2026-03-10
 - 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-consumables.md`
 
@@ -395,10 +411,14 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 화면 아무 곳 터치 시 조이스틱 원점 생성
 - 드래그 방향/거리로 이동 방향/속도 결정
 - 데드존: 8px 이내 이동 무시
-- 최대 반경: 50px
+- 최대 반경: 50px (`JOYSTICK_MAX_RADIUS`)
 - 터치 종료 시 조이스틱 사라짐, 캐릭터 정지
+- 시각 표현: PNG 텍스처 존재 시 Image 오브젝트, 미존재 시 Graphics 폴백
+  - base: `joystick_base` 텍스처(128x128 홀로그램 동심원), displaySize 100x100, alpha 0.7
+  - thumb: `joystick_thumb` 텍스처(64x64 시안 글로우), displaySize 40x40, alpha 0.85
+  - `textures.exists()` 가드로 Image/Graphics 분기, setPosition/setVisible/destroy 호환
 - 관련 파일: `js/systems/VirtualJoystick.js`
-- 구현 일자: 2026-03-08
+- 구현 일자: 2026-03-08 (Image 텍스처 전환: 2026-03-10)
 
 #### 자동 공격
 - 사거리 내 가장 가까운 적 방향으로 자동 발사

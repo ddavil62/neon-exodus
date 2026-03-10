@@ -1,8 +1,9 @@
 /**
  * @fileoverview 에셋 로드 및 게임 초기화 씬.
  *
- * Phase 1 스프라이트 에셋(player, projectile, 잡몹 10종, XP 보석 3종)과
- * Phase 2 보스/미니보스 에셋(미니보스 2종, 보스 3종)을 preload한다.
+ * Phase 1 스프라이트 에셋(player, projectile, 잡몹 10종, XP 보석 3종),
+ * Phase 2 보스/미니보스 에셋(미니보스 2종, 보스 3종),
+ * Phase 2 아트 에셋(배경 타일, 조이스틱 UI, 소모품 48x48, 무기/패시브/업그레이드 아이콘)을 preload한다.
  * 에셋 파일이 없는 경우 Graphics 플레이스홀더 텍스처로 폴백한다.
  * 로딩 바를 표시하고, 완료 후 MenuScene으로 전환한다.
  */
@@ -102,7 +103,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('xp_gem_m', 'assets/sprites/items/xp_gem_m.png');
     this.load.image('xp_gem_l', 'assets/sprites/items/xp_gem_l.png');
 
-    // 소모성 아이템 6종 정적 이미지 (24x24)
+    // 소모성 아이템 6종 정적 이미지 (48x48, Phase 2 업스케일)
     const consumableAssets = [
       { key: 'consumable_nano_repair',    file: 'items/nano_repair.png' },
       { key: 'consumable_mag_pulse',      file: 'items/magnetic_pulse.png' },
@@ -123,6 +124,36 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('enemy_commander_drone', 'assets/sprites/bosses/commander_drone.png');
     this.load.image('enemy_siege_titan', 'assets/sprites/bosses/siege_titan.png');
     this.load.image('enemy_core_processor', 'assets/sprites/bosses/core_processor.png');
+
+    // ── Phase 2 아트 에셋 ──
+
+    // 배경 타일 (128x128, 기존 _generateBackgroundTile 폴백과 병행)
+    this.load.image('bg_tile', 'assets/backgrounds/bg_tile.png');
+
+    // 조이스틱 UI 이미지
+    this.load.image('joystick_base', 'assets/ui/joystick/base.png');
+    this.load.image('joystick_thumb', 'assets/ui/joystick/thumb.png');
+
+    // 메뉴 배경 (Group B)
+    this.load.image('menu_bg', 'assets/backgrounds/menu_bg.png');
+
+    // 무기 아이콘 7종 (Group B, 32x32)
+    const WEAPON_ICON_IDS = ['blaster', 'laser_gun', 'plasma_orb', 'electric_chain', 'missile', 'drone', 'emp_blast'];
+    for (const id of WEAPON_ICON_IDS) {
+      this.load.image('icon_weapon_' + id, 'assets/ui/icons/weapon_' + id + '.png');
+    }
+
+    // 패시브 아이콘 10종 (Group B, 32x32)
+    const PASSIVE_ICON_IDS = ['booster', 'armor_plate', 'battery_pack', 'overclock', 'magnet_module', 'regen_module', 'aim_module', 'critical_chip', 'cooldown_chip', 'luck_module'];
+    for (const id of PASSIVE_ICON_IDS) {
+      this.load.image('icon_passive_' + id, 'assets/ui/icons/passive_' + id + '.png');
+    }
+
+    // 업그레이드 아이콘 4종 (Group B, 32x32)
+    const UPGRADE_ICON_IDS = ['basic', 'growth', 'special', 'limitBreak'];
+    for (const id of UPGRADE_ICON_IDS) {
+      this.load.image('icon_upgrade_' + id, 'assets/ui/icons/upgrade_' + id + '.png');
+    }
   }
 
   /**
@@ -483,7 +514,7 @@ export default class BootScene extends Phaser.Scene {
       }
     }
 
-    // ── 소모성 아이템 6종: 24x24 ──
+    // ── 소모성 아이템 6종: 48x48 (Phase 2 업스케일) ──
     const consumablePlaceholders = {
       consumable_nano_repair:    { color: 0x39FF14, symbol: 'cross' },
       consumable_mag_pulse:      { color: 0x00FFFF, symbol: 'circle' },
@@ -497,39 +528,39 @@ export default class BootScene extends Phaser.Scene {
         gfx.clear();
         gfx.fillStyle(cfg.color, 1);
         if (cfg.symbol === 'cross') {
-          // 십자: 중앙 가로줄 + 세로줄
-          gfx.fillRect(4, 9, 16, 6);
-          gfx.fillRect(9, 4, 6, 16);
+          // 십자: 중앙 가로줄 + 세로줄 (48x48 기준 2배 스케일)
+          gfx.fillRect(8, 18, 32, 12);
+          gfx.fillRect(18, 8, 12, 32);
         } else if (cfg.symbol === 'diamond') {
           // 다이아몬드
           gfx.fillPoints([
-            { x: 12, y: 2 },
-            { x: 22, y: 12 },
-            { x: 12, y: 22 },
-            { x: 2, y: 12 },
+            { x: 24, y: 4 },
+            { x: 44, y: 24 },
+            { x: 24, y: 44 },
+            { x: 4, y: 24 },
           ], true);
         } else {
           // 원형
-          gfx.fillCircle(12, 12, 10);
+          gfx.fillCircle(24, 24, 20);
         }
-        gfx.generateTexture(texKey, 24, 24);
+        gfx.generateTexture(texKey, 48, 48);
       }
     }
 
-    // 조이스틱 바탕: 원형
+    // 조이스틱 바탕: 128x128 원형 (Phase 2 업스케일)
     if (!this.textures.exists('joystick_base')) {
       gfx.clear();
       gfx.fillStyle(0xFFFFFF, 0.15);
-      gfx.fillCircle(32, 32, 32);
-      gfx.generateTexture('joystick_base', 64, 64);
+      gfx.fillCircle(64, 64, 64);
+      gfx.generateTexture('joystick_base', 128, 128);
     }
 
-    // 조이스틱 엄지: 원형
+    // 조이스틱 엄지: 64x64 원형 (Phase 2 업스케일)
     if (!this.textures.exists('joystick_thumb')) {
       gfx.clear();
       gfx.fillStyle(COLORS.NEON_CYAN, 0.7);
-      gfx.fillCircle(16, 16, 16);
-      gfx.generateTexture('joystick_thumb', 32, 32);
+      gfx.fillCircle(32, 32, 32);
+      gfx.generateTexture('joystick_thumb', 64, 64);
     }
 
     gfx.destroy();
