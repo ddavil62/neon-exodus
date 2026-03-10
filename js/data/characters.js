@@ -5,11 +5,12 @@
 
 /**
  * 전체 캐릭터 데이터.
- * @type {Array<{id: string, nameKey: string, descKey: string, passiveKey: string, startWeapon: string, uniquePassive: Object|null, unlockCondition: Object|null, phase: number}>}
+ * @type {Array<{id: string, spriteKey: string, nameKey: string, descKey: string, passiveKey: string, startWeapon: string, uniquePassive: Object|null, unlockCondition: Object|null, phase: number}>}
  */
 export const CHARACTERS = [
   {
     id: 'agent',
+    spriteKey: 'player',       // 기존 에셋 파일명 호환 (player.png / player_walk.png)
     nameKey: 'character.agent.name',
     descKey: 'character.agent.desc',
     passiveKey: 'character.agent.passive',
@@ -20,6 +21,7 @@ export const CHARACTERS = [
   },
   {
     id: 'sniper',
+    spriteKey: 'sniper',
     nameKey: 'character.sniper.name',
     descKey: 'character.sniper.desc',
     passiveKey: 'character.sniper.passive',
@@ -37,6 +39,7 @@ export const CHARACTERS = [
   },
   {
     id: 'engineer',
+    spriteKey: 'engineer',
     nameKey: 'character.engineer.name',
     descKey: 'character.engineer.desc',
     passiveKey: 'character.engineer.passive',
@@ -54,6 +57,7 @@ export const CHARACTERS = [
   },
   {
     id: 'berserker',
+    spriteKey: 'berserker',
     nameKey: 'character.berserker.name',
     descKey: 'character.berserker.desc',
     passiveKey: 'character.berserker.passive',
@@ -72,6 +76,7 @@ export const CHARACTERS = [
   },
   {
     id: 'medic',
+    spriteKey: 'medic',
     nameKey: 'character.medic.name',
     descKey: 'character.medic.desc',
     passiveKey: 'character.medic.passive',
@@ -90,6 +95,7 @@ export const CHARACTERS = [
   },
   {
     id: 'hidden',
+    spriteKey: 'hidden',
     nameKey: 'character.hidden.name',
     descKey: 'character.hidden.desc',
     passiveKey: 'character.hidden.passive',

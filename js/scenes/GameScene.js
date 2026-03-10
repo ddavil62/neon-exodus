@@ -104,8 +104,8 @@ export default class GameScene extends Phaser.Scene {
     // ── 소모성 아이템 오브젝트 풀 ──
     this.consumablePool = new ObjectPool(this, Consumable, 20);
 
-    // ── 플레이어 ──
-    this.player = new Player(this, WORLD_WIDTH / 2, WORLD_HEIGHT / 2);
+    // ── 플레이어 (선택된 캐릭터 ID에 따른 스프라이트 적용) ──
+    this.player = new Player(this, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, this.characterId);
 
     // ── 카메라 설정 ──
     this.cameras.main.startFollow(this.player, true, CAMERA_LERP, CAMERA_LERP);

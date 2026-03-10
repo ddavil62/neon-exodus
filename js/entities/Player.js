@@ -32,9 +32,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
    * @param {Phaser.Scene} scene - Phaser 씬 참조
    * @param {number} x - 초기 X 좌표
    * @param {number} y - 초기 Y 좌표
+   * @param {string} [characterId="agent"] - 캐릭터 ID (텍스처 키 결정에 사용)
    */
-  constructor(scene, x, y) {
-    super(scene, x, y, 'player');
+  constructor(scene, x, y, characterId = 'agent') {
+    // characterId로 idle 텍스처 키 결정
+    const idleKey = characterId === 'agent' ? 'player' : characterId;
+    super(scene, x, y, idleKey);
+
+    /** 선택된 캐릭터 ID */
+    this.characterId = characterId;
+
+    /** idle 텍스처 키 (정지 시 복귀용) */
+    this._idleTextureKey = idleKey;
+
+    /** walk 스프라이트시트 텍스처 키 */
+    this._walkTextureKey = characterId === 'agent' ? 'player_walk' : `${characterId}_walk`;
+
+    /** walk 애니메이션 키 접두사 (예: 'walk' 또는 'sniper_walk') */
+    this._walkAnimPrefix = characterId === 'agent' ? 'walk' : `${characterId}_walk`;
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -547,25 +562,27 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     let animKey;
     let flip = false;
 
+    const prefix = this._walkAnimPrefix;
+
     if (deg >= 337.5 || deg < 22.5) {
-      animKey = 'walk_right';           // East (0도)
+      animKey = `${prefix}_right`;           // East (0도)
     } else if (deg < 67.5) {
-      animKey = 'walk_down_right';      // SE (45도)
+      animKey = `${prefix}_down_right`;      // SE (45도)
     } else if (deg < 112.5) {
-      animKey = 'walk_down';            // South (90도)
+      animKey = `${prefix}_down`;            // South (90도)
     } else if (deg < 157.5) {
-      animKey = 'walk_down_right';      // SW (135도) --- SE를 flipX 미러
+      animKey = `${prefix}_down_right`;      // SW (135도) --- SE를 flipX 미러
       flip = true;
     } else if (deg < 202.5) {
-      animKey = 'walk_right';           // West (180도) --- East를 flipX 미러
+      animKey = `${prefix}_right`;           // West (180도) --- East를 flipX 미러
       flip = true;
     } else if (deg < 247.5) {
-      animKey = 'walk_up_right';        // NW (225도) --- NE를 flipX 미러
+      animKey = `${prefix}_up_right`;        // NW (225도) --- NE를 flipX 미러
       flip = true;
     } else if (deg < 292.5) {
-      animKey = 'walk_up';              // North (270도)
+      animKey = `${prefix}_up`;              // North (270도)
     } else {
-      animKey = 'walk_up_right';        // NE (315도)
+      animKey = `${prefix}_up_right`;        // NE (315도)
     }
 
     this.setFlipX(flip);
@@ -575,8 +592,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // player_walk 텍스처가 로드된 경우에만 애니메이션 재생
-    if (this.scene.textures.exists('player_walk')) {
+    // 해당 캐릭터의 walk 텍스처가 로드된 경우에만 애니메이션 재생
+    if (this.scene.textures.exists(this._walkTextureKey)) {
       this.play(animKey);
     }
   }
@@ -593,7 +610,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 걷기 애니메이션 중단 후 idle 정적 텍스처로 복귀
     this.anims.stop();
-    this.setTexture('player');
+    this.setTexture(this._idleTextureKey);
     this.setFlipX(false);
     this.setScale(SPRITE_SCALE);
 

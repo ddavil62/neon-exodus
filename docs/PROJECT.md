@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-10 (소모성 아이템 6종)
+> 최종 업데이트: 2026-03-10 (캐릭터별 고유 스프라이트 + 8방향 걷기 애니메이션)
 
 ## 프로젝트 개요
 
@@ -53,7 +53,7 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image 로드 + player_walk spritesheet), 플레이스홀더 폴백, 걷기 anim 등록, SoundSystem 초기화
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출)
@@ -63,7 +63,7 @@ neon-exodus/
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (13개, 진행률)
 │   │   └── CollectionScene.js     # 도감 화면 (4탭: 무기/패시브/적/도전과제)
 │   ├── entities/
-│   │   ├── Player.js              # 플레이어 (이동, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드)
+│   │   ├── Player.js              # 플레이어 (이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드)
 │   │   ├── Enemy.js               # 적 기본 클래스 (초기화, 이동, 데미지, 사망)
 │   │   ├── EnemyTypes.js          # 적 유형별 AI 15종
 │   │   ├── Projectile.js          # 투사체 (발사, 피격, 관통)
@@ -89,13 +89,23 @@ neon-exodus/
 │       ├── waves.js               # 스폰 테이블 6구간 + 미니보스/보스 스케줄
 │       ├── upgrades.js            # 영구 업그레이드 22종
 │       ├── consumables.js          # 소모성 아이템 6종 (드롭률, 텍스처, 색상)
-│       ├── characters.js          # 캐릭터 6종
+│       ├── characters.js          # 캐릭터 6종 (spriteKey 필드로 텍스처 매핑)
 │       └── achievements.js        # 도전과제 13종
 ├── assets/
-│   └── sprites/                   # 벡터 PNG 에셋 (GPT Image API 17종 + SVG 직접 생성 3종) + 걷기 스프라이트시트
-│       ├── player.png             # 플레이어 정적 이미지 (48x48, idle용)
-│       ├── player_walk.png        # 플레이어 걷기 스프라이트시트 (240x192, 5방향x4프레임, 48x48/프레임)
-│       ├── walk_frames/           # 걷기 개별 프레임 20개 PNG (디버깅용)
+│   └── sprites/                   # 벡터 PNG 에셋 (GPT Image API 17종 + SVG 직접 생성 3종) + 캐릭터 6종 idle/walk 스프라이트
+│       ├── player.png             # agent idle 정적 이미지 (48x48)
+│       ├── player_walk.png        # agent 걷기 스프라이트시트 (240x192, 5방향x4프레임, 48x48/프레임)
+│       ├── sniper.png             # sniper idle (48x48, 네온 그린 #39FF14)
+│       ├── sniper_walk.png        # sniper 걷기 스프라이트시트 (240x192)
+│       ├── engineer.png           # engineer idle (48x48, 옐로우 #FFD700)
+│       ├── engineer_walk.png      # engineer 걷기 스프라이트시트 (240x192)
+│       ├── berserker.png          # berserker idle (48x48, 레드 #FF3333)
+│       ├── berserker_walk.png     # berserker 걷기 스프라이트시트 (240x192)
+│       ├── medic.png              # medic idle (48x48, 화이트+그린 #00FF88)
+│       ├── medic_walk.png         # medic 걷기 스프라이트시트 (240x192)
+│       ├── hidden.png             # hidden idle (48x48, 퍼플 #AA00FF)
+│       ├── hidden_walk.png        # hidden 걷기 스프라이트시트 (240x192)
+│       ├── walk_frames/           # 걷기 개별 프레임 PNG (캐릭터별 서브폴더, 디버깅용)
 │       ├── projectile.png         # 투사체 정적 이미지 (12x12)
 │       ├── enemies/               # 잡몹 10종 정적 이미지
 │       │   ├── nano_drone.png     # 32x32
@@ -129,7 +139,7 @@ neon-exodus/
 │   ├── generate-sprites.js        # (레거시) Phase 1 DALL-E 3 스프라이트 생성 스크립트
 │   ├── generate-sprites-phase2.js # (레거시) Phase 2 보스/미니보스 스프라이트 생성 스크립트
 │   ├── generate-vector-sprites.js # 하이브리드 20종 벡터 PNG 생성 스크립트 (GPT Image API 17종 + SVG 직접 생성 3종, 현행)
-│   ├── generate-walk-anim.js      # 플레이어 걷기 애니메이션 스프라이트시트 생성 스크립트 (GPT Image API 5방향x4프레임, 현행)
+│   ├── generate-walk-anim.js      # 캐릭터별 idle + 걷기 애니메이션 스프라이트시트 생성 스크립트 (GPT Image API, --char 옵션, 현행)
 │   └── generate-consumable-sprites.js # 소모성 아이템 6종 24x24 아이콘 생성 스크립트 (GPT Image API)
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
@@ -143,7 +153,8 @@ neon-exodus/
 │   ├── weapon-report-layout.spec.js # 무기 리포트 레이아웃 테스트 (11개)
 │   ├── sprite-scale.spec.js       # 스프라이트 2x 스케일 테스트 (21개)
 │   ├── walk-anim.spec.js          # 걷기 애니메이션 테스트 (24개)
-│   └── consumables.spec.js        # 소모성 아이템 테스트 (34개)
+│   ├── consumables.spec.js        # 소모성 아이템 테스트 (34개)
+│   └── char-sprites.spec.js       # 캐릭터별 고유 스프라이트 테스트 (46개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -167,7 +178,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 375키, `t()` 함수로 참조 |
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 소모성 아이템 풀/수집/효과 |
-| 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리 |
+| 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위), 치명타 판정, 무기 진화, 드론 AI |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
@@ -189,7 +200,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 **Phaser 렌더 설정**: `pixelArt: false`, `antialias: true` -- 벡터 에셋의 매끄러운 외곽선 렌더링.
 
-**에셋 로드 방식**: 정적 엔티티는 `this.load.image()` 이미지 로드. 플레이어 걷기 애니메이션은 `this.load.spritesheet('player_walk', ...)` 스프라이트시트 로드. 정지 시에는 Phaser tween 아이들 맥동 애니메이션, 이동 시에는 spritesheet 프레임 기반 걷기 애니메이션 재생.
+**에셋 로드 방식**: 정적 엔티티는 `this.load.image()` 이미지 로드. 캐릭터 6종의 idle은 `this.load.image(charId, ...)`, walk는 `this.load.spritesheet(charId + '_walk', ...)` 스프라이트시트 로드. 정지 시에는 Phaser tween 아이들 맥동 애니메이션, 이동 시에는 해당 캐릭터의 spritesheet 프레임 기반 걷기 애니메이션 재생.
 
 | 엔티티 | 에셋 크기 | 충돌체 | 아이들 tween |
 |---|---|---|---|
@@ -210,9 +221,9 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - 오브젝트 풀 재사용: Enemy.init()에서 `killTweensOf(this)` 선행 호출 후 새 tween 부여. `_deactivate()`에서도 `killTweensOf(this)` 호출
 - 에셋 미존재 시 Graphics 플레이스홀더 폴백 유지 (`textures.exists()` 가드)
 - 에셋 생성 (정적): `node scripts/generate-vector-sprites.js` (GPT Image API 17종 + SVG 직접 생성 3종 = 20종 PNG 생성, API 키 필요)
-- 에셋 생성 (걷기 애니메이션): `node scripts/generate-walk-anim.js` (GPT Image API 5방향 x 4프레임 = 20개 프레임 + 240x192 스프라이트시트, API 키 필요)
+- 에셋 생성 (캐릭터 스프라이트): `node scripts/generate-walk-anim.js` (5종 캐릭터 idle + walk 일괄 생성), `node scripts/generate-walk-anim.js --char sniper` (특정 캐릭터만), API 키 필요
 - 아트 컨셉: `docs/ART_CONCEPT.md`
-- 관련 파일: `js/config.js`, `js/main.js`, `js/scenes/BootScene.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`, `scripts/generate-vector-sprites.js`, `scripts/generate-walk-anim.js`
+- 관련 파일: `js/config.js`, `js/main.js`, `js/scenes/BootScene.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`, `js/data/characters.js`, `scripts/generate-vector-sprites.js`, `scripts/generate-walk-anim.js`
 - 구현 일자: 2026-03-10 (GPT Image API 벡터 전환 + XP 보석 SVG 직접 생성), 이전: 2026-03-10 (SVG 코드 벡터), 이전: 2026-03-09 (픽셀아트 SPRITE_SCALE=2)
 - 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`, `.claude/specs/2026-03-10-neon-exodus-gpt-image-art.md`
 - XP 보석 수정 QA: `.claude/specs/2026-03-10-neon-exodus-gpt-image-art-qa-xpfix.md`
@@ -293,27 +304,43 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 구현 일자: 2026-03-10
 - 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-consumables.md`
 
-### 플레이어 걷기 애니메이션
+### 캐릭터별 고유 스프라이트 + 8방향 걷기 애니메이션
 
-8방향 걷기 애니메이션 시스템. GPT Image API로 5방향 프레임을 생성하고, 나머지 3방향은 flipX 미러링으로 처리한다.
+캐릭터 6종 각각에 고유한 idle 스프라이트(48x48)와 걷기 애니메이션 스프라이트시트(240x192)를 적용한다. GPT Image API로 5종 캐릭터(agent 제외)의 스프라이트를 생성하고, 선택한 캐릭터에 맞는 스프라이트가 표시된다.
 
-#### 스프라이트시트 (player_walk.png)
+#### 캐릭터별 비주얼 컨셉
+| 캐릭터 | spriteKey | 주색 | 외형 컨셉 |
+|---|---|---|---|
+| agent | `player` | 시안 (#00FFFF) | 헬멧+글로우 바이저, 사이버펑크 갑옷 (기존 에셋) |
+| sniper | `sniper` | 네온 그린 (#39FF14) | 날렵한 체형, 스코프 헬멧, 롱코트 |
+| engineer | `engineer` | 옐로우 (#FFD700) | 통통한 실루엣, 백팩+안테나, 기술자 고글 |
+| berserker | `berserker` | 레드 (#FF3333) | 거대 체형, 두꺼운 갑옷, 뿔 달린 헬멧 |
+| medic | `medic` | 화이트+그린 (#00FF88) | 십자 마크, 의료 백팩, 경량 갑옷 |
+| hidden | `hidden` | 퍼플 (#AA00FF) | 망토/후드, 퍼플 글로우 실루엣, 미스터리 |
+
+#### 텍스처 키 규칙 (characters.js spriteKey 기반)
+- idle 텍스처 키: `spriteKey` (agent='player', 나머지=charId)
+- walk 텍스처 키: `spriteKey + '_walk'` (agent='player_walk', 나머지=`charId_walk`)
+- walk 애니메이션 키 접두사: agent='walk', 나머지=`charId_walk`
+- Player 생성자에서 characterId를 받아 `_idleTextureKey`, `_walkTextureKey`, `_walkAnimPrefix` 동적 결정
+
+#### 스프라이트시트 규격 (전 캐릭터 공통)
 - 크기: 240x192 (5열 x 4행, 프레임 48x48)
 - 레이아웃: col0=down, col1=down-right, col2=right, col3=up-right, col4=up
 - 프레임 번호: row * 5 + col (Phaser 좌->우, 위->아래 순번)
 - 걷기 사이클: neutral(0) -> left-step(1) -> neutral(2) -> right-step(3)
 
-#### 방향 프레임 매핑
-| 방향 | animKey | 프레임 번호 | flipX |
-|---|---|---|---|
-| down (S) | walk_down | 0, 5, 10, 15 | false |
-| down-right (SE) | walk_down_right | 1, 6, 11, 16 | false |
-| right (E) | walk_right | 2, 7, 12, 17 | false |
-| up-right (NE) | walk_up_right | 3, 8, 13, 18 | false |
-| up (N) | walk_up | 4, 9, 14, 19 | false |
-| down-left (SW) | walk_down_right | 1, 6, 11, 16 | true |
-| left (W) | walk_right | 2, 7, 12, 17 | true |
-| up-left (NW) | walk_up_right | 3, 8, 13, 18 | true |
+#### 방향 프레임 매핑 (agent 예시, 다른 캐릭터는 prefix가 `{charId}_walk`)
+| 방향 | animKey (agent) | animKey (sniper) | 프레임 번호 | flipX |
+|---|---|---|---|---|
+| down (S) | walk_down | sniper_walk_down | 0, 5, 10, 15 | false |
+| down-right (SE) | walk_down_right | sniper_walk_down_right | 1, 6, 11, 16 | false |
+| right (E) | walk_right | sniper_walk_right | 2, 7, 12, 17 | false |
+| up-right (NE) | walk_up_right | sniper_walk_up_right | 3, 8, 13, 18 | false |
+| up (N) | walk_up | sniper_walk_up | 4, 9, 14, 19 | false |
+| down-left (SW) | walk_down_right | sniper_walk_down_right | 1, 6, 11, 16 | true |
+| left (W) | walk_right | sniper_walk_right | 2, 7, 12, 17 | true |
+| up-left (NW) | walk_up_right | sniper_walk_up_right | 3, 8, 13, 18 | true |
 
 #### 8방향 각도 분류 (atan2 기반)
 - 수식: `deg = (Math.atan2(dirY, dirX) * 180 / Math.PI + 360) % 360`
@@ -322,7 +349,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 
 #### 상태 전이
 - **정지 -> 이동**: idle tween pause, setScale(SPRITE_SCALE) 정상화, _isMoving=true, 방향별 walk anim play
-- **이동 -> 정지**: anims.stop(), setTexture('player'), setFlipX(false), setScale(SPRITE_SCALE), idle tween resume, _isMoving=false
+- **이동 -> 정지**: anims.stop(), setTexture(this._idleTextureKey), setFlipX(false), setScale(SPRITE_SCALE), idle tween resume, _isMoving=false
 - **방향 전환 (이동 중)**: 동일 animKey면 play() 미호출(끊김 방지), 다른 animKey면 새 anim play + flipX 갱신
 - **AutoPilot 모드**: Player._handleMovement()의 dirX/dirY를 공유하므로 동일 로직 적용
 
@@ -332,26 +359,35 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | frameRate | 8 fps |
 | repeat | -1 (무한 루프) |
 | 프레임 크기 | 48x48 |
-| 등록 방식 | BootScene._registerPlayerWalkAnims() |
+| 등록 방식 | BootScene._registerWalkAnims() |
+| 총 애니메이션 수 | 6종 x 5방향 = 30개 |
+
+#### 에셋 로드 (BootScene.preload)
+- agent: `this.load.image('player', ...)` + `this.load.spritesheet('player_walk', ...)`
+- 나머지 5종: 루프로 `this.load.image(charId, ...)` + `this.load.spritesheet(charId + '_walk', ...)`
+- 총 12개 에셋 로드 (6종 x idle + walk)
 
 #### 에셋 생성 스크립트 (generate-walk-anim.js)
-- GPT Image API(gpt-image-1)로 5방향 x 4프레임 = 20개 PNG 개별 생성
-- 1024x1024 생성 후 48x48 리사이즈 (sharp, fit: contain, 투명 배경)
-- 투명 배경 확인 + 폴백 투명화 (밝기 임계값 40 이하)
-- 스프라이트시트 합성: sharp composite, 5열 x 4행, 240x192
-- API rate limit 대응: 호출 간 1초 대기
-- 실패 시: 시안 반투명(alpha 128) 48x48 fallback PNG 생성
-- 임시 프레임 파일(walk_frames/) 디버깅용 보존
+- CHARACTER_DEFS 맵으로 5종 캐릭터(sniper/engineer/berserker/medic/hidden)의 idlePrompt, walkStylePrompt, color 정의
+- `--char` 옵션: 특정 캐릭터만 단독 생성 (`node scripts/generate-walk-anim.js --char sniper`)
+- 미지정 시: 5종 전체 순차 생성 (`node scripts/generate-walk-anim.js`)
+- agent는 CHARACTER_DEFS에 미포함 (기존 player.png/player_walk.png 재사용)
+- 캐릭터당: idle 1개 + walk 프레임 20개 = 21개 GPT Image API 호출
+- idle: 1024x1024 생성 -> 48x48 리사이즈 -> `assets/sprites/{charId}.png`
+- walk: 5방향 x 4프레임 = 20개 생성 -> 240x192 합성 -> `assets/sprites/{charId}_walk.png`
+- 임시 프레임: `walk_frames/{charId}/` 서브폴더에 보존
+- API rate limit: 호출 간 1초 대기, 캐릭터 간 2초 추가 대기
 - 실행: `node scripts/generate-walk-anim.js` (루트 .env에 OPENAI_API_KEY 필요)
 
 #### 플레이스홀더 폴백
-- BootScene._generatePlaceholderTextures()에서 player_walk 미존재 시 240x192 시안 원 격자 생성
-- _registerPlayerWalkAnims()에서 player_walk 텍스처 미존재 시 early return
-- _playWalkAnim()에서 player_walk 텍스처 존재 확인 후 play() 호출
+- BootScene._generatePlaceholderTextures()에서 6종 캐릭터별 idle(48x48) + walk(240x192) 플레이스홀더 생성
+- 캐릭터별 고유 색상 적용 (sniper=0x39FF14, engineer=0xFFD700, berserker=0xFF3333, medic=0x00FF88, hidden=0xAA00FF)
+- _registerWalkAnims()에서 텍스처 미존재 캐릭터는 애니메이션 등록 스킵
+- _playWalkAnim()에서 `this._walkTextureKey` 텍스처 존재 확인 후 play() 호출
 
-- 관련 파일: `js/entities/Player.js`, `js/scenes/BootScene.js`, `scripts/generate-walk-anim.js`, `assets/sprites/player_walk.png`
-- 구현 일자: 2026-03-10
-- 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-walk-anim.md`
+- 관련 파일: `js/data/characters.js`, `js/entities/Player.js`, `js/scenes/BootScene.js`, `js/scenes/GameScene.js`, `scripts/generate-walk-anim.js`
+- 구현 일자: 2026-03-10 (걷기 애니메이션 기반: 2026-03-10, 캐릭터별 고유 스프라이트 확장: 2026-03-10)
+- 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-walk-anim.md`, `.claude/specs/2026-03-10-neon-exodus-char-sprites.md`
 
 ### 조작 시스템
 
@@ -646,18 +682,19 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - AchievementManager.checkAll()로 도전과제 체크
 
 #### 캐릭터 (6종)
-| 캐릭터 | 시작 무기 | 고유 패시브 | 해금 조건 | Phase |
-|---|---|---|---|---|
-| 에이전트 | blaster | 없음 | 기본 제공 | 1 |
-| 스나이퍼 | laser_gun | critDamageMultiplier +0.30 | totalKills >= 5000 | 3 |
-| 엔지니어 | drone | droneSummonBonus +1 (드론 수 +1) | totalClears >= 10 | 3 |
-| 버서커 | electric_chain | HP 50% 이하 시 공격력 +40% | totalBossKills >= 10 | 3 |
-| 메딕 | blaster | hpRegenMultiplier x2.0, maxHp -30% | totalSurviveMinutes >= 500 | 4 |
-| ??? (Weapon Master) | blaster | 무기 슬롯 +2, 무기 등장 확률 x2 | sniper+engineer+berserker 모두 해금 | 4 |
+| 캐릭터 | spriteKey | 시작 무기 | 고유 패시브 | 해금 조건 | Phase |
+|---|---|---|---|---|---|
+| 에이전트 | `player` | blaster | 없음 | 기본 제공 | 1 |
+| 스나이퍼 | `sniper` | laser_gun | critDamageMultiplier +0.30 | totalKills >= 5000 | 3 |
+| 엔지니어 | `engineer` | drone | droneSummonBonus +1 (드론 수 +1) | totalClears >= 10 | 3 |
+| 버서커 | `berserker` | electric_chain | HP 50% 이하 시 공격력 +40% | totalBossKills >= 10 | 3 |
+| 메딕 | `medic` | blaster | hpRegenMultiplier x2.0, maxHp -30% | totalSurviveMinutes >= 500 | 4 |
+| ??? (Weapon Master) | `hidden` | blaster | 무기 슬롯 +2, 무기 등장 확률 x2 | sniper+engineer+berserker 모두 해금 | 4 |
 
 - CharacterScene: MenuScene에서 출격 버튼 클릭 시 이동. 캐릭터 목록을 세로 스크롤로 표시
 - 잠금 캐릭터는 alpha 0.4, 선택 캐릭터는 neonCyan 테두리 하이라이트
 - 선택 후 출격 버튼으로 GameScene 시작 (characterId 전달)
+- GameScene.init()에서 characterId 수신, Player 생성 시 전달 -> 캐릭터별 고유 스프라이트/애니메이션 적용
 - 관련 파일: `js/data/characters.js`, `js/scenes/CharacterScene.js`
 - 구현 일자: 2026-03-09
 
@@ -1031,7 +1068,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] API 호출 간 1초 대기(Rate Limit 대응), 개별 에셋 실패 시 스킵(기존 PNG 보존)
 - [x] XP 보석 3종 SVG 직접 생성으로 변경 *(GPT Image API 1024px -> 12~28px 다운스케일 시 디테일 소실 버그 수정, `svgOverride` 플래그로 분기)*
 
-### 플레이어 8방향 걷기 애니메이션 -- 완료 (2026-03-10)
+### 플레이어 8방향 걷기 애니메이션 -- 완료 (2026-03-10) -> 캐릭터별 스프라이트로 확장
 - [x] 걷기 애니메이션 스프라이트시트 생성 스크립트 (`scripts/generate-walk-anim.js`)
 - [x] GPT Image API(gpt-image-1)로 5방향 x 4프레임 = 20개 PNG 생성 + 240x192 스프라이트시트 합성
 - [x] BootScene: player_walk spritesheet 로드 + 5방향 anim 등록 (8fps, repeat:-1)
@@ -1043,6 +1080,22 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] player_walk 미존재 시 플레이스홀더 폴백 동작
 - [x] AutoPilot 모드 호환 (dirX/dirY 공유)
 - [x] Playwright 24/24 테스트 전체 통과
+
+### 캐릭터별 고유 스프라이트 + 8방향 걷기 애니메이션 -- 완료 (2026-03-10)
+- [x] characters.js에 spriteKey 필드 추가 (agent='player', sniper='sniper', engineer='engineer', berserker='berserker', medic='medic', hidden='hidden')
+- [x] generate-walk-anim.js 다중 캐릭터 생성 지원 (CHARACTER_DEFS 맵, --char 옵션)
+- [x] 5종 캐릭터 idle 스프라이트 GPT Image API 생성 (각 48x48)
+- [x] 5종 캐릭터 walk 스프라이트시트 GPT Image API 생성 (각 240x192, 5방향x4프레임)
+- [x] BootScene: 5종 캐릭터 idle + walk 에셋 로드 (총 12개 에셋)
+- [x] BootScene: 5종 캐릭터별 고유 색상 플레이스홀더 생성
+- [x] BootScene: _registerWalkAnims()로 6종x5방향=30개 애니메이션 등록 (CHAR_ANIM_DEFS 배열)
+- [x] Player constructor: characterId 파라미터 추가, _idleTextureKey/_walkTextureKey/_walkAnimPrefix 동적 결정
+- [x] Player._playWalkAnim(): this._walkAnimPrefix 기반 동적 animKey
+- [x] Player._setIdleState(): this._idleTextureKey 기반 동적 idle 텍스처 복귀
+- [x] GameScene: Player 생성 시 this.characterId 전달
+- [x] agent 하위 호환 유지 (spriteKey='player', animPrefix='walk', 기존 에셋 재사용)
+- [x] 에셋 미존재 시 캐릭터별 색상 플레이스홀더 폴백 동작
+- [x] Playwright 46/46 테스트 전체 통과
 
 ### 소모성 아이템(Consumable) 6종 -- 완료 (2026-03-10)
 - [x] 소모성 아이템 6종 데이터 정의 (`js/data/consumables.js`): CONSUMABLES 배열, CONSUMABLE_MAP

@@ -67,6 +67,16 @@ export default class BootScene extends Phaser.Scene {
       frameHeight: 48,
     });
 
+    // ── 캐릭터 5종 idle + walk 스프라이트 에셋 ──
+    const CHAR_SPRITE_KEYS = ['sniper', 'engineer', 'berserker', 'medic', 'hidden'];
+    for (const charId of CHAR_SPRITE_KEYS) {
+      this.load.image(charId, `assets/sprites/${charId}.png`);
+      this.load.spritesheet(`${charId}_walk`, `assets/sprites/${charId}_walk.png`, {
+        frameWidth: 48,
+        frameHeight: 48,
+      });
+    }
+
     // 투사체 정적 이미지 (12x12)
     this.load.image('projectile', 'assets/sprites/projectile.png');
 
@@ -131,8 +141,8 @@ export default class BootScene extends Phaser.Scene {
     // 플레이스홀더 텍스처 생성
     this._generatePlaceholderTextures();
 
-    // 플레이어 8방향 걷기 애니메이션 등록
-    this._registerPlayerWalkAnims();
+    // 캐릭터 6종 8방향 걷기 애니메이션 등록
+    this._registerWalkAnims();
 
     // 배경 타일 텍스처 생성
     this._generateBackgroundTile();
@@ -223,35 +233,52 @@ export default class BootScene extends Phaser.Scene {
   // ── 걷기 애니메이션 등록 ──
 
   /**
-   * 플레이어 8방향 걷기 애니메이션을 Phaser anims에 등록한다.
+   * 캐릭터 6종의 8방향 걷기 애니메이션을 Phaser anims에 등록한다.
    * 5방향(down, down-right, right, up-right, up)은 스프라이트시트 프레임으로 직접 등록.
    * 나머지 3방향(down-left, left, up-left)은 Player.js에서 flipX + 미러 방향 키로 처리하므로
    * 별도 등록 불필요.
+   *
+   * 애니메이션 키 규칙:
+   * - agent: walk_down, walk_down_right, ... (기존 호환)
+   * - 그 외: {charId}_walk_down, {charId}_walk_down_right, ...
+   *
    * @private
    */
-  _registerPlayerWalkAnims() {
-    // player_walk 텍스처가 없으면 등록 불가 (에셋 로드 실패 시 플레이스홀더로 폴백)
-    if (!this.textures.exists('player_walk')) return;
-
+  _registerWalkAnims() {
     const fps = 8;
 
-    // 5방향 x 4프레임 애니메이션 등록
-    // 프레임 번호 = row * 5 + col (Phaser 좌->우, 위->아래 순번)
-    const WALK_DIRS = [
-      { key: 'walk_down',       frames: [0, 5, 10, 15] },
-      { key: 'walk_down_right', frames: [1, 6, 11, 16] },
-      { key: 'walk_right',      frames: [2, 7, 12, 17] },
-      { key: 'walk_up_right',   frames: [3, 8, 13, 18] },
-      { key: 'walk_up',         frames: [4, 9, 14, 19] },
+    // 5방향 프레임 번호 = row * 5 + col (Phaser 좌->우, 위->아래 순번)
+    const DIR_DEFS = [
+      { suffix: 'down',       frames: [0, 5, 10, 15] },
+      { suffix: 'down_right', frames: [1, 6, 11, 16] },
+      { suffix: 'right',      frames: [2, 7, 12, 17] },
+      { suffix: 'up_right',   frames: [3, 8, 13, 18] },
+      { suffix: 'up',         frames: [4, 9, 14, 19] },
     ];
 
-    for (const dir of WALK_DIRS) {
-      this.anims.create({
-        key: dir.key,
-        frames: dir.frames.map(f => ({ key: 'player_walk', frame: f })),
-        frameRate: fps,
-        repeat: -1,
-      });
+    // 6종 캐릭터: spriteKey -> walkTextureKey, animPrefix
+    const CHAR_ANIM_DEFS = [
+      { walkTexture: 'player_walk',     animPrefix: 'walk' },           // agent (기존 키 유지)
+      { walkTexture: 'sniper_walk',     animPrefix: 'sniper_walk' },
+      { walkTexture: 'engineer_walk',   animPrefix: 'engineer_walk' },
+      { walkTexture: 'berserker_walk',  animPrefix: 'berserker_walk' },
+      { walkTexture: 'medic_walk',      animPrefix: 'medic_walk' },
+      { walkTexture: 'hidden_walk',     animPrefix: 'hidden_walk' },
+    ];
+
+    for (const charDef of CHAR_ANIM_DEFS) {
+      // 텍스처 미존재 시 해당 캐릭터 애니메이션 등록 스킵 (플레이스홀더 폴백)
+      if (!this.textures.exists(charDef.walkTexture)) continue;
+
+      for (const dir of DIR_DEFS) {
+        const animKey = `${charDef.animPrefix}_${dir.suffix}`;
+        this.anims.create({
+          key: animKey,
+          frames: dir.frames.map(f => ({ key: charDef.walkTexture, frame: f })),
+          frameRate: fps,
+          repeat: -1,
+        });
+      }
     }
   }
 
@@ -331,6 +358,38 @@ export default class BootScene extends Phaser.Scene {
         }
       }
       gfx.generateTexture('player_walk', 240, 192);
+    }
+
+    // ── 캐릭터 5종 idle + walk 플레이스홀더 ──
+    const CHAR_PLACEHOLDER_COLORS = {
+      sniper:    0x39FF14,
+      engineer:  0xFFD700,
+      berserker: 0xFF3333,
+      medic:     0x00FF88,
+      hidden:    0xAA00FF,
+    };
+    for (const [charId, color] of Object.entries(CHAR_PLACEHOLDER_COLORS)) {
+      // idle: 48x48, 해당 색상 원 + 방향 삼각형 (agent와 동일 패턴)
+      if (!this.textures.exists(charId)) {
+        gfx.clear();
+        gfx.fillStyle(color, 1);
+        gfx.fillCircle(24, 24, 20);
+        gfx.fillStyle(color, 0.7);
+        gfx.fillTriangle(46, 24, 36, 14, 36, 34);
+        gfx.generateTexture(charId, 48, 48);
+      }
+      // walk: 240x192, 해당 색상 원 격자 (4행x5열)
+      const walkKey = `${charId}_walk`;
+      if (!this.textures.exists(walkKey)) {
+        gfx.clear();
+        for (let row = 0; row < 4; row++) {
+          for (let col = 0; col < 5; col++) {
+            gfx.fillStyle(color, 0.8);
+            gfx.fillCircle(col * 48 + 24, row * 48 + 24, 18);
+          }
+        }
+        gfx.generateTexture(walkKey, 240, 192);
+      }
     }
 
     // ── 잡몹 10종 (벡터 에셋 크기 기준 플레이스홀더) ──

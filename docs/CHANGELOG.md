@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-03-10 -- 캐릭터별 고유 스프라이트 + 8방향 걷기 애니메이션
+
+### 추가
+- characters.js `spriteKey` 필드 (`js/data/characters.js`): 6종 캐릭터에 idle 텍스처 키 매핑 추가. agent='player'(기존 에셋 호환), sniper='sniper', engineer='engineer', berserker='berserker', medic='medic', hidden='hidden'. walk 텍스처 키는 `spriteKey + '_walk'` 규칙
+- 5종 캐릭터 idle 스프라이트 (`assets/sprites/`): sniper.png(48x48, 2.8KB), engineer.png(48x48, 3.1KB), berserker.png(48x48, 4.3KB), medic.png(48x48, 4.0KB), hidden.png(48x48, 3.3KB). GPT Image API(gpt-image-1) 생성
+- 5종 캐릭터 walk 스프라이트시트 (`assets/sprites/`): sniper_walk.png(240x192, 54KB), engineer_walk.png(240x192, 64KB), berserker_walk.png(240x192, 71KB), medic_walk.png(240x192, 61KB), hidden_walk.png(240x192, 60KB). GPT Image API 5방향x4프레임 생성
+- 5종 캐릭터 walk 개별 프레임 (`assets/sprites/walk_frames/{charId}/`): 캐릭터당 20개 x 5종 = 100개 임시 프레임 PNG
+- BootScene 캐릭터 5종 에셋 로드 (`js/scenes/BootScene.js` preload): CHAR_SPRITE_KEYS 루프로 idle image + walk spritesheet 로드 (총 12개 에셋)
+- BootScene 캐릭터 5종 플레이스홀더 (`js/scenes/BootScene.js` _generatePlaceholderTextures): CHAR_PLACEHOLDER_COLORS 맵으로 캐릭터별 고유 색상(sniper=0x39FF14, engineer=0xFFD700, berserker=0xFF3333, medic=0x00FF88, hidden=0xAA00FF) idle(48x48 원+삼각형) + walk(240x192 원 격자) 생성
+- Player characterId 파라미터 (`js/entities/Player.js` constructor): 기본값 'agent'. _idleTextureKey, _walkTextureKey, _walkAnimPrefix를 characterId 기반으로 동적 결정
+- Playwright 테스트 (`tests/char-sprites.spec.js`): 46개 테스트 (정상 34 + 예외 12)
+
+### 변경
+- BootScene `_registerPlayerWalkAnims()` -> `_registerWalkAnims()` (`js/scenes/BootScene.js`): 함수명 변경. agent 전용에서 6종 캐릭터 일괄 처리로 확장. CHAR_ANIM_DEFS 배열로 6종 walkTexture/animPrefix 정의, 6종x5방향=30개 애니메이션 등록. 텍스처 미존재 캐릭터는 스킵
+- Player._playWalkAnim() (`js/entities/Player.js`): 하드코딩된 'walk_' 접두사를 `this._walkAnimPrefix + '_'` 패턴으로 변경. 텍스처 존재 확인도 `this._walkTextureKey` 기반
+- Player._setIdleState() (`js/entities/Player.js`): `setTexture('player')` -> `setTexture(this._idleTextureKey)`
+- GameScene Player 생성 (`js/scenes/GameScene.js` L108): `new Player(this, x, y)` -> `new Player(this, x, y, this.characterId)`
+- generate-walk-anim.js (`scripts/generate-walk-anim.js`): 단일 agent 전용에서 5종 캐릭터 다중 생성으로 확장. CHARACTER_DEFS 맵(idlePrompt, walkStylePrompt, color) 추가, --char 옵션, generateIdleSprite() 함수 추가, 캐릭터별 walk_frames 서브폴더 사용
+
+### 참고
+- 스펙: `.claude/specs/2026-03-10-neon-exodus-char-sprites.md`
+- 구현 리포트: `.claude/specs/2026-03-10-neon-exodus-char-sprites-report.md`
+- QA: `.claude/specs/2026-03-10-neon-exodus-char-sprites-qa.md`
+- QA 결과: 수용기준 9/9 PASS, 예외 시나리오 12/12 PASS, Playwright 46/46 전체 통과. 시각적 검증 스크린샷 8건 확인
+- agent는 기존 player.png/player_walk.png 재사용 (하위 호환 완벽 유지)
+- 에셋 용량 추가: 약 320KB (10개 파일)
+- 잠재적 이슈(LOW): Player.js에서 `characterId === 'agent'` 하드코딩 3곳. 향후 spriteKey 참조 방식 리팩토링 가능하나 현재 구조에서 문제 없음
+
 ## 2026-03-10 -- 소모성 아이템(Consumable) 6종
 
 ### 추가
