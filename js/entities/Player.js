@@ -51,6 +51,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     /** walk 애니메이션 키 접두사 (예: 'walk' 또는 'sniper_walk') */
     this._walkAnimPrefix = characterId === 'agent' ? 'walk' : `${characterId}_walk`;
 
+    /** 이전 걷기 방향 섹터 인덱스 (0~7, 히스테리시스용) — -1이면 미설정 */
+    this._lastWalkSector = -1;
+
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -547,6 +550,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // 처음 이동 시작: idle tween 일시 정지 + 스케일 정상화
     if (!this._isMoving) {
       this._isMoving = true;
+      this._lastWalkSector = -1;
       if (this._idleTween) this._idleTween.pause();
       this.setScale(SPRITE_SCALE);
     }
@@ -556,33 +560,47 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const angle = Math.atan2(dirY, dirX);
     const deg = (angle * 180 / Math.PI + 360) % 360;
 
-    // 8방향 분류 (각 방향 45도 범위, 22.5도 오프셋 적용)
-    // 기준: 0=right, 45=down-right, 90=down, 135=down-left
-    //       180=left, 225=up-left, 270=up, 315=up-right
+    // 8방향 섹터 중심 각도 (인덱스 0~7)
+    // 0=E(0°), 1=SE(45°), 2=S(90°), 3=SW(135°), 4=W(180°), 5=NW(225°), 6=N(270°), 7=NE(315°)
+    const SECTOR_CENTERS = [0, 45, 90, 135, 180, 225, 270, 315];
+
+    // 현재 각도에 가장 가까운 섹터 인덱스 계산
+    let bestSector = 0;
+    let bestDist = 360;
+    for (let i = 0; i < 8; i++) {
+      let diff = Math.abs(deg - SECTOR_CENTERS[i]);
+      if (diff > 180) diff = 360 - diff;
+      if (diff < bestDist) {
+        bestDist = diff;
+        bestSector = i;
+      }
+    }
+
+    // 히스테리시스: 이전 섹터에서 30도 이상 벗어나야 방향 전환 (경계 진동 방지)
+    if (this._lastWalkSector >= 0 && this._lastWalkSector !== bestSector) {
+      const lastCenter = SECTOR_CENTERS[this._lastWalkSector];
+      let distFromLast = Math.abs(deg - lastCenter);
+      if (distFromLast > 180) distFromLast = 360 - distFromLast;
+      if (distFromLast < 30) {
+        bestSector = this._lastWalkSector;
+      }
+    }
+    this._lastWalkSector = bestSector;
+
+    // 섹터 → 애니메이션 키 + flipX 매핑
+    const prefix = this._walkAnimPrefix;
     let animKey;
     let flip = false;
 
-    const prefix = this._walkAnimPrefix;
-
-    if (deg >= 337.5 || deg < 22.5) {
-      animKey = `${prefix}_right`;           // East (0도)
-    } else if (deg < 67.5) {
-      animKey = `${prefix}_down_right`;      // SE (45도)
-    } else if (deg < 112.5) {
-      animKey = `${prefix}_down`;            // South (90도)
-    } else if (deg < 157.5) {
-      animKey = `${prefix}_down_right`;      // SW (135도) --- SE를 flipX 미러
-      flip = true;
-    } else if (deg < 202.5) {
-      animKey = `${prefix}_right`;           // West (180도) --- East를 flipX 미러
-      flip = true;
-    } else if (deg < 247.5) {
-      animKey = `${prefix}_up_right`;        // NW (225도) --- NE를 flipX 미러
-      flip = true;
-    } else if (deg < 292.5) {
-      animKey = `${prefix}_up`;              // North (270도)
-    } else {
-      animKey = `${prefix}_up_right`;        // NE (315도)
+    switch (bestSector) {
+      case 0: animKey = `${prefix}_right`; break;                         // E (0°)
+      case 1: animKey = `${prefix}_down_right`; break;                    // SE (45°)
+      case 2: animKey = `${prefix}_down`; break;                          // S (90°)
+      case 3: animKey = `${prefix}_down_right`; flip = true; break;       // SW (135°) flipX
+      case 4: animKey = `${prefix}_right`; flip = true; break;            // W (180°) flipX
+      case 5: animKey = `${prefix}_up_right`; flip = true; break;         // NW (225°) flipX
+      case 6: animKey = `${prefix}_up`; break;                            // N (270°)
+      default: animKey = `${prefix}_up_right`; break;                     // NE (315°)
     }
 
     this.setFlipX(flip);
