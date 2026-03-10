@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-03-10 -- 플레이어 8방향 걷기 애니메이션
+
+### 추가
+- 걷기 애니메이션 스프라이트시트 생성 스크립트 (`scripts/generate-walk-anim.js`): GPT Image API(gpt-image-1)로 5방향 x 4프레임 = 20개 PNG 개별 생성 후 sharp composite로 240x192 스프라이트시트 합성. 기존 generate-vector-sprites.js 유틸리티(removeBackground, hasTransparentBackground, sleep) 패턴 재활용. 실패 프레임 시안 반투명 fallback PNG 생성. API rate limit 1초 대기
+- 걷기 애니메이션 스프라이트시트 (`assets/sprites/player_walk.png`): 240x192, 5열(방향) x 4행(프레임), 프레임 48x48. 레이아웃: col0=down, col1=down-right, col2=right, col3=up-right, col4=up. Phaser 프레임 번호 = row * 5 + col
+- 걷기 프레임 개별 파일 (`assets/sprites/walk_frames/`): 20개 PNG (디버깅용 보존)
+- BootScene.preload() player_walk spritesheet 로드 (`js/scenes/BootScene.js` L65-68): `load.spritesheet('player_walk', ..., { frameWidth: 48, frameHeight: 48 })`
+- BootScene._registerPlayerWalkAnims() 신규 메서드 (`js/scenes/BootScene.js` L219-243): 5방향 걷기 애니메이션 등록 (walk_down, walk_down_right, walk_right, walk_up_right, walk_up). frameRate 8fps, repeat -1. player_walk 텍스처 미존재 시 early return
+- BootScene._generatePlaceholderTextures() player_walk 플레이스홀더 (`js/scenes/BootScene.js` L311-321): 240x192, 20프레임 시안 원 격자
+- Player._playWalkAnim(dirX, dirY) 신규 메서드 (`js/entities/Player.js` L432-483): atan2 기반 0~360도 변환 후 22.5도 오프셋 8방향 분류. left 계열 3방향(SW/W/NW)은 flipX=true + 미러 방향 animKey(walk_down_right/walk_right/walk_up_right). 동일 animKey 재생 중이면 play() 미호출(끊김 방지). player_walk 텍스처 존재 시에만 play()
+- Player._setIdleState() 신규 메서드 (`js/entities/Player.js` L490-503): anims.stop() -> setTexture('player') -> setFlipX(false) -> setScale(SPRITE_SCALE) -> idle tween resume. _isMoving guard로 중복 호출 방지
+- Player._isMoving 상태 변수 (`js/entities/Player.js` L166): 걷기/idle 전환 판단용
+- Playwright 테스트 (`tests/walk-anim.spec.js`): 24개 테스트 (에셋/등록 4 + 동작 7 + 엣지케이스 5 + 기존 유지 3 + 시각적 4 + 경계값 1)
+
+### 변경
+- Player._idleTween 참조 저장 (`js/entities/Player.js` L38-46): 기존 `scene.tweens.add({...})` 반환값을 `this._idleTween`에 저장. 이동 시 pause(), 정지 시 resume() 호출
+- Player._handleMovement() (`js/entities/Player.js` L394-423): 정지 시 `_setIdleState()`, 이동 시 `_playWalkAnim(dirX, dirY)` 호출 추가
+- BootScene.create() (`js/scenes/BootScene.js` L122): `_generatePlaceholderTextures()` 이후 `_registerPlayerWalkAnims()` 호출 추가
+
+### 참고
+- 스펙: `.claude/specs/2026-03-10-neon-exodus-walk-anim.md`
+- 구현 리포트: `.claude/specs/2026-03-10-neon-exodus-walk-anim-report.md`
+- QA: `.claude/specs/2026-03-10-neon-exodus-walk-anim-qa.md`
+- QA 결과: 수용기준 10/10 PASS, 예외 시나리오 5/5 PASS, Playwright 24/24 전체 통과. 시각적 검증 스크린샷 5건 확인
+- 8방향 각도 매핑: right(337.5~22.5), SE(22.5~67.5), down(67.5~112.5), SW(112.5~157.5), left(157.5~202.5), NW(202.5~247.5), up(247.5~292.5), NE(292.5~337.5). 경계값 테스트 전체 통과
+- 걷기 사이클: neutral -> left-step -> neutral -> right-step (4프레임)
+- AutoPilot 모드에서도 동일한 방향 감지/애니메이션 로직 적용 (Player._handleMovement()의 dirX/dirY 공유)
+- 피격 틴트(setTint)와 무적 깜빡임(setAlpha)은 스프라이트 레벨 속성이므로 걷기 애니메이션과 독립적으로 동작
+
 ## 2026-03-10 -- XP 보석 가시성 수정: SVG 직접 생성 하이브리드 방식
 
 ### 수정

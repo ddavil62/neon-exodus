@@ -61,6 +61,12 @@ export default class BootScene extends Phaser.Scene {
     // 플레이어 정적 이미지 (48x48)
     this.load.image('player', 'assets/sprites/player.png');
 
+    // 플레이어 걷기 애니메이션 스프라이트시트 (240x192, 5방향x4프레임, 프레임 48x48)
+    this.load.spritesheet('player_walk', 'assets/sprites/player_walk.png', {
+      frameWidth: 48,
+      frameHeight: 48,
+    });
+
     // 투사체 정적 이미지 (12x12)
     this.load.image('projectile', 'assets/sprites/projectile.png');
 
@@ -111,6 +117,9 @@ export default class BootScene extends Phaser.Scene {
 
     // 플레이스홀더 텍스처 생성
     this._generatePlaceholderTextures();
+
+    // 플레이어 8방향 걷기 애니메이션 등록
+    this._registerPlayerWalkAnims();
 
     // 배경 타일 텍스처 생성
     this._generateBackgroundTile();
@@ -198,6 +207,41 @@ export default class BootScene extends Phaser.Scene {
     }
   }
 
+  // ── 걷기 애니메이션 등록 ──
+
+  /**
+   * 플레이어 8방향 걷기 애니메이션을 Phaser anims에 등록한다.
+   * 5방향(down, down-right, right, up-right, up)은 스프라이트시트 프레임으로 직접 등록.
+   * 나머지 3방향(down-left, left, up-left)은 Player.js에서 flipX + 미러 방향 키로 처리하므로
+   * 별도 등록 불필요.
+   * @private
+   */
+  _registerPlayerWalkAnims() {
+    // player_walk 텍스처가 없으면 등록 불가 (에셋 로드 실패 시 플레이스홀더로 폴백)
+    if (!this.textures.exists('player_walk')) return;
+
+    const fps = 8;
+
+    // 5방향 x 4프레임 애니메이션 등록
+    // 프레임 번호 = row * 5 + col (Phaser 좌->우, 위->아래 순번)
+    const WALK_DIRS = [
+      { key: 'walk_down',       frames: [0, 5, 10, 15] },
+      { key: 'walk_down_right', frames: [1, 6, 11, 16] },
+      { key: 'walk_right',      frames: [2, 7, 12, 17] },
+      { key: 'walk_up_right',   frames: [3, 8, 13, 18] },
+      { key: 'walk_up',         frames: [4, 9, 14, 19] },
+    ];
+
+    for (const dir of WALK_DIRS) {
+      this.anims.create({
+        key: dir.key,
+        frames: dir.frames.map(f => ({ key: 'player_walk', frame: f })),
+        frameRate: fps,
+        repeat: -1,
+      });
+    }
+  }
+
   // ── 내부 메서드 ──
 
   /**
@@ -262,6 +306,18 @@ export default class BootScene extends Phaser.Scene {
       gfx.fillStyle(COLORS.NEON_CYAN, 0.7);
       gfx.fillTriangle(46, 24, 36, 14, 36, 34);
       gfx.generateTexture('player', 48, 48);
+    }
+
+    // player_walk spritesheet 플레이스홀더 (240x192, 20프레임 시안 원 격자)
+    if (!this.textures.exists('player_walk')) {
+      gfx.clear();
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 5; col++) {
+          gfx.fillStyle(COLORS.NEON_CYAN, 0.8);
+          gfx.fillCircle(col * 48 + 24, row * 48 + 24, 18);
+        }
+      }
+      gfx.generateTexture('player_walk', 240, 192);
     }
 
     // ── 잡몹 10종 (벡터 에셋 크기 기준 플레이스홀더) ──

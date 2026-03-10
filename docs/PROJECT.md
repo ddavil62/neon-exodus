@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-10 (XP 보석 가시성 수정 - SVG 직접 생성 하이브리드 방식)
+> 최종 업데이트: 2026-03-10 (플레이어 8방향 걷기 애니메이션)
 
 ## 프로젝트 개요
 
@@ -53,7 +53,7 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image 로드), 플레이스홀더 폴백, SoundSystem 초기화
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image 로드 + player_walk spritesheet), 플레이스홀더 폴백, 걷기 anim 등록, SoundSystem 초기화
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출)
@@ -63,7 +63,7 @@ neon-exodus/
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (13개, 진행률)
 │   │   └── CollectionScene.js     # 도감 화면 (4탭: 무기/패시브/적/도전과제)
 │   ├── entities/
-│   │   ├── Player.js              # 플레이어 (이동, HP/XP, 레벨업, 메타 업그레이드)
+│   │   ├── Player.js              # 플레이어 (이동, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드)
 │   │   ├── Enemy.js               # 적 기본 클래스 (초기화, 이동, 데미지, 사망)
 │   │   ├── EnemyTypes.js          # 적 유형별 AI 15종
 │   │   ├── Projectile.js          # 투사체 (발사, 피격, 관통)
@@ -90,8 +90,10 @@ neon-exodus/
 │       ├── characters.js          # 캐릭터 6종
 │       └── achievements.js        # 도전과제 13종
 ├── assets/
-│   └── sprites/                   # 벡터 PNG 에셋 (GPT Image API 17종 + SVG 직접 생성 3종)
-│       ├── player.png             # 플레이어 정적 이미지 (48x48)
+│   └── sprites/                   # 벡터 PNG 에셋 (GPT Image API 17종 + SVG 직접 생성 3종) + 걷기 스프라이트시트
+│       ├── player.png             # 플레이어 정적 이미지 (48x48, idle용)
+│       ├── player_walk.png        # 플레이어 걷기 스프라이트시트 (240x192, 5방향x4프레임, 48x48/프레임)
+│       ├── walk_frames/           # 걷기 개별 프레임 20개 PNG (디버깅용)
 │       ├── projectile.png         # 투사체 정적 이미지 (12x12)
 │       ├── enemies/               # 잡몹 10종 정적 이미지
 │       │   ├── nano_drone.png     # 32x32
@@ -118,7 +120,8 @@ neon-exodus/
 │   ├── build.js                   # www/ 디렉토리 빌드 스크립트
 │   ├── generate-sprites.js        # (레거시) Phase 1 DALL-E 3 스프라이트 생성 스크립트
 │   ├── generate-sprites-phase2.js # (레거시) Phase 2 보스/미니보스 스프라이트 생성 스크립트
-│   └── generate-vector-sprites.js # 하이브리드 20종 벡터 PNG 생성 스크립트 (GPT Image API 17종 + SVG 직접 생성 3종, 현행)
+│   ├── generate-vector-sprites.js # 하이브리드 20종 벡터 PNG 생성 스크립트 (GPT Image API 17종 + SVG 직접 생성 3종, 현행)
+│   └── generate-walk-anim.js      # 플레이어 걷기 애니메이션 스프라이트시트 생성 스크립트 (GPT Image API 5방향x4프레임, 현행)
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
@@ -129,7 +132,8 @@ neon-exodus/
 │   ├── phase1-art-qa.spec.js     # Phase 1 아트 QA 테스트 (22개)
 │   ├── weapon-report.spec.js     # 무기별 결과 리포트 테스트 (28개)
 │   ├── weapon-report-layout.spec.js # 무기 리포트 레이아웃 테스트 (11개)
-│   └── sprite-scale.spec.js       # 스프라이트 2x 스케일 테스트 (21개)
+│   ├── sprite-scale.spec.js       # 스프라이트 2x 스케일 테스트 (21개)
+│   └── walk-anim.spec.js          # 걷기 애니메이션 테스트 (24개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -153,7 +157,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 351키, `t()` 함수로 참조 |
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지 |
-| 플레이어 | `js/entities/Player.js` | 조이스틱 이동, HP/XP/레벨업, 메타 업그레이드 반영 |
+| 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위), 치명타 판정, 무기 진화, 드론 AI |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
@@ -175,7 +179,7 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 
 **Phaser 렌더 설정**: `pixelArt: false`, `antialias: true` -- 벡터 에셋의 매끄러운 외곽선 렌더링.
 
-**에셋 로드 방식**: `this.load.image()` 정적 이미지 로드 (spritesheet 미사용). 프레임 애니메이션 제거, Phaser tween으로 아이들 맥동 애니메이션 구현.
+**에셋 로드 방식**: 정적 엔티티는 `this.load.image()` 이미지 로드. 플레이어 걷기 애니메이션은 `this.load.spritesheet('player_walk', ...)` 스프라이트시트 로드. 정지 시에는 Phaser tween 아이들 맥동 애니메이션, 이동 시에는 spritesheet 프레임 기반 걷기 애니메이션 재생.
 
 | 엔티티 | 에셋 크기 | 충돌체 | 아이들 tween |
 |---|---|---|---|
@@ -194,12 +198,73 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 - tween 공통: `yoyo: true, repeat: -1, ease: 'Sine.easeInOut'`
 - 오브젝트 풀 재사용: Enemy.init()에서 `killTweensOf(this)` 선행 호출 후 새 tween 부여. `_deactivate()`에서도 `killTweensOf(this)` 호출
 - 에셋 미존재 시 Graphics 플레이스홀더 폴백 유지 (`textures.exists()` 가드)
-- 에셋 생성: `node scripts/generate-vector-sprites.js` (GPT Image API 17종 + SVG 직접 생성 3종 = 20종 PNG 생성, API 키 필요)
+- 에셋 생성 (정적): `node scripts/generate-vector-sprites.js` (GPT Image API 17종 + SVG 직접 생성 3종 = 20종 PNG 생성, API 키 필요)
+- 에셋 생성 (걷기 애니메이션): `node scripts/generate-walk-anim.js` (GPT Image API 5방향 x 4프레임 = 20개 프레임 + 240x192 스프라이트시트, API 키 필요)
 - 아트 컨셉: `docs/ART_CONCEPT.md`
-- 관련 파일: `js/config.js`, `js/main.js`, `js/scenes/BootScene.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`, `scripts/generate-vector-sprites.js`
+- 관련 파일: `js/config.js`, `js/main.js`, `js/scenes/BootScene.js`, `js/entities/Player.js`, `js/entities/Enemy.js`, `js/entities/Projectile.js`, `js/entities/XPGem.js`, `scripts/generate-vector-sprites.js`, `scripts/generate-walk-anim.js`
 - 구현 일자: 2026-03-10 (GPT Image API 벡터 전환 + XP 보석 SVG 직접 생성), 이전: 2026-03-10 (SVG 코드 벡터), 이전: 2026-03-09 (픽셀아트 SPRITE_SCALE=2)
 - 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-art-phase1.md`, `.claude/specs/2026-03-10-neon-exodus-gpt-image-art.md`
 - XP 보석 수정 QA: `.claude/specs/2026-03-10-neon-exodus-gpt-image-art-qa-xpfix.md`
+
+### 플레이어 걷기 애니메이션
+
+8방향 걷기 애니메이션 시스템. GPT Image API로 5방향 프레임을 생성하고, 나머지 3방향은 flipX 미러링으로 처리한다.
+
+#### 스프라이트시트 (player_walk.png)
+- 크기: 240x192 (5열 x 4행, 프레임 48x48)
+- 레이아웃: col0=down, col1=down-right, col2=right, col3=up-right, col4=up
+- 프레임 번호: row * 5 + col (Phaser 좌->우, 위->아래 순번)
+- 걷기 사이클: neutral(0) -> left-step(1) -> neutral(2) -> right-step(3)
+
+#### 방향 프레임 매핑
+| 방향 | animKey | 프레임 번호 | flipX |
+|---|---|---|---|
+| down (S) | walk_down | 0, 5, 10, 15 | false |
+| down-right (SE) | walk_down_right | 1, 6, 11, 16 | false |
+| right (E) | walk_right | 2, 7, 12, 17 | false |
+| up-right (NE) | walk_up_right | 3, 8, 13, 18 | false |
+| up (N) | walk_up | 4, 9, 14, 19 | false |
+| down-left (SW) | walk_down_right | 1, 6, 11, 16 | true |
+| left (W) | walk_right | 2, 7, 12, 17 | true |
+| up-left (NW) | walk_up_right | 3, 8, 13, 18 | true |
+
+#### 8방향 각도 분류 (atan2 기반)
+- 수식: `deg = (Math.atan2(dirY, dirX) * 180 / Math.PI + 360) % 360`
+- 분류: 22.5도 오프셋 적용, 각 방향 45도 범위
+- right: 337.5~22.5, SE: 22.5~67.5, down: 67.5~112.5, SW: 112.5~157.5, left: 157.5~202.5, NW: 202.5~247.5, up: 247.5~292.5, NE: 292.5~337.5
+
+#### 상태 전이
+- **정지 -> 이동**: idle tween pause, setScale(SPRITE_SCALE) 정상화, _isMoving=true, 방향별 walk anim play
+- **이동 -> 정지**: anims.stop(), setTexture('player'), setFlipX(false), setScale(SPRITE_SCALE), idle tween resume, _isMoving=false
+- **방향 전환 (이동 중)**: 동일 animKey면 play() 미호출(끊김 방지), 다른 animKey면 새 anim play + flipX 갱신
+- **AutoPilot 모드**: Player._handleMovement()의 dirX/dirY를 공유하므로 동일 로직 적용
+
+#### 애니메이션 파라미터
+| 파라미터 | 값 |
+|---|---|
+| frameRate | 8 fps |
+| repeat | -1 (무한 루프) |
+| 프레임 크기 | 48x48 |
+| 등록 방식 | BootScene._registerPlayerWalkAnims() |
+
+#### 에셋 생성 스크립트 (generate-walk-anim.js)
+- GPT Image API(gpt-image-1)로 5방향 x 4프레임 = 20개 PNG 개별 생성
+- 1024x1024 생성 후 48x48 리사이즈 (sharp, fit: contain, 투명 배경)
+- 투명 배경 확인 + 폴백 투명화 (밝기 임계값 40 이하)
+- 스프라이트시트 합성: sharp composite, 5열 x 4행, 240x192
+- API rate limit 대응: 호출 간 1초 대기
+- 실패 시: 시안 반투명(alpha 128) 48x48 fallback PNG 생성
+- 임시 프레임 파일(walk_frames/) 디버깅용 보존
+- 실행: `node scripts/generate-walk-anim.js` (루트 .env에 OPENAI_API_KEY 필요)
+
+#### 플레이스홀더 폴백
+- BootScene._generatePlaceholderTextures()에서 player_walk 미존재 시 240x192 시안 원 격자 생성
+- _registerPlayerWalkAnims()에서 player_walk 텍스처 미존재 시 early return
+- _playWalkAnim()에서 player_walk 텍스처 존재 확인 후 play() 호출
+
+- 관련 파일: `js/entities/Player.js`, `js/scenes/BootScene.js`, `scripts/generate-walk-anim.js`, `assets/sprites/player_walk.png`
+- 구현 일자: 2026-03-10
+- 스펙 문서: `.claude/specs/2026-03-10-neon-exodus-walk-anim.md`
 
 ### 조작 시스템
 
@@ -876,3 +941,16 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] GPT Image API 투명 배경 지원 (`background: 'transparent'`) + 미지원 시 폴백 투명화(밝기 임계값 40)
 - [x] API 호출 간 1초 대기(Rate Limit 대응), 개별 에셋 실패 시 스킵(기존 PNG 보존)
 - [x] XP 보석 3종 SVG 직접 생성으로 변경 *(GPT Image API 1024px -> 12~28px 다운스케일 시 디테일 소실 버그 수정, `svgOverride` 플래그로 분기)*
+
+### 플레이어 8방향 걷기 애니메이션 -- 완료 (2026-03-10)
+- [x] 걷기 애니메이션 스프라이트시트 생성 스크립트 (`scripts/generate-walk-anim.js`)
+- [x] GPT Image API(gpt-image-1)로 5방향 x 4프레임 = 20개 PNG 생성 + 240x192 스프라이트시트 합성
+- [x] BootScene: player_walk spritesheet 로드 + 5방향 anim 등록 (8fps, repeat:-1)
+- [x] BootScene: player_walk 플레이스홀더 텍스처 (240x192 시안 원 격자)
+- [x] Player._playWalkAnim(): atan2 기반 8방향 매핑, left 계열 3방향 flipX 미러링
+- [x] Player._setIdleState(): 걷기 중단 + idle 텍스처 복귀 + idle tween 재개
+- [x] idle tween pause/resume 전환 (이동 시 정지, 정지 시 재개)
+- [x] 동일 방향 유지 시 play() 재호출 방지 (끊김 방지)
+- [x] player_walk 미존재 시 플레이스홀더 폴백 동작
+- [x] AutoPilot 모드 호환 (dirX/dirY 공유)
+- [x] Playwright 24/24 테스트 전체 통과

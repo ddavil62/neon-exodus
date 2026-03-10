@@ -34,8 +34,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // 아이들 맥동 tween 애니메이션 (벡터 에셋 전환)
-    scene.tweens.add({
+    // 아이들 맥동 tween 애니메이션 (정지 시에만 재생, 이동 시 일시 정지)
+    this._idleTween = scene.tweens.add({
       targets: this,
       scaleX: { from: 1.0, to: 1.05 },
       scaleY: { from: 1.0, to: 0.95 },
@@ -159,6 +159,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // depth 설정 (적 위에 표시)
     this.setDepth(10);
+
+    // ── 걷기 애니메이션 상태 ──
+
+    /** 현재 이동 중 여부 (걷기/idle 전환 판단용) */
+    this._isMoving = false;
   }
 
   // ── 공개 메서드 ──
@@ -408,9 +413,93 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (dirX === 0 && dirY === 0) {
       this.body.setVelocity(0, 0);
+      // 정지: idle 상태로 전환 (걷기 애니메이션 중단, idle tween 재개)
+      this._setIdleState();
     } else {
       this.body.setVelocity(dirX * speed, dirY * speed);
+      // 이동: 방향에 맞는 걷기 애니메이션 재생
+      this._playWalkAnim(dirX, dirY);
     }
+  }
+
+  /**
+   * 이동 방향(dirX, dirY)을 8방향으로 매핑하여 해당 걷기 애니메이션을 재생한다.
+   * left 계열 3방향(down-left, left, up-left)은 flipX=true + 미러 방향 애니메이션으로 처리한다.
+   * @param {number} dirX - X 방향 성분 (-1~1)
+   * @param {number} dirY - Y 방향 성분 (-1~1)
+   * @private
+   */
+  _playWalkAnim(dirX, dirY) {
+    // 처음 이동 시작: idle tween 일시 정지 + 스케일 정상화
+    if (!this._isMoving) {
+      this._isMoving = true;
+      if (this._idleTween) this._idleTween.pause();
+      this.setScale(SPRITE_SCALE);
+    }
+
+    // atan2로 0~360도 각도 계산
+    // atan2(y, x): 0=오른쪽(East), Phaser Y축 아래 양수 기준 시계방향 증가
+    const angle = Math.atan2(dirY, dirX);
+    const deg = (angle * 180 / Math.PI + 360) % 360;
+
+    // 8방향 분류 (각 방향 45도 범위, 22.5도 오프셋 적용)
+    // 기준: 0=right, 45=down-right, 90=down, 135=down-left
+    //       180=left, 225=up-left, 270=up, 315=up-right
+    let animKey;
+    let flip = false;
+
+    if (deg >= 337.5 || deg < 22.5) {
+      animKey = 'walk_right';           // East (0도)
+    } else if (deg < 67.5) {
+      animKey = 'walk_down_right';      // SE (45도)
+    } else if (deg < 112.5) {
+      animKey = 'walk_down';            // South (90도)
+    } else if (deg < 157.5) {
+      animKey = 'walk_down_right';      // SW (135도) --- SE를 flipX 미러
+      flip = true;
+    } else if (deg < 202.5) {
+      animKey = 'walk_right';           // West (180도) --- East를 flipX 미러
+      flip = true;
+    } else if (deg < 247.5) {
+      animKey = 'walk_up_right';        // NW (225도) --- NE를 flipX 미러
+      flip = true;
+    } else if (deg < 292.5) {
+      animKey = 'walk_up';              // North (270도)
+    } else {
+      animKey = 'walk_up_right';        // NE (315도)
+    }
+
+    this.setFlipX(flip);
+
+    // 동일 애니메이션이 이미 재생 중이면 재시작하지 않음 (방향 유지 중 끊김 방지)
+    if (this.anims.currentAnim && this.anims.currentAnim.key === animKey && this.anims.isPlaying) {
+      return;
+    }
+
+    // player_walk 텍스처가 로드된 경우에만 애니메이션 재생
+    if (this.scene.textures.exists('player_walk')) {
+      this.play(animKey);
+    }
+  }
+
+  /**
+   * 이동 정지 시 idle 상태로 복귀한다.
+   * 걷기 애니메이션을 중단하고 정적 player 텍스처로 전환하며, idle tween을 재개한다.
+   * @private
+   */
+  _setIdleState() {
+    if (!this._isMoving) return; // 이미 idle 상태면 중복 처리 방지
+
+    this._isMoving = false;
+
+    // 걷기 애니메이션 중단 후 idle 정적 텍스처로 복귀
+    this.anims.stop();
+    this.setTexture('player');
+    this.setFlipX(false);
+    this.setScale(SPRITE_SCALE);
+
+    // idle tween 재개
+    if (this._idleTween) this._idleTween.resume();
   }
 
   /**
