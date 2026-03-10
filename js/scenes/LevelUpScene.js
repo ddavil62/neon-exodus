@@ -459,6 +459,9 @@ export default class LevelUpScene extends Phaser.Scene {
       case 'creditDropBonus':
         // 크레딧 보너스는 메타에서 처리
         break;
+      case 'attackDamage':
+        p.damageMultiplier = 1 + totalEffect;
+        break;
     }
   }
 

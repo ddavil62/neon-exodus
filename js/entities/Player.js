@@ -136,6 +136,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     /** 효과 범위 배수 */
     this.areaMultiplier = 1.0;
 
+    /** 공격력 배율 (데미지 앰프 패시브) */
+    this.damageMultiplier = 1.0;
+
     /** 크리티컬 확률 (0~1) */
     this.critChance = 0;
 
@@ -353,6 +356,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       mult += this.lowHpAttackBonus;
     }
 
+    // 데미지 앰프 패시브 배율 적용
+    if (this.damageMultiplier && this.damageMultiplier > 1) {
+      mult *= this.damageMultiplier;
+    }
+
     return mult;
   }
 
@@ -390,6 +398,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.magnetMultiplier = 1.0;
     this.regen = 0;
     this.critChance = 0;
+    this.damageMultiplier = 1.0;
 
     // 각 보유 패시브의 누적 효과 적용
     for (const [passiveId, level] of Object.entries(this._passives)) {
@@ -425,6 +434,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
           break;
         case 'cooldownReduction':
           this.cooldownMultiplier = Math.max(0.3, 1 - totalEffect);
+          break;
+        case 'attackDamage':
+          this.damageMultiplier = 1 + totalEffect;
           break;
         // projectileRange, creditDropBonus: 외부 시스템에서 처리
       }

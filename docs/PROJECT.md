@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-11 (AutoPilot 아이템 수집 가중치 강화)
+> 최종 업데이트: 2026-03-11 (전체 무기 진화 11종 완성)
 
 ## 프로젝트 개요
 
@@ -86,10 +86,10 @@ neon-exodus/
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
 │   │   └── IAPManager.js          # Google Play IAP 관리 (구매/복원, Mock 모드)
 │   └── data/
-│       ├── weapons.js             # 무기 11종 (기본 7종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 3종
+│       ├── weapons.js             # 무기 11종 (기본 7종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 11종
 │       ├── enemies.js             # 잡몹 10종 + 미니보스 2종 + 보스 6종
 │       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER, WEAPON_DROP_SCHEDULE)
-│       ├── passives.js            # 패시브 아이템 10종
+│       ├── passives.js            # 패시브 아이템 11종
 │       ├── waves.js               # 스폰 테이블 6구간 + 미니보스/보스 스케줄
 │       ├── upgrades.js            # 영구 업그레이드 22종
 │       ├── consumables.js          # 소모성 아이템 6종 (드롭률, 텍스처, 색상)
@@ -539,20 +539,30 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 구현 일자: 2026-03-09
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase3.md`
 
-#### 무기 진화 시스템
-| 진화 무기 | 조건 (무기 Lv8 + 패시브 Lv5) | 타입 | 주요 스탯 |
-|---|---|---|---|
-| 프리시전 캐논 | blaster + aim_module | projectile | dmg 60, cd 200ms, pierce 99, multiShot 3 |
-| 플라즈마 스톰 | electric_chain + overclock | chain | dmg 90, cd 600ms, chain 10, range 250, decay 0.92 |
-| 핵 미사일 | missile + critical_chip | homing | dmg 150, cd 1000ms, speed 320, radius 140 |
+#### 무기 진화 시스템 (11종 완성)
+| # | 진화 무기 | 조건 (무기 Lv8 + 패시브 Lv5) | 타입 | 주요 스탯 |
+|---|---|---|---|---|
+| 1 | 프리시전 캐논 | blaster + aim_module | projectile | dmg 60, cd 200ms, pierce 99, multiShot 3 |
+| 2 | 플라즈마 스톰 | electric_chain + overclock | chain | dmg 90, cd 600ms, chain 10, range 250, decay 0.92 |
+| 3 | 핵 미사일 | missile + critical_chip | homing | dmg 150, cd 1000ms, speed 320, radius 140 |
+| 4 | 이온 캐논 | laser_gun + battery_pack | beam | tickDmg 50, cd 600ms, dur 800ms, range 500, beamCount 3 |
+| 5 | 가디언 스피어 | plasma_orb + armor_plate | orbital | orbCount 6, tickDmg 45, orbRadius 120, angSpd 18.0, tick 200ms |
+| 6 | 하이브마인드 | drone + magnet_module | summon | droneCount 6, dmg 65, cd 400ms, range 200, spd 700 |
+| 7 | 퍼페츄얼 EMP | emp_blast + cooldown_chip | aoe | dmg 120, cd 2000ms, radius 250, slow 0.20, slowDur 3000ms |
+| 8 | 팬텀 스트라이크 | force_blade + booster | melee | dmg 200, cd 400ms, range 130, arc 360, knockback 50 |
+| 9 | 바이오플라즈마 | nano_swarm + regen_module | cloud | cloud 6, tickDmg 45, radius 100, dur 7000ms, cd 500ms, poison 8 |
+| 10 | 이벤트 호라이즌 | vortex_cannon + luck_module | gravity | dmg 140, pullDmg 40, pullRadius 160, vortexDur 5000ms, cd 1400ms, pullForce 200 |
+| 11 | 데스 블룸 | reaper_field + damage_amp | rotating_blade | blade 8, dmg 130, orbit 130, angSpd 14.0, tick 100ms, curse 5000ms |
 
 - 무기 최대 레벨 + 대응 패시브 Lv5 이상 시 즉시 자동 진화
 - LevelUpScene에서 무기/패시브 업그레이드 후 GameScene._tryEvolutionCheck() 호출
 - 진화 성공 시 카메라 금색 플래시(300ms) + "[무기명] EVOLVED!" 팝업 (2초 후 소멸)
 - 이미 진화한 무기는 중복 진화 방지 (weapon._evolvedId 체크)
+- `getWeaponStats()` 최상단에서 `_evolvedStats` 공통 체크 (모든 무기 타입 자동 지원)
+- `beamCount` 신규 속성: 이온 캐논 진화 시 가장 가까운 적 3명에게 빔 동시 발사 (`findClosestEnemies()` 유틸 메서드). 기본값 1 (기존 동작 유지)
 - 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`, `js/scenes/GameScene.js`
-- 구현 일자: 2026-03-09
-- 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase3.md`
+- 구현 일자: 2026-03-09 (전체 11종 완성: 2026-03-11)
+- 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase3.md`, `.claude/specs/2026-03-11-weapon-evolution-all.md`
 
 #### 치명타 시스템
 - `_rollCrit(baseDamage)`: critChance > 0이고 Math.random() < critChance일 때 치명타 발생
@@ -741,7 +751,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/entities/XPGem.js`, `js/scenes/LevelUpScene.js`
 - 구현 일자: 2026-03-08 (Phase 2 확장: 2026-03-09, 스킵 버그 수정: 2026-03-09)
 
-#### 패시브 아이템 (10종)
+#### 패시브 아이템 (11종)
 | # | 아이템 | 효과/Lv | 최대 Lv |
 |---|---|---|---|
 | 1 | 부스터 | 이동속도 +8% | 5 |
@@ -754,9 +764,11 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 8 | 크리티컬 칩 | 크리티컬 확률 +5% (데미지 150%) | 5 |
 | 9 | 쿨다운 칩 | 무기 쿨다운 -6% | 5 |
 | 10 | 행운 모듈 | 크레딧 드랍량 +10% | 5 |
+| 11 | 데미지 앰프 | 공격력 배율 +8% (Lv5 시 x1.40) | 5 |
 
+- `damage_amp` 패시브: `damageMultiplier = 1 + (0.08 * level)`. `Player.getEffectiveAttackMultiplier()`에서 기존 attackMultiplier에 곱하기로 적용
 - 관련 파일: `js/data/passives.js`
-- 구현 일자: 2026-03-08
+- 구현 일자: 2026-03-08 (damage_amp 추가: 2026-03-11)
 
 ### 메타 시스템
 
@@ -1083,6 +1095,8 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 9. ~~**AutoPilotSystem AUTO_HUNT import 미사용**~~: **해결됨 (2026-03-11)**. 하드코딩 상수(DANGER_RADIUS, XP_SEARCH_RADIUS, DIRECTION_CHANGE_INTERVAL, CRITICAL_DANGER_RADIUS) 완전 제거, AUTO_HUNT 객체에서 런타임 참조로 전환.
 10. **AutoPilotSystem _wander() 벽 회피 미경유**: idle 모드에서 _applyDirection()을 거치지 않아 벽 회피와 jitter가 미적용. Phaser setCollideWorldBounds가 물리 레벨에서 보완하나, 벽 근처 AI 움직임이 부자연스러울 수 있음.
 11. **IAP 플러그인 미등록**: InAppPurchase Capacitor 플러그인이 package.json에 미등록. 네이티브 빌드 전 `@nicegram/capacitor-iap` 등 설치 필요. 웹 환경에서는 Mock 모드로 정상 동작.
+12. **Player.damageMultiplier 미초기화**: constructor에 `this.damageMultiplier` 미선언. `getEffectiveAttackMultiplier()`에서 `this.damageMultiplier && this.damageMultiplier > 1` 조건으로 undefined 안전 처리됨. 생성자에 `this.damageMultiplier = 1.0` 추가 권장.
+13. **Player._applyPassiveEffects() attackDamage case 누락**: `_applyPassiveEffects()` 메서드에 `attackDamage` case 미구현 및 리셋 블록에 `damageMultiplier` 미포함. 현재 이 메서드는 외부 호출이 없는 dead code이므로 런타임 영향 없음.
 
 ## 현재 구현 상태
 
@@ -1117,7 +1131,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 ### Phase 3: 콘텐츠 확장 -- 완료 (2026-03-09)
 - [x] 전기 체인 무기 (chain 타입, Lv1~8, 연쇄 번개)
 - [x] 미사일 무기 (homing 타입, Lv1~8, 유도 추적 + 범위 폭발)
-- [x] 무기 진화 시스템 활성화 (3종: precision_cannon, plasma_storm, nuke_missile)
+- [x] 무기 진화 시스템 활성화 (초기 3종: precision_cannon, plasma_storm, nuke_missile -> 2026-03-11 전체 11종 완성)
 - [x] 캐릭터 선택 화면 (CharacterScene) + 캐릭터 3명 (스나이퍼/엔지니어/버서커)
 - [x] 캐릭터 고유 패시브 (스나이퍼 critDamage+30%, 버서커 저HP 공격+40%)
 - [x] 치명타 시스템 전체 구현 (_rollCrit, 5개 데미지 지점 적용, CRIT! 시각 효과)
@@ -1165,6 +1179,21 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 풀 undefined 시 null 반환으로 안전 처리 (4개 메서드 모두)
 - [x] REACTION_MISS_CHANCE, IMPERFECTION_ANGLE 미변경 (제약사항 준수)
 - [x] Playwright 29/29 테스트 전체 통과
+
+### 전체 무기 진화 완성 (11종) -- 완료 (2026-03-11)
+- [x] 8개 신규 진화 레시피 추가 (WEAPON_EVOLUTIONS 총 11개): ion_cannon, guardian_sphere, hivemind, perpetual_emp, phantom_strike, bioplasma, event_horizon, death_blossom
+- [x] 8개 진화 무기 데이터 추가 (EVOLVED_WEAPONS 총 11개)
+- [x] damage_amp 패시브 신규 추가 (stat: attackDamage, effectPerLevel: 0.08, maxLevel: 5, icon: anger symbol)
+- [x] Player.damageMultiplier 스탯 + getEffectiveAttackMultiplier()에 곱하기 반영
+- [x] LevelUpScene._applyPassiveEffect()에 attackDamage 케이스 추가
+- [x] getWeaponStats() 최상단 _evolvedStats 공통 체크 (모든 무기 타입 자동 지원, 기존 chain/homing 개별 처리를 통합)
+- [x] beamCount 다중 빔 메커니즘: _updateBeam() + renderBeams() + findClosestEnemies() (이온 캐논 beamCount:3)
+- [x] 적 부족 시 부채꼴 기본 방향 fallback 처리
+- [x] i18n ko/en 확장 (8개 진화 무기 name/desc + 1개 패시브 name/desc/detail)
+- [x] CollectionScene 자동 표시 (WEAPON_EVOLUTIONS 순회 로직 활용)
+- [x] GameScene._tryEvolutionCheck() 자동 동작 (데이터 추가만으로 동작)
+- [x] 기존 3개 진화 (precision_cannon, plasma_storm, nuke_missile) 회귀 PASS
+- [x] Playwright 35/35 테스트 전체 통과
 
 ### 무기별 결과 리포트 -- 완료 (2026-03-09)
 - [x] WeaponSystem.weaponStats Map으로 무기별 킬/데미지 추적

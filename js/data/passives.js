@@ -1,6 +1,6 @@
 /**
  * @fileoverview 패시브 아이템 데이터 테이블.
- * 런 중 레벨업으로 획득하는 패시브 아이템 10종을 정의한다.
+ * 런 중 레벨업으로 획득하는 패시브 아이템 11종을 정의한다.
  */
 
 /**
@@ -108,6 +108,16 @@ export const PASSIVES = [
     stat: 'creditDropBonus',
     effectPerLevel: 0.10,
     icon: '\u{1F340}', // four leaf clover
+  },
+  {
+    id: 'damage_amp',
+    nameKey: 'passive.damage_amp.name',
+    descKey: 'passive.damage_amp.desc',
+    detailKey: 'passive.damage_amp.detail',
+    maxLevel: 5,
+    stat: 'attackDamage',
+    effectPerLevel: 0.08,
+    icon: '\u{1F4A2}', // anger symbol (💢)
   },
 ];
 

@@ -389,6 +389,62 @@ export const WEAPON_EVOLUTIONS = [
     resultNameKey: 'weapon.evolution.nukeMissile.name',
     resultDescKey: 'weapon.evolution.nukeMissile.desc',
   },
+  {
+    weaponId: 'laser_gun',
+    passiveId: 'battery_pack',
+    resultId: 'ion_cannon',
+    resultNameKey: 'weapon.evolution.ionCannon.name',
+    resultDescKey: 'weapon.evolution.ionCannon.desc',
+  },
+  {
+    weaponId: 'plasma_orb',
+    passiveId: 'armor_plate',
+    resultId: 'guardian_sphere',
+    resultNameKey: 'weapon.evolution.guardianSphere.name',
+    resultDescKey: 'weapon.evolution.guardianSphere.desc',
+  },
+  {
+    weaponId: 'drone',
+    passiveId: 'magnet_module',
+    resultId: 'hivemind',
+    resultNameKey: 'weapon.evolution.hivemind.name',
+    resultDescKey: 'weapon.evolution.hivemind.desc',
+  },
+  {
+    weaponId: 'emp_blast',
+    passiveId: 'cooldown_chip',
+    resultId: 'perpetual_emp',
+    resultNameKey: 'weapon.evolution.perpetualEmp.name',
+    resultDescKey: 'weapon.evolution.perpetualEmp.desc',
+  },
+  {
+    weaponId: 'force_blade',
+    passiveId: 'booster',
+    resultId: 'phantom_strike',
+    resultNameKey: 'weapon.evolution.phantomStrike.name',
+    resultDescKey: 'weapon.evolution.phantomStrike.desc',
+  },
+  {
+    weaponId: 'nano_swarm',
+    passiveId: 'regen_module',
+    resultId: 'bioplasma',
+    resultNameKey: 'weapon.evolution.bioplasma.name',
+    resultDescKey: 'weapon.evolution.bioplasma.desc',
+  },
+  {
+    weaponId: 'vortex_cannon',
+    passiveId: 'luck_module',
+    resultId: 'event_horizon',
+    resultNameKey: 'weapon.evolution.eventHorizon.name',
+    resultDescKey: 'weapon.evolution.eventHorizon.desc',
+  },
+  {
+    weaponId: 'reaper_field',
+    passiveId: 'damage_amp',
+    resultId: 'death_blossom',
+    resultNameKey: 'weapon.evolution.deathBlossom.name',
+    resultDescKey: 'weapon.evolution.deathBlossom.desc',
+  },
 ];
 
 // ── 진화 무기 데이터 ──
@@ -425,6 +481,78 @@ export const EVOLVED_WEAPONS = [
     type: 'homing',
     stats: {
       damage: 150, cooldown: 1000, speed: 320, turnSpeed: 3.5, explosionRadius: 140, range: 600,
+    },
+  },
+  {
+    id: 'ion_cannon',
+    nameKey: 'weapon.evolution.ionCannon.name',
+    descKey: 'weapon.evolution.ionCannon.desc',
+    type: 'beam',
+    stats: {
+      tickDamage: 50, cooldown: 600, duration: 800, range: 500, beamCount: 3,
+    },
+  },
+  {
+    id: 'guardian_sphere',
+    nameKey: 'weapon.evolution.guardianSphere.name',
+    descKey: 'weapon.evolution.guardianSphere.desc',
+    type: 'orbital',
+    stats: {
+      orbCount: 6, tickDamage: 45, orbRadius: 120, angularSpeed: 18.0, tickInterval: 200,
+    },
+  },
+  {
+    id: 'hivemind',
+    nameKey: 'weapon.evolution.hivemind.name',
+    descKey: 'weapon.evolution.hivemind.desc',
+    type: 'summon',
+    stats: {
+      droneCount: 6, damage: 65, cooldown: 400, shootRange: 200, moveSpeed: 700,
+    },
+  },
+  {
+    id: 'perpetual_emp',
+    nameKey: 'weapon.evolution.perpetualEmp.name',
+    descKey: 'weapon.evolution.perpetualEmp.desc',
+    type: 'aoe',
+    stats: {
+      damage: 120, cooldown: 2000, radius: 250, slowFactor: 0.20, slowDuration: 3000,
+    },
+  },
+  {
+    id: 'phantom_strike',
+    nameKey: 'weapon.evolution.phantomStrike.name',
+    descKey: 'weapon.evolution.phantomStrike.desc',
+    type: 'melee',
+    stats: {
+      damage: 200, cooldown: 400, range: 130, arcAngle: 360, knockback: 50,
+    },
+  },
+  {
+    id: 'bioplasma',
+    nameKey: 'weapon.evolution.bioplasma.name',
+    descKey: 'weapon.evolution.bioplasma.desc',
+    type: 'cloud',
+    stats: {
+      cloudCount: 6, tickDamage: 45, radius: 100, duration: 7000, cooldown: 500, poisonStack: 8,
+    },
+  },
+  {
+    id: 'event_horizon',
+    nameKey: 'weapon.evolution.eventHorizon.name',
+    descKey: 'weapon.evolution.eventHorizon.desc',
+    type: 'gravity',
+    stats: {
+      damage: 140, pullDamage: 40, pullRadius: 160, vortexDuration: 5000, cooldown: 1400, pullForce: 200,
+    },
+  },
+  {
+    id: 'death_blossom',
+    nameKey: 'weapon.evolution.deathBlossom.name',
+    descKey: 'weapon.evolution.deathBlossom.desc',
+    type: 'rotating_blade',
+    stats: {
+      bladeCount: 8, damage: 130, orbitRadius: 130, angularSpeed: 14.0, tickInterval: 100, curseDuration: 5000,
     },
   },
 ];

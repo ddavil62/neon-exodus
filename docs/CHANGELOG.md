@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-03-11 -- 전체 무기 진화 11종 완성
+
+### 추가
+- WEAPON_EVOLUTIONS 8개 신규 레시피 (`js/data/weapons.js`): laser_gun+battery_pack=ion_cannon, plasma_orb+armor_plate=guardian_sphere, drone+magnet_module=hivemind, emp_blast+cooldown_chip=perpetual_emp, force_blade+booster=phantom_strike, nano_swarm+regen_module=bioplasma, vortex_cannon+luck_module=event_horizon, reaper_field+damage_amp=death_blossom
+- EVOLVED_WEAPONS 8개 진화 무기 데이터 (`js/data/weapons.js`): 각 진화 무기별 타입-specific 스탯 정의 (총 11종)
+- damage_amp 패시브 (`js/data/passives.js`): id=damage_amp, stat=attackDamage, effectPerLevel=0.08, maxLevel=5, icon=anger symbol. Lv5 시 damageMultiplier 1.40 (40% 증가)
+- LevelUpScene._applyPassiveEffect() attackDamage 케이스 (`js/scenes/LevelUpScene.js`): `p.damageMultiplier = 1 + totalEffect`
+- Player.getEffectiveAttackMultiplier() damageMultiplier 반영 (`js/entities/Player.js`): `mult *= this.damageMultiplier` (undefined 안전 체크 포함)
+- WeaponSystem.findClosestEnemies() (`js/systems/WeaponSystem.js`): 거리순 정렬 + N개 반환 유틸 메서드 (beamCount 다중 타겟팅용)
+- _updateBeam() 다중 빔 로직 (`js/systems/WeaponSystem.js`): beamCount >= 2 시 가장 가까운 적 N명에게 각각 빔 발사. 적 부족 시 부채꼴 기본 방향 fallback
+- renderBeams() 다중 빔 렌더링 (`js/systems/WeaponSystem.js`): beamCount 수만큼 빔 시각화
+- i18n ko/en 확장 (`js/i18n.js`): 8개 진화 무기 name/desc + 1개 패시브 name/desc/detail
+- Playwright 테스트 (`tests/weapon-evolution-all.spec.js`): 35개 테스트
+
+### 변경
+- getWeaponStats() 리팩토링 (`js/systems/WeaponSystem.js`): 최상단에 `_evolvedStats` 공통 체크 추가. 기존 chain/homing 타입 개별 처리를 공통 로직으로 통합하여 모든 무기 타입(beam, orbital, summon, aoe, melee, cloud, gravity, rotating_blade 포함)이 자동으로 진화 스탯 사용
+
+### 참고
+- 스펙: `.claude/specs/2026-03-11-weapon-evolution-all.md`
+- 구현 리포트: `.claude/specs/2026-03-11-weapon-evolution-all-report.md`
+- QA: `.claude/specs/2026-03-11-weapon-evolution-all-qa.md`
+- QA 결과: 수용기준 13/13 PASS, 예외 시나리오 8/8 PASS, Playwright 35/35 전체 통과
+- LOW 이슈 3건: Player.damageMultiplier 미초기화, Player._applyPassiveEffects() attackDamage case 누락, 리셋 블록 damageMultiplier 미포함. 모두 런타임 영향 없음 (dead code 경로)
+- 기존 3개 진화 (precision_cannon, plasma_storm, nuke_missile) 회귀 테스트 PASS
+
 ## 2026-03-11 -- AutoPilot 아이템 수집 가중치 강화
 
 ### 추가

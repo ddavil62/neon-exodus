@@ -168,6 +168,11 @@ export default class WeaponSystem {
    * @returns {Object} 무기 스탯 객체
    */
   getWeaponStats(weapon) {
+    // 진화 무기인 경우 진화 스탯을 바로 반환 (모든 무기 타입 공통)
+    if (weapon._evolvedStats) {
+      return weapon._evolvedStats;
+    }
+
     const { data, level } = weapon;
     const levels = data.levels;
 
@@ -424,15 +429,22 @@ export default class WeaponSystem {
    */
   _updateBeam(weapon, time, delta) {
     const stats = this.getWeaponStats(weapon);
+    const beamCount = stats.beamCount || 1;
 
     // 빔 상태 초기화
     if (!this._beamStates.has(weapon.id)) {
+      // 빔 개수만큼 방향 배열 초기화
+      const dirs = [];
+      for (let i = 0; i < beamCount; i++) {
+        dirs.push({ dirX: 0, dirY: -1 });
+      }
       this._beamStates.set(weapon.id, {
         active: false,
         timer: 0,
-        dirX: 0,
-        dirY: -1,    // 기본 상향
-        damaged: false, // duration 동안 1회 데미지 적용 여부
+        dirs,              // 빔 방향 배열 (beamCount 지원)
+        dirX: 0,           // 하위 호환: 단일 빔 방향
+        dirY: -1,
+        damaged: false,
       });
     }
 
@@ -442,29 +454,62 @@ export default class WeaponSystem {
     }
 
     const state = this._beamStates.get(weapon.id);
+
+    // beamCount 변경 시 dirs 배열 갱신
+    if (!state.dirs || state.dirs.length !== beamCount) {
+      state.dirs = [];
+      for (let i = 0; i < beamCount; i++) {
+        state.dirs.push({ dirX: 0, dirY: -1 });
+      }
+    }
+
     state.timer -= delta;
 
     if (state.active) {
-      // 빔 활성 상태: 렌더링 + 데미지
-      const target = this.findClosestEnemy(
-        this.player.x, this.player.y, stats.range
-      );
-
-      // 방향 갱신 (적이 있으면 해당 방향, 없으면 기존 방향 유지)
-      if (target) {
-        const dx = target.x - this.player.x;
-        const dy = target.y - this.player.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 0) {
-          state.dirX = dx / dist;
-          state.dirY = dy / dist;
+      // 빔 활성 상태: 다중 타겟 방향 갱신 + 데미지
+      if (beamCount > 1) {
+        // 다중 빔: 가장 가까운 적 N명에게 각각 방향 갱신
+        const targets = this.findClosestEnemies(
+          this.player.x, this.player.y, stats.range, beamCount
+        );
+        for (let i = 0; i < beamCount; i++) {
+          const t = targets[i];
+          if (t) {
+            const dx = t.x - this.player.x;
+            const dy = t.y - this.player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+              state.dirs[i].dirX = dx / dist;
+              state.dirs[i].dirY = dy / dist;
+            }
+          }
+        }
+      } else {
+        // 단일 빔 (기존 로직)
+        const target = this.findClosestEnemy(
+          this.player.x, this.player.y, stats.range
+        );
+        if (target) {
+          const dx = target.x - this.player.x;
+          const dy = target.y - this.player.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 0) {
+            state.dirX = dx / dist;
+            state.dirY = dy / dist;
+            state.dirs[0].dirX = dx / dist;
+            state.dirs[0].dirY = dy / dist;
+          }
         }
       }
 
       // 데미지 적용 (duration 동안 1회)
       if (!state.damaged) {
         state.damaged = true;
-        this._applyBeamDamage(stats, state, weapon.id);
+        // 다중 빔: 각 빔별로 데미지 적용
+        for (let i = 0; i < beamCount; i++) {
+          const dirState = state.dirs[i];
+          this._applyBeamDamage(stats, dirState, weapon.id);
+        }
       }
 
       // duration 종료 시 비활성으로 전환
@@ -482,20 +527,47 @@ export default class WeaponSystem {
         state.damaged = false;
 
         // 발사 방향 결정
-        const target = this.findClosestEnemy(
-          this.player.x, this.player.y, stats.range
-        );
-        if (target) {
-          const dx = target.x - this.player.x;
-          const dy = target.y - this.player.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist > 0) {
-            state.dirX = dx / dist;
-            state.dirY = dy / dist;
+        if (beamCount > 1) {
+          const targets = this.findClosestEnemies(
+            this.player.x, this.player.y, stats.range, beamCount
+          );
+          for (let i = 0; i < beamCount; i++) {
+            const t = targets[i];
+            if (t) {
+              const dx = t.x - this.player.x;
+              const dy = t.y - this.player.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist > 0) {
+                state.dirs[i].dirX = dx / dist;
+                state.dirs[i].dirY = dy / dist;
+              }
+            } else {
+              // 적이 부족하면 기본 상향
+              const spread = ((i - (beamCount - 1) / 2) * 0.4);
+              state.dirs[i].dirX = Math.sin(spread);
+              state.dirs[i].dirY = -Math.cos(spread);
+            }
           }
         } else {
-          state.dirX = 0;
-          state.dirY = -1; // 적 없으면 상향
+          const target = this.findClosestEnemy(
+            this.player.x, this.player.y, stats.range
+          );
+          if (target) {
+            const dx = target.x - this.player.x;
+            const dy = target.y - this.player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+              state.dirX = dx / dist;
+              state.dirY = dy / dist;
+              state.dirs[0].dirX = dx / dist;
+              state.dirs[0].dirY = dy / dist;
+            }
+          } else {
+            state.dirX = 0;
+            state.dirY = -1;
+            state.dirs[0].dirX = 0;
+            state.dirs[0].dirY = -1;
+          }
         }
       }
     }
@@ -589,30 +661,36 @@ export default class WeaponSystem {
       const stats = this.getWeaponStats(weapon);
       const px = this.player.x;
       const py = this.player.y;
-      const endX = px + state.dirX * stats.range;
-      const endY = py + state.dirY * stats.range;
+      const beamCount = stats.beamCount || 1;
 
       // 빔 잔여 시간 비율로 미세 맥동 (duration 내 +-1px 너비 변화)
       const progress = state.timer / stats.duration;
       const pulse = Math.sin(progress * Math.PI * 4) * 1;
 
-      // 외곽 글로우: 8px cyan 20% opacity
-      this._beamGraphics.lineStyle(8 + pulse, 0x00FFFF, 0.2);
-      this._beamGraphics.lineBetween(px, py, endX, endY);
+      // 다중 빔 렌더링 (beamCount만큼 반복)
+      for (let bi = 0; bi < beamCount; bi++) {
+        const dir = state.dirs && state.dirs[bi] ? state.dirs[bi] : state;
+        const endX = px + dir.dirX * stats.range;
+        const endY = py + dir.dirY * stats.range;
 
-      // 메인 빔: 4px cyan 80% opacity
-      this._beamGraphics.lineStyle(4 + pulse * 0.5, 0x00FFFF, 0.8);
-      this._beamGraphics.lineBetween(px, py, endX, endY);
+        // 외곽 글로우: 8px cyan 20% opacity
+        this._beamGraphics.lineStyle(8 + pulse, 0x00FFFF, 0.2);
+        this._beamGraphics.lineBetween(px, py, endX, endY);
 
-      // 코어: 2px white 90% opacity
-      this._beamGraphics.lineStyle(2, 0xFFFFFF, 0.9);
-      this._beamGraphics.lineBetween(px, py, endX, endY);
+        // 메인 빔: 4px cyan 80% opacity
+        this._beamGraphics.lineStyle(4 + pulse * 0.5, 0x00FFFF, 0.8);
+        this._beamGraphics.lineBetween(px, py, endX, endY);
 
-      // 빔 끝점에 밝은 원형 글로우
-      this._beamGraphics.fillStyle(0x00FFFF, 0.5);
-      this._beamGraphics.fillCircle(endX, endY, 6);
-      this._beamGraphics.fillStyle(0xFFFFFF, 0.4);
-      this._beamGraphics.fillCircle(endX, endY, 3);
+        // 코어: 2px white 90% opacity
+        this._beamGraphics.lineStyle(2, 0xFFFFFF, 0.9);
+        this._beamGraphics.lineBetween(px, py, endX, endY);
+
+        // 빔 끝점에 밝은 원형 글로우
+        this._beamGraphics.fillStyle(0x00FFFF, 0.5);
+        this._beamGraphics.fillCircle(endX, endY, 6);
+        this._beamGraphics.fillStyle(0xFFFFFF, 0.4);
+        this._beamGraphics.fillCircle(endX, endY, 3);
+      }
     }
   }
 
@@ -1840,6 +1918,35 @@ export default class WeaponSystem {
     });
 
     return closest;
+  }
+
+  /**
+   * 지정 좌표에서 사거리 내 가장 가까운 활성 적 N명을 찾는다.
+   * beamCount 등 다중 타겟팅에 사용한다.
+   * @param {number} x - 기준 X 좌표
+   * @param {number} y - 기준 Y 좌표
+   * @param {number} range - 탐색 사거리 (px)
+   * @param {number} count - 최대 반환 수
+   * @returns {Array<Phaser.Physics.Arcade.Sprite>} 가까운 순 정렬된 적 배열
+   */
+  findClosestEnemies(x, y, range, count) {
+    const enemyPool = this.scene.waveSystem
+      ? this.scene.waveSystem.enemyPool
+      : null;
+    if (!enemyPool) return [];
+
+    const candidates = [];
+    enemyPool.forEach((enemy) => {
+      if (!enemy.active) return;
+      const dist = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
+      if (dist < range) {
+        candidates.push({ enemy, dist });
+      }
+    });
+
+    // 거리순 정렬 후 상위 N개 반환
+    candidates.sort((a, b) => a.dist - b.dist);
+    return candidates.slice(0, count).map(c => c.enemy);
   }
 
   /**
