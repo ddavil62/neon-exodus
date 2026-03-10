@@ -35,7 +35,7 @@ const TABS = [
 // ── 레이아웃 상수 ──
 
 const CARD_W = 320;
-const CARD_H = 48;
+const CARD_H = 56;
 const CARD_GAP = 4;
 const LIST_START_Y = 110;
 
@@ -325,20 +325,20 @@ export default class CollectionScene extends Phaser.Scene {
     bg.strokeRoundedRect(x - CARD_W / 2, y - CARD_H / 2, CARD_W, CARD_H, 4);
     this._container.add(bg);
 
-    const nameColor = item.discovered ? UI_COLORS.textPrimary : UI_COLORS.textSecondary;
-    const nameText = this.add.text(x - CARD_W / 2 + 12, y - 12, item.name, {
-      fontSize: '11px',
+    const nameColor = item.discovered ? UI_COLORS.neonCyan : UI_COLORS.textSecondary;
+    const nameText = this.add.text(x - CARD_W / 2 + 12, y - 14, item.name, {
+      fontSize: '12px',
       fontFamily: 'Galmuri11, monospace',
       color: nameColor,
     }).setAlpha(item.discovered ? 1 : 0.5);
     this._container.add(nameText);
 
     const descText = this.add.text(x - CARD_W / 2 + 12, y + 6, item.desc, {
-      fontSize: '8px',
+      fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
-      color: UI_COLORS.textSecondary,
+      color: UI_COLORS.textPrimary,
       wordWrap: { width: CARD_W - 24 },
-    }).setAlpha(item.discovered ? 0.7 : 0.3);
+    }).setAlpha(item.discovered ? 0.85 : 0.3);
     this._container.add(descText);
   }
 
