@@ -934,10 +934,10 @@ export default class GameScene extends Phaser.Scene {
         break;
 
       case 'mag_pulse':
-        // 자기 펄스: 전체 XP 보석 즉시 흡수
+        // 자기 펄스: 전체 XP 보석을 플레이어 방향으로 끌어당김 (뱀서 스타일)
         this.xpGemPool.forEach((gem) => {
           if (gem.active) {
-            gem.collect();
+            gem.beingMagnetized = true;
           }
         });
         break;
