@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-03-10 -- XP 보석 가시성 수정: SVG 직접 생성 하이브리드 방식
+
+### 수정
+- XP 보석 3종(xp_gem_s/m/l) 생성 방식을 GPT Image API에서 SVG 직접 생성으로 변경 (`scripts/generate-vector-sprites.js`): GPT Image API 1024x1024 이미지를 12~28px로 다운스케일 시 디테일이 소실되어 거의 투명해지는 버그 수정. `svgOverride: true` 플래그로 GPT API 호출과 SVG 직접 생성을 분기
+- `createGemSVG(size)` 함수 추가 (`scripts/generate-vector-sprites.js` L216~237): 다이아몬드형 폴리곤 + 시안(#00FFFF) 코어 + 흰색(#FFFFFF) 내부 하이라이트 + feGaussianBlur 글로우 필터(stdDeviation = `Math.max(1, size * 0.08)`)
+- `generateGemSprite(asset)` 함수 추가 (`scripts/generate-vector-sprites.js` L248~268): SVG 문자열 -> sharp -> PNG 직접 변환. viewBox가 최종 크기이므로 리사이즈 불필요
+- main() 루프에서 `asset.svgOverride` 여부에 따라 `generateGemSprite()` / `generateSprite()` 분기 (`scripts/generate-vector-sprites.js` L427~429). SVG 직접 생성 에셋은 API rate limit 대기(sleep) 불필요
+
+### 참고
+- 스펙: `.claude/specs/2026-03-10-neon-exodus-gpt-image-art.md`
+- QA (XP 보석 수정): `.claude/specs/2026-03-10-neon-exodus-gpt-image-art-qa-xpfix.md`
+- QA 결과: 수용기준 8/8 PASS, 예외 시나리오 7/7 PASS, Playwright 11/11 전체 통과. 시각적 검증 스크린샷 7건 확인
+- XP 보석 PNG 상세: xp_gem_s.png(12x12, 244B, 비투명 72.2%), xp_gem_m.png(20x20, 410B, 비투명 79.0%), xp_gem_l.png(28x28, 596B, 비투명 81.6%)
+- 나머지 17종은 기존 GPT Image API 방식 유지. 하이브리드 구조: 대형 에셋(32px+) = GPT Image API, 소형 에셋(12~28px XP 보석) = SVG 직접 생성
+
 ## 2026-03-10 -- GPT Image API 벡터 아트 전환: 20종 스프라이트 고품질 재생성
 
 ### 추가
