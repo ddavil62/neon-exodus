@@ -95,9 +95,9 @@ export default class LevelUpScene extends Phaser.Scene {
     // 3택 카드 생성
     const choices = this._generateChoices();
 
-    // 선택지가 없으면 스킵 UI 표시
+    // 선택지가 없으면 자동 스킵 (UI 표시 없이 즉시 게임 재개)
     if (choices.length === 0) {
-      this._renderSkip();
+      this.time.delayedCall(0, () => this._skipLevelUp());
       return;
     }
 
