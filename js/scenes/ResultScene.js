@@ -11,6 +11,8 @@ import { SaveManager } from '../managers/SaveManager.js';
 import { AchievementManager } from '../managers/AchievementManager.js';
 import { MetaManager } from '../managers/MetaManager.js';
 import { AdManager } from '../managers/AdManager.js';
+import { getWeaponById } from '../data/weapons.js';
+import { STAGES } from '../data/stages.js';
 
 // ── ResultScene 클래스 ──
 
@@ -21,7 +23,7 @@ export default class ResultScene extends Phaser.Scene {
 
   /**
    * 초기 데이터를 전달받는다.
-   * @param {{ victory: boolean, killCount: number, runTime: number, creditsEarned: number, level: number, weaponSlotsFilled: number, weaponEvolutions: number }} data
+   * @param {{ victory: boolean, killCount: number, runTime: number, creditsEarned: number, level: number, weaponSlotsFilled: number, weaponEvolutions: number, stageId: string, newWeaponUnlocked: string|null }} data
    */
   init(data) {
     /** 승리 여부 */
@@ -57,6 +59,12 @@ export default class ResultScene extends Phaser.Scene {
      * @type {Array<{ id: string, nameKey: string, kills: number, damage: number, dps: number }>}
      */
     this.weaponReport = data.weaponReport || [];
+
+    /** 플레이한 스테이지 ID */
+    this.stageId = data.stageId || null;
+
+    /** 이번 런에서 영구 해금된 무기 ID (클리어 시에만 값 존재) */
+    this.newWeaponUnlocked = data.newWeaponUnlocked || null;
   }
 
   /**
@@ -218,6 +226,11 @@ export default class ResultScene extends Phaser.Scene {
         delay: 1000,
       });
       rewardEndY = rewardY + 44;
+    }
+
+    // ── 무기 해금 배너 (스테이지 클리어 시) ──
+    if (this.newWeaponUnlocked) {
+      rewardEndY = this._renderWeaponUnlockBanner(centerX, rewardEndY);
     }
 
     // ── 하단 버튼 Y좌표 동적 계산 ──
@@ -456,6 +469,91 @@ export default class ResultScene extends Phaser.Scene {
     });
 
     return curY + displayWeapons.length * rowHeight + 4;
+  }
+
+  // ── 무기 해금 배너 ──
+
+  /**
+   * 스테이지 클리어 시 무기 해금 배너를 렌더링한다.
+   * 네온 시안 글로우 텍스트로 해금된 무기명을 표시한다.
+   * @param {number} centerX - 중심 X 좌표
+   * @param {number} startY - 시작 Y 좌표
+   * @returns {number} 렌더링 후 다음 Y 좌표
+   * @private
+   */
+  _renderWeaponUnlockBanner(centerX, startY) {
+    const weaponData = getWeaponById(this.newWeaponUnlocked);
+    const weaponName = weaponData ? t(weaponData.nameKey) : this.newWeaponUnlocked;
+
+    // 스테이지 클리어 텍스트
+    const stageData = this.stageId ? STAGES[this.stageId] : null;
+    if (stageData) {
+      const stageName = t(stageData.nameKey);
+      const clearText = this.add.text(centerX, startY + 8, t('result.stageCleared', stageName), {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonGreen,
+      }).setOrigin(0.5).setAlpha(0);
+
+      this.tweens.add({
+        targets: clearText,
+        alpha: 1,
+        duration: 500,
+        delay: 1100,
+      });
+    }
+
+    // 무기 해금 배너 배경 (네온 글로우 효과)
+    const bannerY = startY + (stageData ? 32 : 8);
+    const bannerWidth = 220;
+    const bannerHeight = 32;
+
+    const bannerBg = this.add.graphics();
+    bannerBg.fillStyle(COLORS.NEON_CYAN, 0.15);
+    bannerBg.fillRoundedRect(
+      centerX - bannerWidth / 2, bannerY - bannerHeight / 2,
+      bannerWidth, bannerHeight, 6
+    );
+    bannerBg.lineStyle(2, COLORS.NEON_CYAN, 0.8);
+    bannerBg.strokeRoundedRect(
+      centerX - bannerWidth / 2, bannerY - bannerHeight / 2,
+      bannerWidth, bannerHeight, 6
+    );
+    bannerBg.setAlpha(0);
+
+    // 무기 해금 텍스트 (네온 시안 + 글로우)
+    const unlockText = this.add.text(
+      centerX, bannerY,
+      t('result.weaponUnlock', weaponName),
+      {
+        fontSize: '14px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonCyan,
+        stroke: UI_COLORS.neonCyan,
+        strokeThickness: 1,
+      }
+    ).setOrigin(0.5).setAlpha(0);
+
+    // 등장 애니메이션 + 글로우 펄스
+    this.tweens.add({
+      targets: [bannerBg, unlockText],
+      alpha: 1,
+      duration: 600,
+      delay: 1200,
+      ease: 'Back.easeOut',
+    });
+
+    // 글로우 펄스 (배너 테두리 깜빡임)
+    this.tweens.add({
+      targets: bannerBg,
+      alpha: { from: 0.7, to: 1 },
+      duration: 800,
+      delay: 1800,
+      yoyo: true,
+      repeat: 2,
+    });
+
+    return bannerY + bannerHeight / 2 + 8;
   }
 
   /**

@@ -427,6 +427,86 @@ const TRANSLATIONS = {
     'autoHunt.purchaseFail': '구매에 실패했습니다.',
     'autoHunt.restored': '자동 사냥 복원 완료!',
 
+    // ── 스테이지 ──
+    'stage.select': '스테이지 선택',
+    'stage.city_outskirts.name': '도시 외곽',
+    'stage.city_outskirts.desc': '네온 시안 팔레트. 기본 난이도.',
+    'stage.industrial_zone.name': '산업 지구',
+    'stage.industrial_zone.desc': '오렌지/레드 팔레트. 난이도 x1.2.',
+    'stage.underground_server.name': '지하 서버 팜',
+    'stage.underground_server.desc': '퍼플/블루 팔레트. 난이도 x1.5.',
+    'stage.the_core.name': '코어',
+    'stage.the_core.desc': '네온 그린 팔레트. 최종 난이도 x2.0.',
+    'stage.clearCount': '{0}회 클리어',
+    'stage.new': 'NEW!',
+    'stage.lockCondition': '{0} 클리어 시 해금',
+
+    // ── 무기: 포스 블레이드 (스테이지 1 해금) ──
+    'weapon.force_blade.name': '포스 블레이드',
+    'weapon.force_blade.desc': '이동 방향 전방 부채꼴을 에너지 검으로 참격한다.',
+    'weapon.force_blade.lv1': '기본 참격. 데미지 30, 쿨다운 0.8초, 범위 60.',
+    'weapon.force_blade.lv2': '데미지 40, 쿨다운 0.78초.',
+    'weapon.force_blade.lv3': '데미지 52, 쿨다운 0.75초.',
+    'weapon.force_blade.lv4': '데미지 65, 쿨다운 0.72초, 범위 확대.',
+    'weapon.force_blade.lv5': '데미지 80, 쿨다운 0.68초.',
+    'weapon.force_blade.lv6': '데미지 96, 쿨다운 0.64초, 90도 범위.',
+    'weapon.force_blade.lv7': '데미지 114, 쿨다운 0.59초.',
+    'weapon.force_blade.lv8': '데미지 135, 쿨다운 0.53초, 120도 범위. 최종 형태.',
+
+    // ── 무기: 나노스웜 (스테이지 2 해금) ──
+    'weapon.nano_swarm.name': '나노스웜',
+    'weapon.nano_swarm.desc': '플레이어 주변에 나노봇 구름을 소환하여 지속 피해를 준다.',
+    'weapon.nano_swarm.lv1': '구름 1개. 틱 데미지 5, 반경 40, 독 스택 1.',
+    'weapon.nano_swarm.lv2': '틱 데미지 7, 반경 44.',
+    'weapon.nano_swarm.lv3': '구름 2개. 틱 데미지 9, 독 스택 2.',
+    'weapon.nano_swarm.lv4': '틱 데미지 12, 반경 52.',
+    'weapon.nano_swarm.lv5': '틱 데미지 15, 독 스택 3.',
+    'weapon.nano_swarm.lv6': '구름 3개. 틱 데미지 19.',
+    'weapon.nano_swarm.lv7': '틱 데미지 24, 독 스택 4.',
+    'weapon.nano_swarm.lv8': '구름 4개. 틱 데미지 30, 독 스택 5. 최종 형태.',
+
+    // ── 무기: 볼텍스 캐넌 (스테이지 3 해금) ──
+    'weapon.vortex_cannon.name': '볼텍스 캐넌',
+    'weapon.vortex_cannon.desc': '블랙홀 투사체로 적을 끌어당기고 지속 피해를 준다.',
+    'weapon.vortex_cannon.lv1': '기본 볼텍스. 직격 20, 끌림 반경 60, 지속 3초.',
+    'weapon.vortex_cannon.lv2': '직격 26, 쿨다운 2.85초.',
+    'weapon.vortex_cannon.lv3': '직격 33, 끌림 반경 70.',
+    'weapon.vortex_cannon.lv4': '직격 42, 쿨다운 2.55초.',
+    'weapon.vortex_cannon.lv5': '직격 52, 끌림 반경 82.',
+    'weapon.vortex_cannon.lv6': '직격 64, 쿨다운 2.2초.',
+    'weapon.vortex_cannon.lv7': '직격 78, 끌림 반경 100, 지속 3.7초.',
+    'weapon.vortex_cannon.lv8': '직격 95, 끌림 반경 115, 지속 4초. 최종 형태.',
+
+    // ── 무기: 리퍼 필드 (스테이지 4 해금) ──
+    'weapon.reaper_field.name': '리퍼 필드',
+    'weapon.reaper_field.desc': '에너지 낫이 플레이어 주변을 회전하며 저주를 부여한다.',
+    'weapon.reaper_field.lv1': '낫 3개. 데미지 18, 저주: 이속-30%, 피해+20%.',
+    'weapon.reaper_field.lv2': '데미지 24, 회전 속도 증가.',
+    'weapon.reaper_field.lv3': '데미지 31, 틱 간격 감소.',
+    'weapon.reaper_field.lv4': '낫 4개. 데미지 39.',
+    'weapon.reaper_field.lv5': '데미지 49, 저주 2.5초.',
+    'weapon.reaper_field.lv6': '데미지 60, 범위 확대.',
+    'weapon.reaper_field.lv7': '낫 5개. 데미지 74, 저주 3초.',
+    'weapon.reaper_field.lv8': '데미지 90, 저주 3.5초. 최종 형태.',
+
+    // ── 신규 보스 ──
+    'enemy.siege_titan_mk2.name': '시즈 타이탄 MK2',
+    'enemy.siege_titan_mk2.desc': '시즈 타이탄의 강화판. 광역 포격 반경 증가.',
+    'enemy.data_phantom.name': '데이터 팬텀',
+    'enemy.data_phantom.desc': '순간이동 + 8방향 투사체 + 분신 소환. 지하 서버 보스.',
+    'enemy.omega_core.name': '오메가 코어',
+    'enemy.omega_core.desc': '회전 레이저 + 소환 + 광역 EMP. 최종 보스.',
+
+    // ── 무기 드롭 ──
+    'game.weaponDropped': '무기 발견!',
+    'game.weaponCollected': '{0} 획득!',
+    'game.weaponUnlocked': '{0} 영구 해금!',
+    'weaponDrop.appeared': '⚔️ 무기 발견!',
+    'weaponDrop.collected': '{0} 획득!',
+    'weaponDrop.upgraded': '{0} 업그레이드!',
+    'result.weaponUnlock': '무기 해금: {0}',
+    'result.stageCleared': '{0} 클리어!',
+
     // ── 소모성 아이템 ──
     'consumable.nano_repair.name': '나노 수리킷',
     'consumable.nano_repair.desc': 'HP를 30 즉시 회복한다.',
@@ -862,6 +942,86 @@ const TRANSLATIONS = {
     'autoHunt.purchaseSuccess': 'Auto Hunt unlocked!',
     'autoHunt.purchaseFail': 'Purchase failed.',
     'autoHunt.restored': 'Auto Hunt restored!',
+
+    // ── Stages ──
+    'stage.select': 'Stage Select',
+    'stage.city_outskirts.name': 'City Outskirts',
+    'stage.city_outskirts.desc': 'Neon cyan palette. Base difficulty.',
+    'stage.industrial_zone.name': 'Industrial Zone',
+    'stage.industrial_zone.desc': 'Orange/red palette. Difficulty x1.2.',
+    'stage.underground_server.name': 'Underground Server Farm',
+    'stage.underground_server.desc': 'Purple/blue palette. Difficulty x1.5.',
+    'stage.the_core.name': 'The Core',
+    'stage.the_core.desc': 'Neon green palette. Final difficulty x2.0.',
+    'stage.clearCount': 'Cleared {0}x',
+    'stage.new': 'NEW!',
+    'stage.lockCondition': 'Clear {0} to unlock',
+
+    // ── Weapons: Force Blade (Stage 1 Unlock) ──
+    'weapon.force_blade.name': 'Force Blade',
+    'weapon.force_blade.desc': 'Slashes enemies in a forward arc with an energy blade.',
+    'weapon.force_blade.lv1': 'Basic slash. DMG 30, CD 0.8s, range 60.',
+    'weapon.force_blade.lv2': 'DMG 40, CD 0.78s.',
+    'weapon.force_blade.lv3': 'DMG 52, CD 0.75s.',
+    'weapon.force_blade.lv4': 'DMG 65, CD 0.72s, range expanded.',
+    'weapon.force_blade.lv5': 'DMG 80, CD 0.68s.',
+    'weapon.force_blade.lv6': 'DMG 96, CD 0.64s, 90 deg arc.',
+    'weapon.force_blade.lv7': 'DMG 114, CD 0.59s.',
+    'weapon.force_blade.lv8': 'DMG 135, CD 0.53s, 120 deg arc. Final form.',
+
+    // ── Weapons: Nano Swarm (Stage 2 Unlock) ──
+    'weapon.nano_swarm.name': 'Nano Swarm',
+    'weapon.nano_swarm.desc': 'Summons nanobot clouds dealing DoT around the player.',
+    'weapon.nano_swarm.lv1': '1 cloud. Tick DMG 5, radius 40, poison x1.',
+    'weapon.nano_swarm.lv2': 'Tick DMG 7, radius 44.',
+    'weapon.nano_swarm.lv3': '2 clouds. Tick DMG 9, poison x2.',
+    'weapon.nano_swarm.lv4': 'Tick DMG 12, radius 52.',
+    'weapon.nano_swarm.lv5': 'Tick DMG 15, poison x3.',
+    'weapon.nano_swarm.lv6': '3 clouds. Tick DMG 19.',
+    'weapon.nano_swarm.lv7': 'Tick DMG 24, poison x4.',
+    'weapon.nano_swarm.lv8': '4 clouds. Tick DMG 30, poison x5. Final form.',
+
+    // ── Weapons: Vortex Cannon (Stage 3 Unlock) ──
+    'weapon.vortex_cannon.name': 'Vortex Cannon',
+    'weapon.vortex_cannon.desc': 'Fires a black hole projectile that pulls enemies.',
+    'weapon.vortex_cannon.lv1': 'Basic vortex. Hit 20, pull radius 60, 3s.',
+    'weapon.vortex_cannon.lv2': 'Hit 26, CD 2.85s.',
+    'weapon.vortex_cannon.lv3': 'Hit 33, pull radius 70.',
+    'weapon.vortex_cannon.lv4': 'Hit 42, CD 2.55s.',
+    'weapon.vortex_cannon.lv5': 'Hit 52, pull radius 82.',
+    'weapon.vortex_cannon.lv6': 'Hit 64, CD 2.2s.',
+    'weapon.vortex_cannon.lv7': 'Hit 78, pull radius 100, 3.7s.',
+    'weapon.vortex_cannon.lv8': 'Hit 95, pull radius 115, 4s. Final form.',
+
+    // ── Weapons: Reaper Field (Stage 4 Unlock) ──
+    'weapon.reaper_field.name': 'Reaper Field',
+    'weapon.reaper_field.desc': 'Energy scythes orbit the player, cursing enemies.',
+    'weapon.reaper_field.lv1': '3 blades. DMG 18, curse: -30% speed, +20% taken.',
+    'weapon.reaper_field.lv2': 'DMG 24, rotation speed up.',
+    'weapon.reaper_field.lv3': 'DMG 31, tick interval reduced.',
+    'weapon.reaper_field.lv4': '4 blades. DMG 39.',
+    'weapon.reaper_field.lv5': 'DMG 49, curse 2.5s.',
+    'weapon.reaper_field.lv6': 'DMG 60, orbit expanded.',
+    'weapon.reaper_field.lv7': '5 blades. DMG 74, curse 3s.',
+    'weapon.reaper_field.lv8': 'DMG 90, curse 3.5s. Final form.',
+
+    // ── New Bosses ──
+    'enemy.siege_titan_mk2.name': 'Siege Titan MK2',
+    'enemy.siege_titan_mk2.desc': 'Enhanced Siege Titan. Larger bombardment radius.',
+    'enemy.data_phantom.name': 'Data Phantom',
+    'enemy.data_phantom.desc': 'Teleport + 8-way shots + clone summon. Server Farm boss.',
+    'enemy.omega_core.name': 'Omega Core',
+    'enemy.omega_core.desc': 'Spinning laser + summon + area EMP. The final boss.',
+
+    // ── Weapon Drop ──
+    'game.weaponDropped': 'Weapon Found!',
+    'game.weaponCollected': '{0} Acquired!',
+    'game.weaponUnlocked': '{0} Permanently Unlocked!',
+    'weaponDrop.appeared': '⚔️ Weapon Found!',
+    'weaponDrop.collected': '{0} Obtained!',
+    'weaponDrop.upgraded': '{0} Upgraded!',
+    'result.weaponUnlock': 'Weapon Unlock: {0}',
+    'result.stageCleared': '{0} Cleared!',
 
     // ── Consumable Items ──
     'consumable.nano_repair.name': 'Nano Repair Kit',

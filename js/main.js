@@ -1,13 +1,14 @@
 /**
  * @fileoverview Phaser 게임 설정 및 부트. 모든 씬을 등록하고 게임 인스턴스를 생성한다.
- * Phase 3: 콘텐츠 확장 (신규 무기 2종, 캐릭터 3종, 도전과제/도감 UI).
- * BootScene → MenuScene ↔ UpgradeScene/CharacterScene/AchievementScene/CollectionScene,
- * CharacterScene → GameScene ↔ LevelUpScene → ResultScene.
+ * Phase 5: 멀티 스테이지 + 스테이지별 신규 무기 해금.
+ * BootScene → MenuScene ↔ UpgradeScene/StageSelectScene/AchievementScene/CollectionScene,
+ * StageSelectScene → CharacterScene → GameScene ↔ LevelUpScene → ResultScene.
  */
 
 import { GAME_WIDTH, GAME_HEIGHT } from './config.js';
 import BootScene from './scenes/BootScene.js';
 import MenuScene from './scenes/MenuScene.js';
+import StageSelectScene from './scenes/StageSelectScene.js';
 import GameScene from './scenes/GameScene.js';
 import LevelUpScene from './scenes/LevelUpScene.js';
 import ResultScene from './scenes/ResultScene.js';
@@ -25,7 +26,7 @@ const config = {
   height: GAME_HEIGHT,
   backgroundColor: '#0A0A1A',
   parent: 'game',
-  scene: [BootScene, MenuScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene],
+  scene: [BootScene, MenuScene, StageSelectScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

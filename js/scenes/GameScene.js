@@ -45,6 +45,8 @@ import { AdManager } from '../managers/AdManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
 import AutoPilotSystem from '../systems/AutoPilotSystem.js';
 import { getPassiveById } from '../data/passives.js';
+import { STAGES, WEAPON_DROP_SCHEDULE } from '../data/stages.js';
+import WeaponDropItem from '../entities/WeaponDropItem.js';
 
 // ── 접촉 데미지 쿨다운 (ms) ──
 /** 같은 적이 연속으로 접촉 데미지를 주지 않도록 하는 최소 간격 */
@@ -63,6 +65,10 @@ const WEAPON_ICON_MAP = {
   precision_cannon: '\u{1F3AF}',
   plasma_storm:     '\u{1F300}',
   nuke_missile:     '\u2622\uFE0F',
+  force_blade:      '\u2694\uFE0F',
+  nano_swarm:       '\u{1F9EA}',
+  vortex_cannon:    '\u{1F300}',
+  reaper_field:     '\u{1FA93}',
 };
 
 /** 무기 아이콘 맵에 없는 무기의 fallback 아이콘 */
@@ -79,11 +85,17 @@ export default class GameScene extends Phaser.Scene {
 
   /**
    * 씬 초기화 데이터를 수신한다.
-   * @param {{ characterId?: string }} data - 캐릭터 선택 정보
+   * @param {{ characterId?: string, stageId?: string }} data - 캐릭터/스테이지 선택 정보
    */
   init(data) {
     /** 선택된 캐릭터 ID (기본: agent) */
     this.characterId = data?.characterId || 'agent';
+
+    /** 선택된 스테이지 ID (기본: stage_1) */
+    this.stageId = data?.stageId || 'stage_1';
+
+    /** 현재 스테이지 데이터 */
+    this.stageData = STAGES[this.stageId] || STAGES.stage_1;
   }
 
   /**
@@ -93,16 +105,23 @@ export default class GameScene extends Phaser.Scene {
     // ── 월드 설정 ──
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-    // 배경: 타일 스프라이트로 월드 전체를 채움
+    // 배경: 스테이지별 타일 스프라이트로 월드 전체를 채움
+    const bgTileKey = this.stageData.bgTileKey || 'bg_tile';
     this.bgTile = this.add.tileSprite(
-      0, 0, WORLD_WIDTH, WORLD_HEIGHT, 'bg_tile'
+      0, 0, WORLD_WIDTH, WORLD_HEIGHT, bgTileKey
     ).setOrigin(0, 0).setDepth(-10);
+
+    // 스테이지별 배경색 적용
+    this.cameras.main.setBackgroundColor(this.stageData.bgColor);
 
     // ── XP 보석 오브젝트 풀 ──
     this.xpGemPool = new ObjectPool(this, XPGem, 100);
 
     // ── 소모성 아이템 오브젝트 풀 ──
     this.consumablePool = new ObjectPool(this, Consumable, 20);
+
+    // ── 무기 드롭 아이템 오브젝트 풀 ──
+    this.weaponDropPool = new ObjectPool(this, WeaponDropItem, 5);
 
     // ── 플레이어 (선택된 캐릭터 ID에 따른 스프라이트 적용) ──
     this.player = new Player(this, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, this.characterId);
@@ -192,7 +211,7 @@ export default class GameScene extends Phaser.Scene {
     const startWeaponLv = Math.min(bonuses.startWeaponLevel || 1, 8);
     this.weaponSystem.addWeapon(startWeaponId, startWeaponLv);
 
-    this.waveSystem = new WaveSystem(this, this.player);
+    this.waveSystem = new WaveSystem(this, this.player, this.stageData);
 
     // ── 충돌 설정 ──
     // 투사체 ↔ 적
@@ -231,6 +250,15 @@ export default class GameScene extends Phaser.Scene {
       this
     );
 
+    // 플레이어 ↔ 무기 드롭 아이템
+    this.physics.add.overlap(
+      this.player,
+      this.weaponDropPool.group,
+      this._onCollectWeaponDrop,
+      null,
+      this
+    );
+
     // ── 게임 상태 ──
     /** 런 경과 시간 (초) */
     this.runTime = 0;
@@ -258,6 +286,12 @@ export default class GameScene extends Phaser.Scene {
 
     /** 접촉 데미지 쿨다운 맵 (적 ID → 마지막 접촉 시각) */
     this._contactCooldowns = new Map();
+
+    /** 무기 드롭 스케줄 인덱스 (이미 스폰한 항목 추적) */
+    this._weaponDropIndex = new Set();
+
+    /** 이번 런에서 스테이지 무기를 이미 획득했는지 여부 */
+    this._stageWeaponCollected = false;
 
     // ── HUD 생성 ──
     this._createHUD();
@@ -302,6 +336,14 @@ export default class GameScene extends Phaser.Scene {
     this.consumablePool.forEach((item) => {
       item.update(time, delta);
     });
+
+    // 무기 드롭 아이템 업데이트
+    this.weaponDropPool.forEach((drop) => {
+      drop.update(time, delta);
+    });
+
+    // 무기 드롭 스케줄 체크
+    this._checkWeaponDropSchedule();
 
     // HUD 갱신
     this._updateHUD();
@@ -421,6 +463,11 @@ export default class GameScene extends Phaser.Scene {
     SoundSystem.stopBgm();
 
     // _cleanup() 전에 결과 데이터를 스냅샷 (destroy 후 접근 불가 방지)
+    // 스테이지 클리어 시 해금된 무기 ID (엔들리스 진입 = 보스 처치 = 클리어)
+    const unlockWeaponId = (this.isEndlessMode && this.stageData)
+      ? this.stageData.unlockWeaponId
+      : null;
+
     const resultData = {
       victory: victory,
       isEndless: this.isEndlessMode,
@@ -432,6 +479,8 @@ export default class GameScene extends Phaser.Scene {
       weaponSlotsFilled: this.weaponSystem ? this.weaponSystem.weapons.length : 0,
       weaponEvolutions: this.weaponEvolutions,
       weaponReport: this._buildWeaponReport(),
+      stageId: this.stageId,
+      newWeaponUnlocked: unlockWeaponId,
     };
 
     // 물리 엔진 즉시 정지 (딜레이 중 추가 충돌 방지)
@@ -472,12 +521,15 @@ export default class GameScene extends Phaser.Scene {
       SaveManager.updateStats('totalBossKills', 1);
     }
 
-    // 최종 보스 처치 판정 → 엔들리스 모드 전환
-    if (enemy.isBoss && enemy.typeId === 'core_processor') {
+    // 최종 보스 처치 판정 → 스테이지 클리어 + 엔들리스 모드 전환
+    const finalBossId = this.stageData ? this.stageData.bossId : 'core_processor';
+    if (enemy.isBoss && enemy.typeId === finalBossId) {
       if (!this.isEndlessMode) {
+        // 스테이지 클리어 처리
+        this._onStageClear();
         this._onEnterEndless();
       }
-      // 엔들리스 중 코어 프로세서 재처치: WaveSystem이 자동 다시 스폰
+      // 엔들리스 중 보스 재처치: WaveSystem이 자동 다시 스폰
     }
   }
 
@@ -1004,6 +1056,92 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
+  // ── 무기 드롭 시스템 ──
+
+  /**
+   * 무기 드롭 스케줄을 체크하여 시간 도달 시 무기 아이템을 스폰한다.
+   * @private
+   */
+  _checkWeaponDropSchedule() {
+    if (!this.stageData || !this.stageData.unlockWeaponId) return;
+    if (this._stageWeaponCollected) return;
+
+    const weaponId = this.stageData.unlockWeaponId;
+    const elapsedSec = Math.floor(this.runTime);
+
+    for (let i = 0; i < WEAPON_DROP_SCHEDULE.length; i++) {
+      const schedule = WEAPON_DROP_SCHEDULE[i];
+      if (elapsedSec >= schedule.time && !this._weaponDropIndex.has(i)) {
+        this._weaponDropIndex.add(i);
+        this._spawnWeaponDrop(weaponId, schedule.permanent);
+      }
+    }
+  }
+
+  /**
+   * 무기 드롭 아이템을 플레이어 근처에 스폰한다.
+   * @param {string} weaponId - 무기 ID
+   * @param {boolean} permanent - 영구 드롭 여부
+   * @private
+   */
+  _spawnWeaponDrop(weaponId, permanent) {
+    const drop = this.weaponDropPool.get(this.player.x, this.player.y);
+    if (drop) {
+      drop.spawn(this.player.x, this.player.y, weaponId, permanent);
+
+      // 무기 드롭 알림
+      this._showWarning(t('weaponDrop.appeared'));
+    }
+  }
+
+  /**
+   * 플레이어가 무기 드롭 아이템을 수집했을 때 처리한다.
+   * @param {import('../entities/Player.js').default} player - 플레이어
+   * @param {import('../entities/WeaponDropItem.js').default} drop - 무기 드롭 아이템
+   * @private
+   */
+  _onCollectWeaponDrop(player, drop) {
+    if (!player.active || !drop.active) return;
+
+    const weaponId = drop.collect();
+    this._stageWeaponCollected = true;
+
+    // 이미 보유 중이면 레벨업, 미보유면 새로 장착
+    const existing = this.weaponSystem.getWeapon(weaponId);
+    if (existing) {
+      this.weaponSystem.upgradeWeapon(weaponId);
+      this._showWarning(t('weaponDrop.upgraded', t(`weapon.${weaponId}.name`)));
+    } else {
+      this.weaponSystem.addWeapon(weaponId, 1);
+      this._showWarning(t('weaponDrop.collected', t(`weapon.${weaponId}.name`)));
+    }
+
+    // 인벤토리 HUD 갱신
+    this._refreshInventoryHUD();
+
+    // 수집 VFX/SFX
+    VFXSystem.consumableCollect(this, drop.x, drop.y, 0x00FFFF);
+    SoundSystem.play('levelup');
+  }
+
+  // ── 스테이지 클리어 ──
+
+  /**
+   * 스테이지 클리어 시 호출된다.
+   * SaveManager에 클리어 기록 + 무기 영구 해금을 처리한다.
+   * @private
+   */
+  _onStageClear() {
+    if (!this.stageData) return;
+
+    SaveManager.clearStage(this.stageId);
+
+    // 스테이지 고유 무기 영구 해금
+    if (this.stageData.unlockWeaponId) {
+      SaveManager.unlockWeapon(this.stageData.unlockWeaponId);
+    }
+  }
+
   // ── 엔들리스 모드 ──
 
   /**
@@ -1426,6 +1564,11 @@ export default class GameScene extends Phaser.Scene {
       // BGM 정지 (결과/메뉴 화면에서 게임 BGM이 계속 재생되는 것을 방지)
       SoundSystem.stopBgm();
 
+      // 스테이지 클리어 시 해금된 무기 ID (엔들리스 진입 = 보스 처치 = 클리어)
+      const quitUnlockWeaponId = (this.isEndlessMode && this.stageData)
+        ? this.stageData.unlockWeaponId
+        : null;
+
       // _cleanup() 전에 결과 데이터를 스냅샷 (destroy 후 접근 불가 방지)
       const resultData = {
         victory: this.isEndlessMode ? true : false,
@@ -1438,6 +1581,8 @@ export default class GameScene extends Phaser.Scene {
         weaponSlotsFilled: this.weaponSystem ? this.weaponSystem.weapons.length : 0,
         weaponEvolutions: this.weaponEvolutions,
         weaponReport: this._buildWeaponReport(),
+        stageId: this.stageId,
+        newWeaponUnlocked: quitUnlockWeaponId,
       };
 
       this._cleanup();

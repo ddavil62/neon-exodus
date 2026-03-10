@@ -157,6 +157,97 @@ export const EMP_BLAST_LEVELS = [
   { level: 8, damage: 75, cooldown: 3000, radius: 185, slowFactor: 0.50, slowDuration: 2800 },
 ];
 
+// ── 포스 블레이드: 스테이지 1 해금 근접 부채꼴 무기 (Lv1~Lv8) ──
+
+/**
+ * 포스 블레이드 레벨별 데이터.
+ * damage: 1회 참격 데미지 (attackMultiplier 적용)
+ * cooldown: 발동 간격 (ms)
+ * range: 참격 반경 (px)
+ * arcAngle: 부채꼴 각도 (도)
+ * knockback: 넉백 거리 (px)
+ * @type {Array<{level: number, damage: number, cooldown: number, range: number, arcAngle: number, knockback: number}>}
+ */
+export const FORCE_BLADE_LEVELS = [
+  { level: 1, damage: 30,  cooldown: 800, range: 60,  arcAngle: 60,  knockback: 20 },
+  { level: 2, damage: 40,  cooldown: 780, range: 65,  arcAngle: 65,  knockback: 22 },
+  { level: 3, damage: 52,  cooldown: 750, range: 70,  arcAngle: 70,  knockback: 24 },
+  { level: 4, damage: 65,  cooldown: 720, range: 75,  arcAngle: 75,  knockback: 26 },
+  { level: 5, damage: 80,  cooldown: 680, range: 80,  arcAngle: 80,  knockback: 28 },
+  { level: 6, damage: 96,  cooldown: 640, range: 90,  arcAngle: 90,  knockback: 30 },
+  { level: 7, damage: 114, cooldown: 590, range: 100, arcAngle: 100, knockback: 33 },
+  { level: 8, damage: 135, cooldown: 530, range: 115, arcAngle: 120, knockback: 36 },
+];
+
+// ── 나노스웜: 스테이지 2 해금 구름 DoT 무기 (Lv1~Lv8) ──
+
+/**
+ * 나노스웜 레벨별 데이터.
+ * cloudCount: 동시 활성 구름 수
+ * tickDamage: 틱당 데미지 (attackMultiplier 적용)
+ * radius: 구름 반경 (px)
+ * duration: 구름 지속 시간 (ms)
+ * cooldown: 구름 재소환 간격 (ms)
+ * poisonStack: 독 스택 수 (스택당 초당 3 DoT, 5초 지속)
+ * @type {Array<{level: number, cloudCount: number, tickDamage: number, radius: number, duration: number, cooldown: number, poisonStack: number}>}
+ */
+export const NANO_SWARM_LEVELS = [
+  { level: 1, cloudCount: 1, tickDamage: 5,  radius: 40, duration: 4000, cooldown: 1000, poisonStack: 1 },
+  { level: 2, cloudCount: 1, tickDamage: 7,  radius: 44, duration: 4200, cooldown: 950,  poisonStack: 1 },
+  { level: 3, cloudCount: 2, tickDamage: 9,  radius: 48, duration: 4400, cooldown: 900,  poisonStack: 2 },
+  { level: 4, cloudCount: 2, tickDamage: 12, radius: 52, duration: 4600, cooldown: 850,  poisonStack: 2 },
+  { level: 5, cloudCount: 2, tickDamage: 15, radius: 56, duration: 4800, cooldown: 800,  poisonStack: 3 },
+  { level: 6, cloudCount: 3, tickDamage: 19, radius: 62, duration: 5000, cooldown: 750,  poisonStack: 3 },
+  { level: 7, cloudCount: 3, tickDamage: 24, radius: 70, duration: 5200, cooldown: 700,  poisonStack: 4 },
+  { level: 8, cloudCount: 4, tickDamage: 30, radius: 80, duration: 5500, cooldown: 650,  poisonStack: 5 },
+];
+
+// ── 볼텍스 캐넌: 스테이지 3 해금 중력 무기 (Lv1~Lv8) ──
+
+/**
+ * 볼텍스 캐넌 레벨별 데이터.
+ * damage: 착탄 시 직격 데미지 (attackMultiplier 적용)
+ * pullDamage: 볼텍스 틱당 데미지
+ * pullRadius: 끌어당기기 반경 (px)
+ * vortexDuration: 소용돌이 지속 시간 (ms)
+ * cooldown: 발사 간격 (ms)
+ * pullForce: 초당 끌어당기기 가속도 (px/s^2)
+ * @type {Array<{level: number, damage: number, pullDamage: number, pullRadius: number, vortexDuration: number, cooldown: number, pullForce: number}>}
+ */
+export const VORTEX_CANNON_LEVELS = [
+  { level: 1, damage: 20, pullDamage: 4,  pullRadius: 60,  vortexDuration: 3000, cooldown: 3000, pullForce: 80 },
+  { level: 2, damage: 26, pullDamage: 6,  pullRadius: 65,  vortexDuration: 3100, cooldown: 2850, pullForce: 85 },
+  { level: 3, damage: 33, pullDamage: 8,  pullRadius: 70,  vortexDuration: 3200, cooldown: 2700, pullForce: 90 },
+  { level: 4, damage: 42, pullDamage: 11, pullRadius: 76,  vortexDuration: 3300, cooldown: 2550, pullForce: 95 },
+  { level: 5, damage: 52, pullDamage: 14, pullRadius: 82,  vortexDuration: 3400, cooldown: 2400, pullForce: 100 },
+  { level: 6, damage: 64, pullDamage: 18, pullRadius: 90,  vortexDuration: 3500, cooldown: 2200, pullForce: 110 },
+  { level: 7, damage: 78, pullDamage: 23, pullRadius: 100, vortexDuration: 3700, cooldown: 2000, pullForce: 120 },
+  { level: 8, damage: 95, pullDamage: 30, pullRadius: 115, vortexDuration: 4000, cooldown: 1800, pullForce: 135 },
+];
+
+// ── 리퍼 필드: 스테이지 4 해금 회전 낫 무기 (Lv1~Lv8) ──
+
+/**
+ * 리퍼 필드 레벨별 데이터.
+ * bladeCount: 낫 개수
+ * damage: 낫 1회 접촉 데미지 (attackMultiplier 적용)
+ * orbitRadius: 공전 반경 (px)
+ * angularSpeed: 초당 공전 속도 (rad/s)
+ * tickInterval: 데미지 적용 간격 (ms)
+ * curseDuration: 사신의 저주 지속 시간 (ms)
+ * @type {Array<{level: number, bladeCount: number, damage: number, orbitRadius: number, angularSpeed: number, tickInterval: number, curseDuration: number}>}
+ */
+export const REAPER_FIELD_LEVELS = [
+  { level: 1, bladeCount: 3, damage: 18, orbitRadius: 65,  angularSpeed: 5.0,  tickInterval: 300, curseDuration: 2000 },
+  { level: 2, bladeCount: 3, damage: 24, orbitRadius: 68,  angularSpeed: 5.5,  tickInterval: 280, curseDuration: 2100 },
+  { level: 3, bladeCount: 3, damage: 31, orbitRadius: 71,  angularSpeed: 6.2,  tickInterval: 260, curseDuration: 2200 },
+  { level: 4, bladeCount: 4, damage: 39, orbitRadius: 74,  angularSpeed: 7.0,  tickInterval: 240, curseDuration: 2300 },
+  { level: 5, bladeCount: 4, damage: 49, orbitRadius: 78,  angularSpeed: 7.8,  tickInterval: 220, curseDuration: 2500 },
+  { level: 6, bladeCount: 4, damage: 60, orbitRadius: 84,  angularSpeed: 8.7,  tickInterval: 200, curseDuration: 2700 },
+  { level: 7, bladeCount: 5, damage: 74, orbitRadius: 92,  angularSpeed: 9.6,  tickInterval: 180, curseDuration: 3000 },
+  { level: 8, bladeCount: 5, damage: 90, orbitRadius: 105, angularSpeed: 11.0, tickInterval: 150, curseDuration: 3500 },
+];
+
 // ── 무기 정의 ──
 
 /**
@@ -226,6 +317,46 @@ export const WEAPONS = [
     maxLevel: 8,
     levels: EMP_BLAST_LEVELS,
     phase: 4,
+  },
+  {
+    id: 'force_blade',
+    nameKey: 'weapon.force_blade.name',
+    descKey: 'weapon.force_blade.desc',
+    type: 'melee',
+    maxLevel: 8,
+    levels: FORCE_BLADE_LEVELS,
+    phase: 5,
+    stageUnlock: true,
+  },
+  {
+    id: 'nano_swarm',
+    nameKey: 'weapon.nano_swarm.name',
+    descKey: 'weapon.nano_swarm.desc',
+    type: 'cloud',
+    maxLevel: 8,
+    levels: NANO_SWARM_LEVELS,
+    phase: 5,
+    stageUnlock: true,
+  },
+  {
+    id: 'vortex_cannon',
+    nameKey: 'weapon.vortex_cannon.name',
+    descKey: 'weapon.vortex_cannon.desc',
+    type: 'gravity',
+    maxLevel: 8,
+    levels: VORTEX_CANNON_LEVELS,
+    phase: 5,
+    stageUnlock: true,
+  },
+  {
+    id: 'reaper_field',
+    nameKey: 'weapon.reaper_field.name',
+    descKey: 'weapon.reaper_field.desc',
+    type: 'rotating_blade',
+    maxLevel: 8,
+    levels: REAPER_FIELD_LEVELS,
+    phase: 5,
+    stageUnlock: true,
   },
 ];
 

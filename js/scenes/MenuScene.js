@@ -54,10 +54,10 @@ export default class MenuScene extends Phaser.Scene {
       color: UI_COLORS.textSecondary,
     }).setOrigin(0.5);
 
-    // ── 출격 버튼 (CharacterScene으로 이동) ──
+    // ── 출격 버튼 (StageSelectScene으로 이동) ──
     this._createButton(centerX, 310, t('menu.start'), UI_COLORS.btnPrimary, () => {
       SoundSystem.resume();
-      this.scene.start('CharacterScene');
+      this.scene.start('StageSelectScene');
     });
 
     // ── 업그레이드 버튼 (활성화) ──

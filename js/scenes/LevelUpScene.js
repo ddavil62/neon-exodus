@@ -9,7 +9,7 @@
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t } from '../i18n.js';
 import { PASSIVES, getPassiveById } from '../data/passives.js';
-import { getAvailableWeapons } from '../data/weapons.js';
+import { getAvailableWeapons, WEAPONS } from '../data/weapons.js';
 import { SaveManager } from '../managers/SaveManager.js';
 
 // ── LevelUpScene 클래스 ──
@@ -295,10 +295,29 @@ export default class LevelUpScene extends Phaser.Scene {
       });
     }
 
-    // 4. 새 무기 획득 (Phase 4 이하, 미장착, 슬롯 여유 있음)
+    // 4. 새 무기 획득 (Phase 4 이하 + 해금된 스테이지 무기, 미장착, 슬롯 여유 있음)
     if (this.weaponSystem && this.weaponSystem.weapons.length < this.maxWeaponSlots) {
       const equippedIds = new Set(this.weaponSystem.weapons.map(w => w.id));
-      const available = getAvailableWeapons(4).filter(w => {
+
+      // 기본 무기 (phase <= 4)
+      const baseWeapons = getAvailableWeapons(4);
+
+      // 영구 해금된 스테이지 무기 (stageUnlock + SaveManager에 해금 기록)
+      const unlockedStageWeapons = WEAPONS.filter(w =>
+        w.stageUnlock && SaveManager.isWeaponUnlocked(w.id)
+      );
+
+      // 중복 제거 후 합산 (해금 무기가 baseWeapons에 이미 포함된 경우 방지)
+      const mergedIds = new Set(baseWeapons.map(w => w.id));
+      const merged = [...baseWeapons];
+      for (const sw of unlockedStageWeapons) {
+        if (!mergedIds.has(sw.id)) {
+          merged.push(sw);
+          mergedIds.add(sw.id);
+        }
+      }
+
+      const available = merged.filter(w => {
         // 미장착이고 레벨 데이터가 있는 무기만
         return !equippedIds.has(w.id) && w.levels && w.levels.length > 0;
       });

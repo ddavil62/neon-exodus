@@ -230,6 +230,53 @@ export default class WeaponSystem {
       };
     }
 
+    // melee 타입 무기 (포스 블레이드)
+    if (data.type === 'melee') {
+      return {
+        damage: lvData.damage || 30,
+        cooldown: lvData.cooldown || 800,
+        range: lvData.range || 60,
+        arcAngle: lvData.arcAngle || 60,
+        knockback: lvData.knockback || 20,
+      };
+    }
+
+    // cloud 타입 무기 (나노스웜)
+    if (data.type === 'cloud') {
+      return {
+        cloudCount: lvData.cloudCount || 1,
+        tickDamage: lvData.tickDamage || 5,
+        radius: lvData.radius || 40,
+        duration: lvData.duration || 4000,
+        cooldown: lvData.cooldown || 1000,
+        poisonStack: lvData.poisonStack || 1,
+      };
+    }
+
+    // gravity 타입 무기 (볼텍스 캐넌)
+    if (data.type === 'gravity') {
+      return {
+        damage: lvData.damage || 20,
+        pullDamage: lvData.pullDamage || 4,
+        pullRadius: lvData.pullRadius || 60,
+        vortexDuration: lvData.vortexDuration || 3000,
+        cooldown: lvData.cooldown || 3000,
+        pullForce: lvData.pullForce || 80,
+      };
+    }
+
+    // rotating_blade 타입 무기 (리퍼 필드)
+    if (data.type === 'rotating_blade') {
+      return {
+        bladeCount: lvData.bladeCount || 3,
+        damage: lvData.damage || 18,
+        orbitRadius: lvData.orbitRadius || 65,
+        angularSpeed: lvData.angularSpeed || 5.0,
+        tickInterval: lvData.tickInterval || 300,
+        curseDuration: lvData.curseDuration || 2000,
+      };
+    }
+
     // homing 타입 무기 (미사일)
     if (data.type === 'homing') {
       return {
@@ -308,6 +355,14 @@ export default class WeaponSystem {
         this._updateDrones(weapon, time, delta);
       } else if (weaponType === 'aoe') {
         this._updateAoe(weapon, time, delta);
+      } else if (weaponType === 'melee') {
+        this._updateMelee(weapon, time, delta);
+      } else if (weaponType === 'cloud') {
+        this._updateCloud(weapon, time, delta);
+      } else if (weaponType === 'gravity') {
+        this._updateGravity(weapon, time, delta);
+      } else if (weaponType === 'rotating_blade') {
+        this._updateRotatingBlade(weapon, time, delta);
       } else {
         this._updateProjectile(weapon, time, delta);
       }

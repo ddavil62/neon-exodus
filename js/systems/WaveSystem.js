@@ -23,13 +23,20 @@ export default class WaveSystem {
   /**
    * @param {Phaser.Scene} scene - Phaser 씬 참조
    * @param {import('../entities/Player.js').default} player - 플레이어 참조
+   * @param {Object} [stageData=null] - 스테이지 데이터 (난이도 배수, 보스/미니보스 오버라이드)
    */
-  constructor(scene, player) {
+  constructor(scene, player, stageData = null) {
     /** @type {Phaser.Scene} */
     this.scene = scene;
 
     /** @type {import('../entities/Player.js').default} */
     this.player = player;
+
+    /** 스테이지 데이터 (난이도 배수, 보스/미니보스 오버라이드 등) */
+    this._stageData = stageData;
+
+    /** 스테이지 난이도 배수 (HP/데미지에 곱셈 적용) */
+    this._stageDiffMult = stageData ? (stageData.difficultyMult || 1.0) : 1.0;
 
     /** 경과 시간 (초) */
     this.elapsedTime = 0;
@@ -63,6 +70,21 @@ export default class WaveSystem {
 
     /** 엔들리스 데미지 배수 */
     this._dmgMultiplier = 1;
+
+    // 스테이지 오버라이드: 미니보스/보스 스케줄
+    this._miniBossSchedule = (stageData && stageData.miniBossOverride)
+      ? stageData.miniBossOverride
+      : MINI_BOSS_SCHEDULE;
+
+    // 스테이지별 보스 스케줄: 15분(900초)에 스테이지 고유 보스 등장
+    if (stageData && stageData.bossId) {
+      this._bossSchedule = [
+        ...BOSS_SCHEDULE.filter(b => b.time < 900),
+        { time: 900, enemyId: stageData.bossId },
+      ];
+    } else {
+      this._bossSchedule = BOSS_SCHEDULE;
+    }
   }
 
   // ── 공개 메서드 ──
@@ -109,10 +131,11 @@ export default class WaveSystem {
       this.currentBatchSize.max
     );
 
-    // 스케일링 계산 (엔들리스 모드에서는 별도 배수 적용)
+    // 스케일링 계산 (스테이지 난이도 배수 + 엔들리스 모드 배수 적용)
     const baseScale = 1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes;
-    const hpMultiplier = this._isEndless ? baseScale * this._hpMultiplier : baseScale;
-    const dmgMultiplier = this._isEndless ? baseScale * this._dmgMultiplier : baseScale;
+    const stageScale = baseScale * this._stageDiffMult;
+    const hpMultiplier = this._isEndless ? stageScale * this._hpMultiplier : stageScale;
+    const dmgMultiplier = this._isEndless ? stageScale * this._dmgMultiplier : stageScale;
 
     for (let i = 0; i < count; i++) {
       const pos = this.getSpawnPosition();
@@ -145,8 +168,8 @@ export default class WaveSystem {
   spawnMiniBoss(bossData) {
     const pos = this.getSpawnPosition();
     const elapsedMinutes = this.elapsedTime / 60;
-    const hpMult = 1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes;
-    const dmgMult = 1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes;
+    const hpMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult;
+    const dmgMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult;
 
     // waves.js는 enemyId 필드 사용
     const typeId = bossData.enemyId || bossData.typeId;
@@ -164,9 +187,9 @@ export default class WaveSystem {
   spawnBoss(bossData) {
     const pos = this.getSpawnPosition();
     const elapsedMinutes = this.elapsedTime / 60;
-    // 보스는 스케일링 덜 적용 (이미 기본 스탯이 높으므로)
-    const hpMult = 1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5;
-    const dmgMult = 1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5;
+    // 보스는 스케일링 덜 적용 (이미 기본 스탯이 높으므로), 스테이지 난이도는 적용
+    const hpMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult;
+    const dmgMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult;
 
     // waves.js는 enemyId 필드 사용
     const typeId = bossData.enemyId || bossData.typeId;
@@ -297,41 +320,59 @@ export default class WaveSystem {
       min: current.countMin || 3,
       max: current.countMax || 5,
     };
-    this.availableEnemyTypes = current.enemies || ['nano_drone'];
+    this.availableEnemyTypes = [...(current.enemies || ['nano_drone'])];
+
+    // 스테이지별 earlySpawnBoost 적용: 특정 적을 일찍 스폰 풀에 추가
+    if (this._stageData && this._stageData.spawnTableOverride) {
+      const override = this._stageData.spawnTableOverride;
+      const boosts = override.earlySpawnBoost;
+      if (boosts) {
+        const boostArray = Array.isArray(boosts) ? boosts : [boosts];
+        for (const boost of boostArray) {
+          if (elapsedMinutes >= boost.fromMinute && !this.availableEnemyTypes.includes(boost.enemyId)) {
+            this.availableEnemyTypes.push(boost.enemyId);
+          }
+        }
+      }
+    }
   }
 
   /**
    * 미니보스 스케줄을 체크하여 시간 도달 시 스폰한다.
+   * 스테이지별 오버라이드 스케줄을 우선 사용한다.
    * @private
    */
   _checkMiniBossSchedule() {
-    if (!MINI_BOSS_SCHEDULE) return;
+    const schedule = this._miniBossSchedule;
+    if (!schedule) return;
 
     const elapsedSeconds = Math.floor(this.elapsedTime);
 
-    for (const schedule of MINI_BOSS_SCHEDULE) {
-      const triggerSec = schedule.time;
+    for (const entry of schedule) {
+      const triggerSec = entry.time;
       if (elapsedSeconds >= triggerSec && !this._spawnedMiniBosses.has(triggerSec)) {
         this._spawnedMiniBosses.add(triggerSec);
-        this.spawnMiniBoss(schedule);
+        this.spawnMiniBoss(entry);
       }
     }
   }
 
   /**
    * 보스 스케줄을 체크하여 시간 도달 시 스폰한다.
+   * 스테이지별 최종 보스를 포함한 스케줄을 사용한다.
    * @private
    */
   _checkBossSchedule() {
-    if (!BOSS_SCHEDULE) return;
+    const schedule = this._bossSchedule;
+    if (!schedule) return;
 
     const elapsedSeconds = Math.floor(this.elapsedTime);
 
-    for (const schedule of BOSS_SCHEDULE) {
-      const triggerSec = schedule.time;
+    for (const entry of schedule) {
+      const triggerSec = entry.time;
       if (elapsedSeconds >= triggerSec && !this._spawnedBosses.has(triggerSec)) {
         this._spawnedBosses.add(triggerSec);
-        this.spawnBoss(schedule);
+        this.spawnBoss(entry);
       }
     }
   }

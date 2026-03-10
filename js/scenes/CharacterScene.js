@@ -25,6 +25,15 @@ export default class CharacterScene extends Phaser.Scene {
   }
 
   /**
+   * 씬 초기화 데이터를 수신한다.
+   * @param {{ stageId?: string }} data - StageSelectScene에서 전달한 스테이지 ID
+   */
+  init(data) {
+    /** 선택된 스테이지 ID */
+    this._stageId = data?.stageId || 'stage_1';
+  }
+
+  /**
    * 캐릭터 선택 UI를 생성한다.
    */
   create() {
@@ -99,7 +108,10 @@ export default class CharacterScene extends Phaser.Scene {
     // 출격 버튼
     this._createBtn(centerX - 60, btnY, t('menu.start'), UI_COLORS.btnPrimary, () => {
       SaveManager.setSelectedCharacter(this._selectedId);
-      this.scene.start('GameScene', { characterId: this._selectedId });
+      this.scene.start('GameScene', {
+        characterId: this._selectedId,
+        stageId: this._stageId,
+      });
     });
 
     // 뒤로가기 버튼
@@ -113,9 +125,9 @@ export default class CharacterScene extends Phaser.Scene {
 
   // ── 뒤로가기 ──
 
-  /** 메뉴 화면으로 돌아간다. */
+  /** 스테이지 선택 화면으로 돌아간다. */
   _onBack() {
-    this.scene.start('MenuScene');
+    this.scene.start('StageSelectScene');
   }
 
   // ── 캐릭터 잠금 해제 판별 ──

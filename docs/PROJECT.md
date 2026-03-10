@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-10 (아트 Phase 2: UI + 배경 + 소모품 아이콘)
+> 최종 업데이트: 2026-03-10 (멀티 스테이지 시스템 + 스테이지별 신규 무기 해금)
 
 ## 프로젝트 개요
 
@@ -55,8 +55,9 @@ neon-exodus/
 │   ├── scenes/
 │   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
+│   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드, 카테고리 아이콘)
@@ -68,11 +69,12 @@ neon-exodus/
 │   │   ├── EnemyTypes.js          # 적 유형별 AI 15종
 │   │   ├── Projectile.js          # 투사체 (발사, 피격, 관통)
 │   │   ├── Consumable.js          # 소모성 아이템 (6종, ObjectPool, 10초 수명, 직접 밟아 수집)
+│   │   ├── WeaponDropItem.js      # 스테이지 무기 드롭 아이템 (ObjectPool, 영구/비영구 소멸, 깜빡임)
 │   │   └── XPGem.js               # XP 보석 (소/중/대, 자석 흡수, 소멸)
 │   ├── systems/
 │   │   ├── ObjectPool.js          # Phaser Group 기반 오브젝트 풀
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (데드존 8px, 최대반경 50px)
-│   │   ├── WeaponSystem.js        # 무기 관리, 자동 발사 (7종 타입: projectile/beam/orbital/chain/homing/summon/aoe)
+│   │   ├── WeaponSystem.js        # 무기 관리, 자동 발사 (11종 타입: projectile/beam/orbital/chain/homing/summon/aoe/melee/cloud/gravity/rotating_blade)
 │   │   ├── WaveSystem.js          # 적 스폰 웨이브 관리, 엔들리스 모드 스케일링
 │   │   ├── SoundSystem.js         # AudioContext 프로그래매틱 SFX 9종 + BGM 2곡
 │   │   ├── VFXSystem.js           # Phaser Particles 기반 VFX 6종
@@ -84,8 +86,9 @@ neon-exodus/
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
 │   │   └── IAPManager.js          # Google Play IAP 관리 (구매/복원, Mock 모드)
 │   └── data/
-│       ├── weapons.js             # 무기 7종 (블래스터/레이저건/플라즈마 오브/전기 체인/미사일/드론/EMP 각 Lv1~8) + 진화 무기 3종
-│       ├── enemies.js             # 잡몹 10종 + 미니보스 2종 + 보스 3종
+│       ├── weapons.js             # 무기 11종 (기본 7종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 3종
+│       ├── enemies.js             # 잡몹 10종 + 미니보스 2종 + 보스 6종
+│       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER, WEAPON_DROP_SCHEDULE)
 │       ├── passives.js            # 패시브 아이템 10종
 │       ├── waves.js               # 스폰 테이블 6구간 + 미니보스/보스 스케줄
 │       ├── upgrades.js            # 영구 업그레이드 22종
@@ -178,12 +181,16 @@ neon-exodus/
 ### 씬 흐름
 
 ```
-BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
-               │                               ↓
-               ├── UpgradeScene           ← ResultScene
+BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
+               │                                                    ↓
+               ├── UpgradeScene                               ← ResultScene
                ├── AchievementScene
                └── CollectionScene
 ```
+
+- StageSelectScene에서 선택한 stageId를 CharacterScene에 전달
+- CharacterScene에서 { characterId, stageId }를 GameScene에 전달
+- ESC 키: StageSelectScene -> MenuScene 뒤로가기
 
 ### 핵심 모듈
 
@@ -191,14 +198,16 @@ BootScene → MenuScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 375키, `t()` 함수로 참조 |
-| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 소모성 아이템 풀/수집/효과 |
+| 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
+| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 무기 드롭 스케줄, 난이도 배수 |
+| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 소모성 아이템 풀/수집/효과, 무기 드롭 스케줄 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭 |
-| 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위), 치명타 판정, 무기 진화, 드론 AI |
+| 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 드론 AI |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
 | 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 8종 (기존 6종 + consumableCollect + empBlast) |
-| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장, 크레딧/통계/도감 관리 |
+| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장, 크레딧/통계/도감/스테이지 클리어/무기 해금 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
@@ -567,6 +576,73 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`
 - 구현 일자: 2026-03-09
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase4.md`
+
+#### 포스 블레이드 (Melee 타입, Lv1~8) -- 스테이지 1 해금
+| 항목 | Lv1 | Lv8 |
+|---|---|---|
+| 데미지 | 30 | 135 |
+| 쿨다운 | 800ms | 530ms |
+| 범위 | 60px | 115px |
+| 부채꼴 각도 | 60도 | 120도 |
+| 넉백 | 20px | 36px |
+
+- 이동 방향 기준 부채꼴 범위 참격, 이동 없을 때 360도 전방위
+- stageUnlock: true (스테이지 1 클리어 시 영구 해금)
+- 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`
+- 구현 일자: 2026-03-10
+- 스펙 문서: `.claude/specs/2026-03-10-multi-stage.md`
+
+#### 나노스웜 (Cloud 타입, Lv1~8) -- 스테이지 2 해금
+| 항목 | Lv1 | Lv8 |
+|---|---|---|
+| 구름 수 | 1 | 4 |
+| 틱 데미지 | 5 | 30 |
+| 반경 | 40px | 80px |
+| 지속시간 | 4000ms | 5500ms |
+| 쿨다운 | 1000ms | 650ms |
+| 독 스택 | 1 | 5 |
+
+- 플레이어 주변 나노봇 구름 소환, 반경 내 적에게 지속 피해 + 독 스택 부여
+- 독 스택: 스택당 초당 3 추가 DoT, 5초 지속. 최대 5스택
+- stageUnlock: true (스테이지 2 클리어 시 영구 해금)
+- 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`
+- 구현 일자: 2026-03-10
+- 스펙 문서: `.claude/specs/2026-03-10-multi-stage.md`
+
+#### 볼텍스 캐넌 (Gravity 타입, Lv1~8) -- 스테이지 3 해금
+| 항목 | Lv1 | Lv8 |
+|---|---|---|
+| 직격 데미지 | 20 | 95 |
+| 흡인 데미지 | 4 | 30 |
+| 흡인 반경 | 60px | 115px |
+| 소용돌이 지속 | 3000ms | 4000ms |
+| 쿨다운 | 3000ms | 1800ms |
+| 흡인력 | 80 | 135 (px/s^2) |
+
+- 블랙홀 투사체 발사 (300px/s), 착탄 지점에 소용돌이 형성
+- 볼텍스 내 적 이동속도 50% 감소
+- stageUnlock: true (스테이지 3 클리어 시 영구 해금)
+- 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`
+- 구현 일자: 2026-03-10
+- 스펙 문서: `.claude/specs/2026-03-10-multi-stage.md`
+
+#### 리퍼 필드 (Rotating Blade 타입, Lv1~8) -- 스테이지 4 해금
+| 항목 | Lv1 | Lv8 |
+|---|---|---|
+| 낫 수 | 3 | 5 |
+| 데미지 | 18 | 90 |
+| 공전 반경 | 65px | 105px |
+| 회전 속도 | 5.0 rad/s | 11.0 rad/s |
+| 틱 간격 | 300ms | 150ms |
+| 저주 지속 | 2000ms | 3500ms |
+
+- 플레이어 주변 에너지 낫 고속 회전, 충돌 시 사신의 저주 부여
+- 사신의 저주: 이동속도 -30%, 받는 피해 +20%
+- orbitRadius 시작값(65px)이 플라즈마 오브 ORBIT_RADIUS(70px)보다 작아 시각적으로 구분
+- stageUnlock: true (스테이지 4 클리어 시 영구 해금)
+- 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`
+- 구현 일자: 2026-03-10
+- 스펙 문서: `.claude/specs/2026-03-10-multi-stage.md`
 
 ### 적 시스템
 

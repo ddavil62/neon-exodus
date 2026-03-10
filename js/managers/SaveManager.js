@@ -22,6 +22,9 @@ const DEFAULT_SAVE = {
   achievements: {},         // { achievementId: true }
   autoHuntUnlocked: false,  // 자동 사냥 IAP 구매 여부
   autoHuntEnabled: false,   // 마지막 런의 자동 사냥 토글 상태 (다음 런에 자동 적용)
+  stageClears: {},          // { stageId: 클리어 횟수 }
+  unlockedWeapons: [],      // 스테이지 해금 무기 ID 배열
+  selectedStage: 'stage_1', // 선택된 스테이지 ID
   stats: {
     totalKills: 0,
     totalRuns: 0,
@@ -319,6 +322,89 @@ export class SaveManager {
     SaveManager.save();
   }
 
+  // ── 스테이지 ──
+
+  /**
+   * 스테이지 클리어를 등록한다. 클리어 횟수를 1 증가시킨다.
+   * @param {string} stageId - 스테이지 ID
+   */
+  static clearStage(stageId) {
+    const data = SaveManager.getData();
+    if (!data.stageClears) data.stageClears = {};
+    data.stageClears[stageId] = (data.stageClears[stageId] || 0) + 1;
+    SaveManager.save();
+  }
+
+  /**
+   * 스테이지 클리어 여부를 반환한다.
+   * @param {string} stageId - 스테이지 ID
+   * @returns {boolean} 클리어 여부
+   */
+  static isStageClear(stageId) {
+    const data = SaveManager.getData();
+    return (data.stageClears && data.stageClears[stageId] > 0) || false;
+  }
+
+  /**
+   * 스테이지 클리어 횟수를 반환한다.
+   * @param {string} stageId - 스테이지 ID
+   * @returns {number} 클리어 횟수
+   */
+  static getStageClearCount(stageId) {
+    const data = SaveManager.getData();
+    return (data.stageClears && data.stageClears[stageId]) || 0;
+  }
+
+  /**
+   * 신규 무기를 영구 해금한다. 이미 해금된 경우 무시.
+   * @param {string} weaponId - 무기 ID
+   */
+  static unlockWeapon(weaponId) {
+    const data = SaveManager.getData();
+    if (!data.unlockedWeapons) data.unlockedWeapons = [];
+    if (!data.unlockedWeapons.includes(weaponId)) {
+      data.unlockedWeapons.push(weaponId);
+      SaveManager.save();
+    }
+  }
+
+  /**
+   * 무기 해금 여부를 반환한다.
+   * @param {string} weaponId - 무기 ID
+   * @returns {boolean} 해금 여부
+   */
+  static isWeaponUnlocked(weaponId) {
+    const data = SaveManager.getData();
+    return data.unlockedWeapons && data.unlockedWeapons.includes(weaponId);
+  }
+
+  /**
+   * 해금된 무기 ID 배열을 반환한다.
+   * @returns {Array<string>} 해금 무기 ID 배열
+   */
+  static getUnlockedWeapons() {
+    const data = SaveManager.getData();
+    return data.unlockedWeapons || [];
+  }
+
+  /**
+   * 선택된 스테이지 ID를 저장한다.
+   * @param {string} stageId - 스테이지 ID
+   */
+  static setSelectedStage(stageId) {
+    const data = SaveManager.getData();
+    data.selectedStage = stageId;
+    SaveManager.save();
+  }
+
+  /**
+   * 선택된 스테이지 ID를 반환한다.
+   * @returns {string} 스테이지 ID
+   */
+  static getSelectedStage() {
+    return SaveManager.getData().selectedStage || 'stage_1';
+  }
+
   // ── 초기화 ──
 
   /**
@@ -413,8 +499,16 @@ export class SaveManager {
       data.version = 4;
     }
 
+    // v4 → v5: 멀티 스테이지 + 무기 해금 필드 추가
+    if (data.version < 5) {
+      if (!data.stageClears) data.stageClears = {};
+      if (!data.unlockedWeapons) data.unlockedWeapons = [];
+      if (!data.selectedStage) data.selectedStage = 'stage_1';
+      data.version = 5;
+    }
+
     // 이후 버전 추가 시 체인 패턴:
-    // if (data.version < 5) { ... data.version = 5; }
+    // if (data.version < 6) { ... data.version = 6; }
 
     data.version = SAVE_DATA_VERSION;
     return data;

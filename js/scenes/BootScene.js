@@ -120,15 +120,23 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('enemy_guardian_drone', 'assets/sprites/bosses/guardian_drone.png');
     this.load.image('enemy_assault_mech', 'assets/sprites/bosses/assault_mech.png');
 
-    // 보스 3종 정적 이미지 (128x128)
+    // 보스 6종 정적 이미지 (128x128) — 기존 3종 + 신규 스테이지 보스 3종
     this.load.image('enemy_commander_drone', 'assets/sprites/bosses/commander_drone.png');
     this.load.image('enemy_siege_titan', 'assets/sprites/bosses/siege_titan.png');
     this.load.image('enemy_core_processor', 'assets/sprites/bosses/core_processor.png');
+    this.load.image('enemy_siege_titan_mk2', 'assets/sprites/bosses/siege_titan_mk2.png');
+    this.load.image('enemy_data_phantom', 'assets/sprites/bosses/data_phantom.png');
+    this.load.image('enemy_omega_core', 'assets/sprites/bosses/omega_core.png');
 
     // ── Phase 2 아트 에셋 ──
 
     // 배경 타일 (128x128, 기존 _generateBackgroundTile 폴백과 병행)
     this.load.image('bg_tile', 'assets/backgrounds/bg_tile.png');
+
+    // 스테이지별 배경 타일 (S2~S4, 128x128)
+    this.load.image('bg_tile_s2', 'assets/backgrounds/bg_tile_s2.png');
+    this.load.image('bg_tile_s3', 'assets/backgrounds/bg_tile_s3.png');
+    this.load.image('bg_tile_s4', 'assets/backgrounds/bg_tile_s4.png');
 
     // 조이스틱 UI 이미지
     this.load.image('joystick_base', 'assets/ui/joystick/base.png');
@@ -137,8 +145,8 @@ export default class BootScene extends Phaser.Scene {
     // 메뉴 배경 (Group B)
     this.load.image('menu_bg', 'assets/backgrounds/menu_bg.png');
 
-    // 무기 아이콘 7종 (Group B, 32x32)
-    const WEAPON_ICON_IDS = ['blaster', 'laser_gun', 'plasma_orb', 'electric_chain', 'missile', 'drone', 'emp_blast'];
+    // 무기 아이콘 11종 (Group B, 32x32) — 기존 7종 + 신규 스테이지 해금 4종
+    const WEAPON_ICON_IDS = ['blaster', 'laser_gun', 'plasma_orb', 'electric_chain', 'missile', 'drone', 'emp_blast', 'force_blade', 'nano_swarm', 'vortex_cannon', 'reaper_field'];
     for (const id of WEAPON_ICON_IDS) {
       this.load.image('icon_weapon_' + id, 'assets/ui/icons/weapon_' + id + '.png');
     }
@@ -466,11 +474,14 @@ export default class BootScene extends Phaser.Scene {
       gfx.generateTexture('enemy_assault_mech', 80, 80);
     }
 
-    // ── 보스 3종: 128x128 ──
+    // ── 보스 6종: 128x128 (기존 3 + 신규 스테이지 보스 3) ──
     const bossColors = {
-      commander_drone: 0xFF00FF,
-      siege_titan:     0xFF6600,
-      core_processor:  0xFF00FF,
+      commander_drone:  0xFF00FF,
+      siege_titan:      0xFF6600,
+      core_processor:   0xFF00FF,
+      siege_titan_mk2:  0xFF4400,
+      data_phantom:     0x8800FF,
+      omega_core:       0x00FF44,
     };
     for (const [id, color] of Object.entries(bossColors)) {
       const texKey = `enemy_${id}`;
@@ -583,35 +594,46 @@ export default class BootScene extends Phaser.Scene {
 
   /**
    * 배경 타일 텍스처를 생성한다.
-   * SF 메탈 바닥 느낌의 64x64 반복 타일.
+   * 스테이지별(S1~S4) SF 바닥 느낌의 64x64 반복 타일.
    * @private
    */
   _generateBackgroundTile() {
-    if (this.textures.exists('bg_tile')) return;
-
-    const gfx = this.add.graphics();
     const size = 64;
 
-    // 어두운 배경
-    gfx.fillStyle(0x0D0D1F, 1);
-    gfx.fillRect(0, 0, size, size);
+    // 스테이지별 타일 정의: [텍스처키, 배경색, 그리드색, 리벳색]
+    const tileDefs = [
+      { key: 'bg_tile',    bg: 0x0D0D1F, grid: 0x1A1A3A, rivet: 0x222244 },
+      { key: 'bg_tile_s2', bg: 0x1A0800, grid: 0x3A1A0A, rivet: 0x442211 },
+      { key: 'bg_tile_s3', bg: 0x050510, grid: 0x1A0A3A, rivet: 0x221144 },
+      { key: 'bg_tile_s4', bg: 0x000000, grid: 0x0A2A0A, rivet: 0x114411 },
+    ];
 
-    // 그리드 라인
-    gfx.lineStyle(1, 0x1A1A3A, 0.5);
-    gfx.lineBetween(0, 0, size, 0);
-    gfx.lineBetween(0, 0, 0, size);
+    for (const def of tileDefs) {
+      if (this.textures.exists(def.key)) continue;
 
-    // 가운데 작은 점 (SF 금속 바닥 리벳)
-    gfx.fillStyle(0x222244, 1);
-    gfx.fillCircle(size / 2, size / 2, 2);
+      const gfx = this.add.graphics();
 
-    // 모서리 점
-    gfx.fillCircle(2, 2, 1);
-    gfx.fillCircle(size - 2, 2, 1);
-    gfx.fillCircle(2, size - 2, 1);
-    gfx.fillCircle(size - 2, size - 2, 1);
+      // 어두운 배경
+      gfx.fillStyle(def.bg, 1);
+      gfx.fillRect(0, 0, size, size);
 
-    gfx.generateTexture('bg_tile', size, size);
-    gfx.destroy();
+      // 그리드 라인
+      gfx.lineStyle(1, def.grid, 0.5);
+      gfx.lineBetween(0, 0, size, 0);
+      gfx.lineBetween(0, 0, 0, size);
+
+      // 가운데 작은 점 (SF 금속 바닥 리벳)
+      gfx.fillStyle(def.rivet, 1);
+      gfx.fillCircle(size / 2, size / 2, 2);
+
+      // 모서리 점
+      gfx.fillCircle(2, 2, 1);
+      gfx.fillCircle(size - 2, 2, 1);
+      gfx.fillCircle(2, size - 2, 1);
+      gfx.fillCircle(size - 2, size - 2, 1);
+
+      gfx.generateTexture(def.key, size, size);
+      gfx.destroy();
+    }
   }
 }

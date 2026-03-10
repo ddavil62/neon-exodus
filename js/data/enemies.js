@@ -246,6 +246,71 @@ export const BOSSES = [
     drops: { runClearReward: true },
     size: 80,
   },
+
+  // ── 스테이지 2~4 보스 3종 ──
+
+  {
+    id: 'siege_titan_mk2',
+    nameKey: 'enemy.siege_titan_mk2.name',
+    descKey: 'enemy.siege_titan_mk2.desc',
+    hp: 2000,
+    speed: 50,
+    contactDamage: 38,
+    xp: 250,
+    spawnAt: 900,  // 15분
+    specialAttacks: ['area_bombardment', 'charge'],
+    bombardmentRadius: 180,   // 기존 siege_titan 80 + 100 증가
+    bombardmentDelay: 2,
+    bombardmentDamage: 35,
+    drops: { runClearReward: true },
+    size: 64,
+  },
+  {
+    id: 'data_phantom',
+    nameKey: 'enemy.data_phantom.name',
+    descKey: 'enemy.data_phantom.desc',
+    hp: 2500,
+    speed: 60,
+    contactDamage: 35,
+    xp: 400,
+    spawnAt: 900,  // 15분
+    specialAttacks: ['phase_shift', 'data_burst', 'clone'],
+    // phase_shift: 4초마다 랜덤 순간이동 (화면 내)
+    phaseShiftInterval: 4,
+    // data_burst: 8방향 투사체 발사
+    dataBurstDamage: 20,
+    dataBurstCooldown: 5,
+    dataBurstDirections: 8,
+    // clone: HP 50% 이하 시 분신 2체 (HP 500)
+    cloneCount: 2,
+    cloneHp: 500,
+    cloneThreshold: 0.5,
+    drops: { runClearReward: true },
+    size: 72,
+  },
+  {
+    id: 'omega_core',
+    nameKey: 'enemy.omega_core.name',
+    descKey: 'enemy.omega_core.desc',
+    hp: 5000,
+    speed: 40,
+    contactDamage: 50,
+    xp: 1000,
+    spawnAt: 900,  // 15분
+    specialAttacks: ['spinning_laser', 'summon_mobs', 'area_emp', 'overload'],
+    spinningLaserDamage: 20,
+    summonCount: 8,
+    summonInterval: 6,
+    summonEnemyId: 'nano_drone',
+    empRadius: 200,
+    empDamage: 30,
+    empInterval: 12,
+    // overload: HP 30% 이하 시 모든 공격 주기 40% 단축
+    overloadThreshold: 0.3,
+    overloadSpeedMult: 0.6,
+    drops: { runClearReward: true },
+    size: 96,
+  },
 ];
 
 // ── 스케일링 설정 ──
