@@ -96,15 +96,18 @@ neon-exodus/
 │       ├── characters.js          # 캐릭터 6종 (spriteKey 필드로 텍스처 매핑)
 │       └── achievements.js        # 도전과제 13종
 ├── assets/
-│   ├── backgrounds/               # 배경 에셋 (Phase 2 아트)
-│   │   ├── bg_tile.png            # 128x128 사이버 메탈 바닥 seamless 타일 (GPT Image API)
+│   ├── backgrounds/               # 배경 에셋 (Phase 2/3 아트)
+│   │   ├── bg_tile.png            # 128x128 사이버 메탈 바닥 seamless 타일 (S1 기본, GPT Image API)
+│   │   ├── bg_tile_s2.png         # 128x128 산업 지구 바닥 seamless 타일 (S2, GPT Image API, Phase 3)
+│   │   ├── bg_tile_s3.png         # 128x128 서버 팜 바닥 seamless 타일 (S3, GPT Image API, Phase 3)
+│   │   ├── bg_tile_s4.png         # 128x128 에너지 코어 바닥 타일 (S4, GPT Image API, Phase 3)
 │   │   └── menu_bg.png            # 360x640 사이버 도시 실루엣 배경 (GPT Image API)
 │   ├── ui/
 │   │   ├── joystick/              # 조이스틱 UI 이미지 (SVG 직접 생성)
 │   │   │   ├── base.png           # 128x128 홀로그램 동심원 베이스
 │   │   │   └── thumb.png          # 64x64 시안 글로우 엄지
 │   │   └── icons/                 # 무기/패시브/업그레이드 아이콘 (SVG 직접 생성, 32x32)
-│   │       ├── weapon_*.png       # 무기 아이콘 7종
+│   │       ├── weapon_*.png       # 무기 아이콘 11종 (기존 7종 + Phase 3 스테이지 해금 4종)
 │   │       ├── passive_*.png      # 패시브 아이콘 10종
 │   │       └── upgrade_*.png      # 업그레이드 아이콘 4종
 │   └── sprites/                   # 벡터 PNG 에셋 (GPT Image API 17종 + SVG 직접 생성 3종) + 캐릭터 6종 idle/walk 스프라이트
@@ -133,12 +136,15 @@ neon-exodus/
 │       │   ├── heavy_bot.png      # 48x48
 │       │   ├── teleport_drone.png # 32x32
 │       │   └── suicide_bot.png    # 40x40
-│       ├── bosses/                # 미니보스 2종 + 보스 3종 정적 이미지
+│       ├── bosses/                # 미니보스 2종 + 보스 6종 정적 이미지
 │       │   ├── guardian_drone.png # 80x80  (미니보스)
 │       │   ├── assault_mech.png   # 80x80  (미니보스)
-│       │   ├── commander_drone.png# 128x128 (보스)
-│       │   ├── siege_titan.png    # 128x128 (보스)
-│       │   └── core_processor.png # 128x128 (보스)
+│       │   ├── commander_drone.png# 128x128 (보스, S1)
+│       │   ├── siege_titan.png    # 128x128 (보스, S1)
+│       │   ├── core_processor.png # 128x128 (보스, S1)
+│       │   ├── siege_titan_mk2.png# 128x128 (보스, S2, Phase 3)
+│       │   ├── data_phantom.png   # 128x128 (보스, S3, Phase 3)
+│       │   └── omega_core.png     # 128x128 (보스, S4, Phase 3)
 │       └── items/                 # XP 보석 3종 + 소모성 아이템 6종 정적 이미지
 │           ├── xp_gem_s.png       # 12x12
 │           ├── xp_gem_m.png       # 20x20
