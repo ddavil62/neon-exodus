@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-03-11 -- 인게임 알림 모달 전환
+
+### 변경
+- `_showEvolutionPopup(nameKey)` 모달 방식으로 전면 교체 (`js/scenes/GameScene.js` L883-977): 기존 카메라 플래시 + 자동 소멸 텍스트 제거. 게임 일시정지(isPaused=true, physics.pause()) + 반투명 오버레이(0x000000 alpha 0.6, depth 350) + NEON_ORANGE 테두리 패널(220x160, depth 351) + 무기 이름(20px neonOrange, depth 352) + "EVOLVED!" 부제목(14px textSecondary, depth 352) + 확인 버튼(NEON_ORANGE 0.8, depth 352-353). 확인 pointerup 시 모달 destroy + 게임 재개
+- `_onEnterEndless()` 내 호출 변경 (`js/scenes/GameScene.js` L1287): `_showWarning(t('game.endlessMode'))` -> `_showEndlessModal()`
+- `_togglePause()` 모달 가드 추가 (`js/scenes/GameScene.js` L1843): `if (this._modalOpen) return;` -- ESC 키(_onBack)도 _togglePause 경유이므로 자동 차단
+
+### 추가
+- `_showEndlessModal()` 신규 함수 (`js/scenes/GameScene.js` L1319-1412): 게임 일시정지 + 반투명 오버레이(depth 350) + NEON_MAGENTA 테두리 패널(220x160, depth 351) + 제목 t('game.endlessMode')(20px neonMagenta, depth 352) + 설명 t('game.endlessModeDesc')(12px textSecondary, wordWrap 200px, depth 352) + 확인 버튼(NEON_CYAN 0.8, depth 352-353)
+- `this._modalOpen` 상태 변수 (`js/scenes/GameScene.js` L311): create()에서 false로 초기화. 모달 열림 시 true, 닫힘 시 false. _togglePause 차단용 플래그
+- `_showEvolutionPopup` 중복 호출 가드 (`js/scenes/GameScene.js` L885): `if (this._modalOpen) return;` -- 동시 다중 진화 시 모달 중첩 방지
+- i18n `game.endlessModeDesc` 키 (`js/i18n.js`): ko L422 '적이 끝없이 밀려온다.\n60초마다 더욱 강해진다.' / en L965 'Enemies surge endlessly.\nThey grow stronger every 60 seconds.'
+- Playwright 테스트 (`tests/modal-notification.spec.js`): 32개 테스트 (i18n 4 + 코드 구조 6 + 진화 모달 6 + 엔들리스 모달 6 + 엣지케이스 6 + 런타임 3 + scrollFactor 1)
+
+### 참고
+- 스펙: `.claude/specs/2026-03-11-modal-notification.md`
+- 구현 리포트: `.claude/specs/2026-03-11-modal-notification-report.md`
+- QA: `.claude/specs/2026-03-11-modal-notification-qa.md`
+- QA 결과: 수용기준 21/21 PASS, 예외 시나리오 8/8 PASS, Playwright 32/32 전체 통과. 시각적 검증 스크린샷 2건 확인
+- `_showWarning()` 함수 보존됨: game.revived(L429, L809), hud.minibossWarning(L600), hud.bossWarning(L612) 등에서 정상 사용
+- `_showEvolutionHint()` 토스트 변경 없음 (L982-1011)
+- 모달 depth 350~353: 일시정지 오버레이(300-301) < 모달 < 광고 부활 팝업(400-403)
+- `_showEvolutionPopup` 중복 호출 가드는 스펙에 미명시였으나 구현 시 추가됨 (QA에서 LOW 잠재 위험으로 지적한 항목의 선제 해결)
+
 ## 2026-03-11 -- 폰트 크기 가독성 개선
 
 ### 변경

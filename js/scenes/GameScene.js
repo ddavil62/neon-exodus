@@ -307,6 +307,9 @@ export default class GameScene extends Phaser.Scene {
     /** 이번 런에서 스테이지 무기를 이미 획득했는지 여부 */
     this._stageWeaponCollected = false;
 
+    /** 모달 열림 상태 (일시정지 토글 차단용) */
+    this._modalOpen = false;
+
     // ── HUD 생성 ──
     this._createHUD();
 
@@ -872,34 +875,104 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 진화 성공 팝업을 표시한다.
+   * 진화 성공 모달을 표시한다.
+   * 게임을 일시정지하고, 플레이어가 "확인"을 눌러야 닫히는 모달 방식.
    * @param {string} nameKey - 진화 무기 이름 i18n 키
    * @private
    */
   _showEvolutionPopup(nameKey) {
-    // 카메라 플래시 (금색)
-    this.cameras.main.flash(300, 255, 215, 0);
+    // 이미 모달이 열려 있으면 중복 표시 방지
+    if (this._modalOpen) return;
 
-    const popupText = this.add.text(
-      GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80,
-      `${t(nameKey)} EVOLVED!`,
-      {
-        fontSize: '20px',
-        fontFamily: 'Galmuri11, monospace',
-        color: UI_COLORS.neonOrange,
-        stroke: '#000000',
-        strokeThickness: 3,
-      }
-    ).setOrigin(0.5).setScrollFactor(0).setDepth(250);
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
 
-    // 2초 후 자동 소멸
-    this.tweens.add({
-      targets: popupText,
-      alpha: 0,
-      y: popupText.y - 30,
-      duration: 500,
-      delay: 1500,
-      onComplete: () => popupText.destroy(),
+    // 게임 일시정지
+    this.isPaused = true;
+    this.physics.pause();
+    this._modalOpen = true;
+
+    // 모달 요소를 저장할 배열 (정리 시 사용)
+    const popupElements = [];
+
+    // 반투명 검정 오버레이
+    const overlay = this.add.rectangle(
+      centerX, centerY, GAME_WIDTH, GAME_HEIGHT,
+      0x000000, 0.6
+    ).setScrollFactor(0).setDepth(350);
+    popupElements.push(overlay);
+
+    // 중앙 패널 배경 + 테두리
+    const panelW = 220;
+    const panelH = 160;
+    const panelX = centerX - panelW / 2;
+    const panelY = centerY - panelH / 2;
+
+    const panelBg = this.add.graphics().setScrollFactor(0).setDepth(351);
+    panelBg.fillStyle(COLORS.UI_PANEL, 0.95);
+    panelBg.fillRoundedRect(panelX, panelY, panelW, panelH, 8);
+    panelBg.lineStyle(2, COLORS.NEON_ORANGE, 1);
+    panelBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 8);
+    popupElements.push(panelBg);
+
+    // 무기 이름 텍스트
+    const weaponNameText = this.add.text(centerX, centerY - 30, t(nameKey), {
+      fontSize: '20px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonOrange,
+      stroke: '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(weaponNameText);
+
+    // "EVOLVED!" 부제목
+    const evolvedText = this.add.text(centerX, centerY, 'EVOLVED!', {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(evolvedText);
+
+    // 확인 버튼 배경
+    const btnW = 120;
+    const btnH = 36;
+    const btnY = centerY + 40;
+
+    const btnBg = this.add.graphics().setScrollFactor(0).setDepth(352);
+    btnBg.fillStyle(COLORS.NEON_ORANGE, 0.8);
+    btnBg.fillRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+    popupElements.push(btnBg);
+
+    // 확인 버튼 텍스트
+    const btnText = this.add.text(centerX, btnY, t('ui.confirm'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(353);
+    popupElements.push(btnText);
+
+    // 확인 버튼 인터랙션 Zone
+    const btnZone = this.add.zone(centerX, btnY, btnW, btnH)
+      .setScrollFactor(0).setDepth(353)
+      .setInteractive({ useHandCursor: true });
+
+    btnZone.on('pointerdown', () => {
+      btnText.setAlpha(0.6);
+    });
+    btnZone.on('pointerup', () => {
+      // 모든 모달 요소 제거
+      popupElements.forEach((el) => {
+        if (el && el.destroy) el.destroy();
+      });
+      btnZone.destroy();
+
+      // 게임 재개
+      this.isPaused = false;
+      this.physics.resume();
+      this._modalOpen = false;
+    });
+    btnZone.on('pointerout', () => {
+      btnText.setAlpha(1);
     });
   }
 
@@ -1211,7 +1284,7 @@ export default class GameScene extends Phaser.Scene {
   _onEnterEndless() {
     this.isEndlessMode = true;
     this.isGameOver = false;
-    this._showWarning(t('game.endlessMode'));
+    this._showEndlessModal();
     this.waveSystem.enterEndlessMode();
 
     // 스케일링 간격마다 적 강화
@@ -1233,6 +1306,108 @@ export default class GameScene extends Phaser.Scene {
         if (!this.isEndlessMode) return;
         this.waveSystem.spawnEndlessMiniboss();
       },
+    });
+  }
+
+  // ── 엔들리스 모드 모달 ──
+
+  /**
+   * 엔들리스 모드 진입 모달을 표시한다.
+   * 게임을 일시정지하고, 플레이어가 "확인"을 눌러야 닫히는 모달 방식.
+   * @private
+   */
+  _showEndlessModal() {
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
+
+    // 게임 일시정지
+    this.isPaused = true;
+    this.physics.pause();
+    this._modalOpen = true;
+
+    // 모달 요소를 저장할 배열 (정리 시 사용)
+    const popupElements = [];
+
+    // 반투명 검정 오버레이
+    const overlay = this.add.rectangle(
+      centerX, centerY, GAME_WIDTH, GAME_HEIGHT,
+      0x000000, 0.6
+    ).setScrollFactor(0).setDepth(350);
+    popupElements.push(overlay);
+
+    // 중앙 패널 배경 + 테두리 (네온 마젠타)
+    const panelW = 220;
+    const panelH = 160;
+    const panelX = centerX - panelW / 2;
+    const panelY = centerY - panelH / 2;
+
+    const panelBg = this.add.graphics().setScrollFactor(0).setDepth(351);
+    panelBg.fillStyle(COLORS.UI_PANEL, 0.95);
+    panelBg.fillRoundedRect(panelX, panelY, panelW, panelH, 8);
+    panelBg.lineStyle(2, COLORS.NEON_MAGENTA, 1);
+    panelBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 8);
+    popupElements.push(panelBg);
+
+    // 제목 텍스트 (네온 마젠타)
+    const titleText = this.add.text(centerX, centerY - 35, t('game.endlessMode'), {
+      fontSize: '20px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonMagenta,
+      stroke: '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(titleText);
+
+    // 설명 텍스트
+    const descText = this.add.text(centerX, centerY + 2, t('game.endlessModeDesc'), {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+      wordWrap: { width: 200 },
+      align: 'center',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(descText);
+
+    // 확인 버튼 배경 (네온 시안)
+    const btnW = 120;
+    const btnH = 36;
+    const btnY = centerY + 45;
+
+    const btnBg = this.add.graphics().setScrollFactor(0).setDepth(352);
+    btnBg.fillStyle(COLORS.NEON_CYAN, 0.8);
+    btnBg.fillRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+    popupElements.push(btnBg);
+
+    // 확인 버튼 텍스트
+    const btnText = this.add.text(centerX, btnY, t('ui.confirm'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(353);
+    popupElements.push(btnText);
+
+    // 확인 버튼 인터랙션 Zone
+    const btnZone = this.add.zone(centerX, btnY, btnW, btnH)
+      .setScrollFactor(0).setDepth(353)
+      .setInteractive({ useHandCursor: true });
+
+    btnZone.on('pointerdown', () => {
+      btnText.setAlpha(0.6);
+    });
+    btnZone.on('pointerup', () => {
+      // 모든 모달 요소 제거
+      popupElements.forEach((el) => {
+        if (el && el.destroy) el.destroy();
+      });
+      btnZone.destroy();
+
+      // 게임 재개
+      this.isPaused = false;
+      this.physics.resume();
+      this._modalOpen = false;
+    });
+    btnZone.on('pointerout', () => {
+      btnText.setAlpha(1);
     });
   }
 
@@ -1664,6 +1839,9 @@ export default class GameScene extends Phaser.Scene {
    * @private
    */
   _togglePause() {
+    // 모달이 열려 있는 동안 일시정지 토글 차단
+    if (this._modalOpen) return;
+
     this.isPaused = !this.isPaused;
 
     const visible = this.isPaused;

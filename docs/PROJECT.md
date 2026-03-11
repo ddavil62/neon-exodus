@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-11 (폰트 크기 가독성 개선)
+> 최종 업데이트: 2026-03-11 (인게임 알림 모달 전환)
 
 ## 프로젝트 개요
 
@@ -57,7 +57,7 @@ neon-exodus/
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 진화 힌트, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드, 카테고리 아이콘)
@@ -193,7 +193,8 @@ neon-exodus/
 │   ├── art-phase4-weapons.spec.js # 아트 Phase 4 무기 이펙트 테스트 (18개)
 │   ├── auto-move-item-weight.spec.js # AutoPilot 아이템 수집 가중치 테스트 (29개)
 │   ├── visual-clarity.spec.js       # 시각적 인지성 개선 테스트 (29개)
-│   └── font-readability.spec.js     # 폰트 크기 가독성 개선 테스트 (11개)
+│   ├── font-readability.spec.js     # 폰트 크기 가독성 개선 테스트 (11개)
+│   └── modal-notification.spec.js  # 인게임 알림 모달 전환 테스트 (32개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -219,10 +220,10 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE=1 일괄 관리 |
-| 다국어 | `js/i18n.js` | ko/en 375키, `t()` 함수로 참조 |
+| 다국어 | `js/i18n.js` | ko/en 376키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
 | 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 무기 드롭 스케줄, 난이도 배수 |
-| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 소모성 아이템 풀/수집/효과, 무기 드롭 스케줄, 플레이어 글로우 서클 생성/동기화/파괴 |
+| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 스케줄, 플레이어 글로우 서클 생성/동기화/파괴 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 드론 AI |
@@ -558,7 +559,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 
 - 무기 최대 레벨 + 대응 패시브 Lv5 이상 시 즉시 자동 진화
 - LevelUpScene에서 무기/패시브 업그레이드 후 GameScene._tryEvolutionCheck() 호출
-- 진화 성공 시 카메라 금색 플래시(300ms) + "[무기명] EVOLVED!" 팝업 (2초 후 소멸)
+- 진화 성공 시 게임 일시정지 + 모달 표시: 반투명 오버레이(depth 350) + NEON_ORANGE 테두리 패널(220x160, depth 351) + 무기 이름(20px neonOrange, depth 352) + "EVOLVED!"(14px, depth 352) + 확인 버튼(NEON_ORANGE, depth 352-353). 확인 클릭 시 모달 destroy + 게임 재개. `_modalOpen` 플래그로 중복 모달 방지 및 일시정지 버튼 차단
 - 이미 진화한 무기는 중복 진화 방지 (weapon._evolvedId 체크)
 - `getWeaponStats()` 최상단에서 `_evolvedStats` 공통 체크 (모든 무기 타입 자동 지원)
 - `beamCount` 신규 속성: 이온 캐논 진화 시 가장 가까운 적 3명에게 빔 동시 발사 (`findClosestEnemies()` 유틸 메서드). 기본값 1 (기존 동작 유지)
@@ -952,7 +953,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 ### 엔들리스 모드
 
 - 코어 프로세서(최종 보스) 처치 시 게임이 종료되지 않고 엔들리스 모드로 진입
-- "ENDLESS MODE!" 경고 메시지 표시
+- 게임 일시정지 + 모달 표시: 반투명 오버레이(depth 350) + NEON_MAGENTA 테두리 패널(220x160, depth 351) + 제목 `t('game.endlessMode')`(20px neonMagenta, depth 352) + 설명 `t('game.endlessModeDesc')`(12px, wordWrap 200px, depth 352) + 확인 버튼(NEON_CYAN, depth 352-353). 확인 클릭 시 모달 destroy + 게임 재개
 - HUD 타이머가 +MM:SS 형식으로 카운트업
 - ENDLESS_SCALE_INTERVAL(60초)마다 적 HP/데미지 +10% 누적 스케일링 (WaveSystem._hpMultiplier, _dmgMultiplier)
 - 5분(300초)마다 미니보스(guardian_drone 또는 assault_mech) 랜덤 스폰
@@ -1310,6 +1311,19 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 8개 씬 전체에서 10px 미만 fontSize 잔존 없음 (grep 검증)
 - [x] CARD_W 미변경, i18n 텍스트 미변경, 타이틀 폰트 미변경
 - [x] Playwright 11/11 테스트 전체 통과
+
+### 인게임 알림 모달 전환 -- 완료 (2026-03-11)
+- [x] `_showEvolutionPopup(nameKey)` 모달 방식으로 교체: 게임 일시정지 + 반투명 오버레이(depth 350) + NEON_ORANGE 테두리 패널(220x160, depth 351) + 무기 이름(20px, depth 352) + "EVOLVED!"(14px, depth 352) + 확인 버튼(depth 352-353)
+- [x] `_showEndlessModal()` 신규 함수: NEON_MAGENTA 테두리 패널 + `t('game.endlessMode')` 제목(20px) + `t('game.endlessModeDesc')` 설명(12px, wordWrap 200px) + NEON_CYAN 확인 버튼
+- [x] `_onEnterEndless()` 내 `_showWarning(t('game.endlessMode'))` 호출을 `_showEndlessModal()` 호출로 교체
+- [x] `_togglePause()` 모달 가드: `if (this._modalOpen) return;` (ESC 키도 자동 차단)
+- [x] `create()` 내 `this._modalOpen = false` 초기화
+- [x] `_showEvolutionPopup` 중복 호출 가드: `if (this._modalOpen) return;` (스펙에 없으나 구현 시 추가)
+- [x] `_showWarning()` 함수 보존 (부활 메시지, 보스/미니보스 경고 등 기존 호출처 정상)
+- [x] `_showEvolutionHint()` 토스트 변경 없음
+- [x] i18n `game.endlessModeDesc` 키 추가 (ko/en, 총 376키)
+- [x] 모달 depth 350~353 범위 (일시정지 300 < 모달 < 광고 부활 400)
+- [x] Playwright 32/32 테스트 전체 통과
 
 ### 무기별 결과 리포트 -- 완료 (2026-03-09)
 - [x] WeaponSystem.weaponStats Map으로 무기별 킬/데미지 추적

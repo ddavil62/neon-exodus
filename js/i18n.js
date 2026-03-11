@@ -419,6 +419,7 @@ const TRANSLATIONS = {
 
     // ── 엔들리스 모드 ──
     'game.endlessMode': 'ENDLESS MODE!',
+    'game.endlessModeDesc': '적이 끝없이 밀려온다.\n60초마다 더욱 강해진다.',
     'result.endless': '엔들리스 생존: {0}분',
     'result.endlessOver': 'ENDLESS OVER!',
 
@@ -961,6 +962,7 @@ const TRANSLATIONS = {
 
     // ── Endless Mode ──
     'game.endlessMode': 'ENDLESS MODE!',
+    'game.endlessModeDesc': 'Enemies surge endlessly.\nThey grow stronger every 60 seconds.',
     'result.endless': 'Endless survived: {0} min',
     'result.endlessOver': 'ENDLESS OVER!',
 
