@@ -253,15 +253,19 @@ export default class WaveSystem {
    */
   enterEndlessMode() {
     this._isEndless = true;
+    // 엔들리스 진입 즉시 큰 상수 배율 적용 (시작부터 체감 난이도 급등)
+    this._hpMultiplier *= 3.0;
+    this._dmgMultiplier *= 2.0;
   }
 
   /**
-   * 엔들리스 스케일을 적용한다. 매 분 +10% 누적.
+   * 엔들리스 스케일을 적용한다. 매 분 HP +15%, 데미지 +12% 누적.
+   * 10분 후 HP 12배, 데미지 6배 / 20분 후 HP 49배, 데미지 19배.
    * @param {number} minutes - 엔들리스 경과 분
    */
   applyEndlessScale(minutes) {
-    this._hpMultiplier *= 1.10;
-    this._dmgMultiplier *= 1.10;
+    this._hpMultiplier *= 1.15;
+    this._dmgMultiplier *= 1.12;
   }
 
   /**

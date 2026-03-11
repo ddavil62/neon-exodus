@@ -461,8 +461,8 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.precisionCannon.desc',
     type: 'projectile',
     stats: {
-      damage: 60, cooldown: 200, projectileSpeed: 550, pierce: 99, range: 400,
-      multiShot: 3,
+      damage: 50, cooldown: 280, projectileSpeed: 550, pierce: 5, range: 400,
+      multiShot: 2,
     },
   },
   {
@@ -471,7 +471,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.plasmaStorm.desc',
     type: 'chain',
     stats: {
-      damage: 90, cooldown: 600, chainCount: 10, chainRange: 250, chainDecay: 0.92,
+      damage: 80, cooldown: 700, chainCount: 8, chainRange: 220, chainDecay: 0.88,
     },
   },
   {
@@ -480,7 +480,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.nukeMissile.desc',
     type: 'homing',
     stats: {
-      damage: 150, cooldown: 1000, speed: 320, turnSpeed: 3.5, explosionRadius: 140, range: 600,
+      damage: 130, cooldown: 1200, speed: 320, turnSpeed: 3.5, explosionRadius: 120, range: 600,
     },
   },
   {
@@ -489,7 +489,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.ionCannon.desc',
     type: 'beam',
     stats: {
-      tickDamage: 50, cooldown: 600, duration: 800, range: 500, beamCount: 3,
+      tickDamage: 40, cooldown: 800, duration: 600, range: 500, beamCount: 2,
     },
   },
   {
@@ -498,7 +498,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.guardianSphere.desc',
     type: 'orbital',
     stats: {
-      orbCount: 6, tickDamage: 45, orbRadius: 120, angularSpeed: 18.0, tickInterval: 200,
+      orbCount: 5, tickDamage: 38, orbRadius: 100, angularSpeed: 16.0, tickInterval: 250,
     },
   },
   {
@@ -507,7 +507,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.hivemind.desc',
     type: 'summon',
     stats: {
-      droneCount: 6, damage: 65, cooldown: 400, shootRange: 200, moveSpeed: 700,
+      droneCount: 5, damage: 55, cooldown: 500, shootRange: 180, moveSpeed: 650,
     },
   },
   {
@@ -516,7 +516,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.perpetualEmp.desc',
     type: 'aoe',
     stats: {
-      damage: 120, cooldown: 2000, radius: 250, slowFactor: 0.20, slowDuration: 3000,
+      damage: 95, cooldown: 2500, radius: 220, slowFactor: 0.30, slowDuration: 2500,
     },
   },
   {
@@ -525,7 +525,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.phantomStrike.desc',
     type: 'melee',
     stats: {
-      damage: 200, cooldown: 400, range: 130, arcAngle: 360, knockback: 50,
+      damage: 165, cooldown: 480, range: 125, arcAngle: 240, knockback: 42,
     },
   },
   {
@@ -534,7 +534,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.bioplasma.desc',
     type: 'cloud',
     stats: {
-      cloudCount: 6, tickDamage: 45, radius: 135, duration: 7000, cooldown: 500, poisonStack: 8,
+      cloudCount: 5, tickDamage: 35, radius: 120, duration: 6000, cooldown: 550, poisonStack: 6,
     },
   },
   {
@@ -543,7 +543,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.eventHorizon.desc',
     type: 'gravity',
     stats: {
-      damage: 140, pullDamage: 40, pullRadius: 160, vortexDuration: 5000, cooldown: 1400, pullForce: 200,
+      damage: 115, pullDamage: 35, pullRadius: 140, vortexDuration: 4500, cooldown: 1600, pullForce: 170,
     },
   },
   {
@@ -552,7 +552,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.deathBlossom.desc',
     type: 'rotating_blade',
     stats: {
-      bladeCount: 8, damage: 130, orbitRadius: 130, angularSpeed: 14.0, tickInterval: 100, curseDuration: 5000,
+      bladeCount: 6, damage: 110, orbitRadius: 115, angularSpeed: 12.5, tickInterval: 130, curseDuration: 4000,
     },
   },
 ];
