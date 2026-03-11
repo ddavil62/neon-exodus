@@ -192,14 +192,14 @@ export const FORCE_BLADE_LEVELS = [
  * @type {Array<{level: number, cloudCount: number, tickDamage: number, radius: number, duration: number, cooldown: number, poisonStack: number}>}
  */
 export const NANO_SWARM_LEVELS = [
-  { level: 1, cloudCount: 1, tickDamage: 5,  radius: 40, duration: 4000, cooldown: 1000, poisonStack: 1 },
-  { level: 2, cloudCount: 1, tickDamage: 7,  radius: 44, duration: 4200, cooldown: 950,  poisonStack: 1 },
-  { level: 3, cloudCount: 2, tickDamage: 9,  radius: 48, duration: 4400, cooldown: 900,  poisonStack: 2 },
-  { level: 4, cloudCount: 2, tickDamage: 12, radius: 52, duration: 4600, cooldown: 850,  poisonStack: 2 },
-  { level: 5, cloudCount: 2, tickDamage: 15, radius: 56, duration: 4800, cooldown: 800,  poisonStack: 3 },
-  { level: 6, cloudCount: 3, tickDamage: 19, radius: 62, duration: 5000, cooldown: 750,  poisonStack: 3 },
-  { level: 7, cloudCount: 3, tickDamage: 24, radius: 70, duration: 5200, cooldown: 700,  poisonStack: 4 },
-  { level: 8, cloudCount: 4, tickDamage: 30, radius: 80, duration: 5500, cooldown: 650,  poisonStack: 5 },
+  { level: 1, cloudCount: 1, tickDamage: 5,  radius: 55,  duration: 4000, cooldown: 1000, poisonStack: 1 },
+  { level: 2, cloudCount: 1, tickDamage: 7,  radius: 60,  duration: 4200, cooldown: 950,  poisonStack: 1 },
+  { level: 3, cloudCount: 2, tickDamage: 9,  radius: 66,  duration: 4400, cooldown: 900,  poisonStack: 2 },
+  { level: 4, cloudCount: 2, tickDamage: 12, radius: 72,  duration: 4600, cooldown: 850,  poisonStack: 2 },
+  { level: 5, cloudCount: 2, tickDamage: 15, radius: 78,  duration: 4800, cooldown: 800,  poisonStack: 3 },
+  { level: 6, cloudCount: 3, tickDamage: 19, radius: 86,  duration: 5000, cooldown: 750,  poisonStack: 3 },
+  { level: 7, cloudCount: 3, tickDamage: 24, radius: 96,  duration: 5200, cooldown: 700,  poisonStack: 4 },
+  { level: 8, cloudCount: 4, tickDamage: 30, radius: 110, duration: 5500, cooldown: 650,  poisonStack: 5 },
 ];
 
 // ── 볼텍스 캐넌: 스테이지 3 해금 중력 무기 (Lv1~Lv8) ──
@@ -534,7 +534,7 @@ export const EVOLVED_WEAPONS = [
     descKey: 'weapon.evolution.bioplasma.desc',
     type: 'cloud',
     stats: {
-      cloudCount: 6, tickDamage: 45, radius: 100, duration: 7000, cooldown: 500, poisonStack: 8,
+      cloudCount: 6, tickDamage: 45, radius: 135, duration: 7000, cooldown: 500, poisonStack: 8,
     },
   },
   {
