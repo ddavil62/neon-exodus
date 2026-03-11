@@ -476,7 +476,7 @@ export default class LevelUpScene extends Phaser.Scene {
    */
   _createCard(x, y, choice) {
     const cardW = 105;
-    const cardH = 175;
+    const cardH = 200;
 
     // 카드 배경
     const bg = this.add.graphics();
