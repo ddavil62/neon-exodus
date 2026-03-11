@@ -75,10 +75,10 @@ class AdManagerClass {
     }
 
     try {
-      // Capacitor 전역 플러그인 브리지에서 AdMob 참조 (번들러 없이 동작)
-      const AdMob = window.Capacitor.Plugins.AdMob;
+      // 동적 import로 플러그인 로드 (번들러 없는 환경에서도 Capacitor가 모듈 제공)
+      const { AdMob } = await import('@capacitor-community/admob');
       if (!AdMob) {
-        throw new Error('AdMob 플러그인이 Capacitor에 등록되지 않음');
+        throw new Error('AdMob 플러그인 로드 실패');
       }
       this._admob = AdMob;
 
@@ -123,14 +123,54 @@ class AdManagerClass {
     this._suspendAudio();
 
     try {
+      // 1. 광고 로드
       await this._admob.prepareRewardVideoAd({
         adId: adUnitId,
       });
-      const result = await this._admob.showRewardVideoAd();
-      console.log('[AdManager] 보상형 광고 표시 완료:', result);
-      return { rewarded: true };
+
+      // 2. 이벤트 리스너로 보상 여부 판단
+      const rewardResult = await new Promise((resolve) => {
+        let rewarded = false;
+        let rewardedHandle = null;
+        let dismissedHandle = null;
+        let failedHandle = null;
+
+        /** 등록된 이벤트 리스너를 모두 해제한다 */
+        const cleanup = () => {
+          if (rewardedHandle) rewardedHandle.remove();
+          if (dismissedHandle) dismissedHandle.remove();
+          if (failedHandle) failedHandle.remove();
+        };
+
+        // 보상 획득 이벤트 (광고를 끝까지 시청함)
+        this._admob.addListener('onRewardedVideoAdReward', () => {
+          rewarded = true;
+        }).then(h => { rewardedHandle = h; });
+
+        // 광고 닫힘 이벤트 (보상 여부와 무관하게 종료)
+        this._admob.addListener('onRewardedVideoAdDismissed', () => {
+          cleanup();
+          resolve({ rewarded });
+        }).then(h => { dismissedHandle = h; });
+
+        // 표시 실패 이벤트
+        this._admob.addListener('onRewardedVideoAdFailedToShow', (err) => {
+          cleanup();
+          resolve({ rewarded: false, error: err.message || 'failedToShow' });
+        }).then(h => { failedHandle = h; });
+
+        // 광고 표시 시작
+        this._admob.showRewardVideoAd().catch((e) => {
+          cleanup();
+          resolve({ rewarded: false, error: e.message });
+        });
+      });
+
+      console.log('[AdManager] 보상형 광고 완료:', rewardResult);
+      return rewardResult;
     } catch (e) {
-      console.warn('[AdManager] 보상형 광고 표시 실패:', e.message);
+      // 광고 로드(prepareRewardVideoAd) 실패
+      console.warn('[AdManager] 보상형 광고 로드 실패:', e.message);
       return { rewarded: false, error: e.message };
     } finally {
       this.isBusy = false;

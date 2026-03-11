@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-03-12 -- AdMob 보상형 광고 실 연동
+
+### 변경
+- `AdManager.js` initialize(): 플러그인 로드 방식을 `window.Capacitor.Plugins.AdMob` 직접 참조에서 `await import('@capacitor-community/admob')` 동적 import로 전환
+- `AdManager.js` showRewarded(): 보상 판단을 순차 await(`showRewardVideoAd()` 반환값)에서 이벤트 기반(`onRewardedVideoAdReward` / `onRewardedVideoAdDismissed` / `onRewardedVideoAdFailedToShow`)으로 전환
+- `AdManager.js` 에러 메시지: "Capacitor에 등록되지 않음" -> "플러그인 로드 실패"
+
+### 참고
+- 스펙: `.claude/specs/2026-03-12-admob-integration.md`
+- 구현 리포트: `.claude/specs/2026-03-12-admob-integration-report.md`
+- QA: `.claude/specs/2026-03-12-admob-integration-qa.md`
+- QA 결과: 수용기준 6/6 충족, QA 전용 32/32 PASS, 기존 테스트 26/27 통과 (C2 실패는 기존 테스트 좌표 하드코딩 이슈로 이번 변경과 무관)
+- 변경 파일: `js/managers/AdManager.js` 1개. GameScene, ResultScene, config.js 미수정
+- Mock 모드/BGM 제어/isBusy/일일 제한 등 기존 로직 변경 없음
+- 네이티브 모드 이벤트 기반 로직은 실제 Android 기기에서만 검증 가능. Playwright에서는 Mock 경로만 실행되므로 코드 정적 분석으로 대체
+
 ## 2026-03-11 -- 인게임 알림 모달 전환
 
 ### 변경

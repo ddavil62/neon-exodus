@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-11 (인게임 알림 모달 전환)
+> 최종 업데이트: 2026-03-12 (AdMob 보상형 광고 실 연동)
 
 ## 프로젝트 개요
 
@@ -84,6 +84,7 @@ neon-exodus/
 │   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
+│   │   ├── AdManager.js            # Google AdMob 보상형 광고 관리 (동적 import, 이벤트 기반 보상 판단, Mock 모드)
 │   │   └── IAPManager.js          # Google Play IAP 관리 (구매/복원, Mock 모드)
 │   └── data/
 │       ├── weapons.js             # 무기 11종 (기본 7종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 11종
@@ -236,6 +237,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
 | 도감 | `js/scenes/CollectionScene.js` | 5탭 도감 (무기/패시브/적/도전과제/진화) |
 | 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑) |
+| 광고 관리 | `js/managers/AdManager.js` | AdMob 보상형 광고 표시/보상 판단, Mock 모드, 일일 제한 |
 | IAP 관리 | `js/managers/IAPManager.js` | Google Play IAP 구매/복원, Mock 모드 |
 
 ## 기능 명세
@@ -1026,6 +1028,50 @@ AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Pl
 - 구현 일자: 2026-03-09 (아이템 수집 가중치 강화: 2026-03-11)
 - 스펙 문서: `.claude/specs/2026-03-09-auto-hunt.md`, `.claude/specs/2026-03-11-auto-move-item-weight.md`
 
+### AdMob 보상형 광고 시스템
+
+Google AdMob 보상형 광고를 통한 추가 보상 제공. Capacitor 네이티브 환경에서는 `@capacitor-community/admob` v7 플러그인 실제 호출, 웹 환경에서는 Mock 모드 동작.
+
+#### AdManager
+- 싱글톤 패턴 (`js/managers/AdManager.js`)
+- `initialize()`: 동적 import(`await import('@capacitor-community/admob')`)로 AdMob 플러그인 로드. `this._admob`에 저장. 초기화 실패 시 Mock 모드 폴백(isMock=true). `_initialized` 플래그로 중복 초기화 방지
+- `showRewarded(adUnitId)`: 보상형 광고 준비/표시. `isBusy` 플래그로 중복 호출 차단. Mock 모드에서는 즉시 `{ rewarded: true }` 반환
+- 네이티브 모드 보상 판단: 이벤트 기반
+  1. `prepareRewardVideoAd({ adId })` — 광고 로드
+  2. 3개 이벤트 리스너 등록 (`onRewardedVideoAdReward`, `onRewardedVideoAdDismissed`, `onRewardedVideoAdFailedToShow`)
+  3. `showRewardVideoAd()` — 광고 표시
+  4. `onRewardedVideoAdReward` 발화 시 `rewarded = true` 기록
+  5. `onRewardedVideoAdDismissed` 발화 시 `{ rewarded }` resolve (끝까지 시청해야 보상)
+  6. 실패 시 `{ rewarded: false, error }` resolve (reject하지 않음)
+  7. 모든 종료 경로에서 `cleanup()` — handle.remove()로 이벤트 리스너 해제
+- BGM 제어: 광고 시청 전 `SoundSystem._ctx.suspend()`, 종료 후 `resume()`
+- 일일 제한: localStorage(`neonExodus_adLimits` 키)에 날짜별 카운터 저장. `getDailyAdCount()`, `incrementDailyAdCount()`, `isAdLimitReached()`, `getRemainingAdCount()` 메서드 제공. 날짜 변경 시 자동 초기화
+- 플러그인 로드: 최상단 bare import 없이 동적 import만 사용 (빌드 호환성)
+
+#### 광고 설정 (config.js)
+| 항목 | 값 |
+|---|---|
+| ADMOB_APP_ID | `ca-app-pub-9149509805250873~5179575681` |
+| ADMOB_UNITS.creditDouble | `ca-app-pub-9149509805250873/8105121927` |
+| ADMOB_UNITS.adRevive | `ca-app-pub-9149509805250873/6373567427` |
+| AD_LIMITS.creditDouble | 3 (일일 3회) |
+| AD_LIMITS.adRevive | 2 (일일 2회) |
+
+#### 광고 종류
+| 유형 | 광고 ID | 일일 제한 | 보상 | 호출 위치 |
+|---|---|---|---|---|
+| 크레딧 2배 | creditDouble | 3회 | 결과 화면 크레딧 2배 지급 | ResultScene._createAdDoubleButton() |
+| 광고 부활 | adRevive | 2회 | HP 50% 회복 + 3초 무적 부활 | GameScene._showAdRevivePopup() |
+
+#### Android 빌드 연동
+- `capacitor.config.json` — `plugins.AdMob.appId` 설정
+- `.github/workflows/build-apk.yml` — `cap sync android` 후 `AndroidManifest.xml`에 `APPLICATION_ID` 메타데이터 자동 주입 (CI 전용)
+- `@capacitor-community/admob` `^7.0.0`이 package.json에 등록됨
+
+- 관련 파일: `js/managers/AdManager.js`, `js/config.js`, `js/scenes/BootScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`, `capacitor.config.json`
+- 구현 일자: 2026-03-12
+- 스펙 문서: `.claude/specs/2026-03-12-admob-integration.md`
+
 ### IAP (인앱결제) 시스템
 
 Google Play 인앱결제를 통한 유료 기능 해금. Capacitor 네이티브 환경에서는 실제 IAP, 웹 환경에서는 Mock 모드 동작.
@@ -1156,7 +1202,8 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - MetaManager: 영구 업그레이드 구매/다운그레이드/적용 계산. canDowngrade(), getDowngradeRefund(), downgradeUpgrade() 메서드 제공. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
 - AchievementManager: 도전과제 조건 검사/보상 지급. ResultScene에서 checkAll() 호출.
 - IAPManager: Google Play 인앱결제 구매/복원. 웹 환경 Mock 모드 지원. BootScene에서 초기화 및 구매 복원.
-- 관련 파일: `js/managers/SaveManager.js`, `js/managers/MetaManager.js`, `js/managers/AchievementManager.js`, `js/managers/IAPManager.js`
+- AdManager: AdMob 보상형 광고 관리. 동적 import로 플러그인 로드, 이벤트 기반 보상 판단, 일일 제한 카운터(localStorage). 웹 환경 Mock 모드 지원. BootScene에서 초기화.
+- 관련 파일: `js/managers/SaveManager.js`, `js/managers/MetaManager.js`, `js/managers/AchievementManager.js`, `js/managers/IAPManager.js`, `js/managers/AdManager.js`
 - 구현 일자: 2026-03-08 (Phase 2 연동: 2026-03-09, IAP/AutoPilot: 2026-03-09)
 
 ## 알려진 제약사항
@@ -1423,3 +1470,15 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] i18n: 6종 이름+설명 ko/en 24키 추가 (총 375키)
 - [x] 스프라이트 생성 스크립트 (`scripts/generate-consumable-sprites.js`) + 6종 PNG 생성 완료
 - [x] Playwright 34/34 테스트 전체 통과
+
+### AdMob 보상형 광고 실 연동 -- 완료 (2026-03-12)
+- [x] AdManager.initialize(): `window.Capacitor.Plugins.AdMob` 직접 참조 -> `await import('@capacitor-community/admob')` 동적 import 전환
+- [x] AdManager.showRewarded(): 순차 await 방식 -> 이벤트 기반 보상 판단 (onRewardedVideoAdReward / onRewardedVideoAdDismissed / onRewardedVideoAdFailedToShow)
+- [x] Rewarded 이벤트 발화 시에만 `{ rewarded: true }` 반환 (끝까지 시청하지 않으면 보상 미지급)
+- [x] 모든 종료 경로(dismissed, failedToShow, showRewardVideoAd catch)에서 cleanup() — handle.remove() 호출
+- [x] prepareRewardVideoAd 실패(로드 실패) 시 catch에서 `{ rewarded: false, error }` resolve
+- [x] 최상단 bare import 없이 동적 import만 사용 (E3 테스트 호환)
+- [x] 플러그인 로드 실패 시 Mock 모드 폴백 유지
+- [x] Mock 모드 / BGM suspend·resume / isBusy / 일일 제한 기존 로직 변경 없음
+- [x] GameScene, ResultScene, config.js 미수정
+- [x] Playwright QA 32/32 + 기존 26/27 통과 (C2 실패는 기존 테스트 좌표 하드코딩 이슈, 이번 변경과 무관)
