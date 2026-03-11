@@ -190,6 +190,9 @@ export default class GameScene extends Phaser.Scene {
     /** 달성한 무기 진화 수 */
     this.weaponEvolutions = 0;
 
+    /** 이미 표시한 진화 힌트 ID 세트 (중복 방지) */
+    this._shownHints = new Set();
+
     // ── 시스템 초기화 ──
     this.joystick = new VirtualJoystick(this);
 
@@ -836,14 +839,17 @@ export default class GameScene extends Phaser.Scene {
 
       // 패시브 레벨 확인
       const passiveLv = (this.player._passives || {})[evo.passiveId] || 0;
-      if (passiveLv < 5) continue;
-
-      // 진화 조건 충족!
-      const success = this.weaponSystem.evolveWeapon(evo.weaponId, evo.resultId);
-      if (success) {
-        this.weaponEvolutions++;
-        SoundSystem.play('evolution');
-        this._showEvolutionPopup(evo.resultNameKey);
+      if (passiveLv >= 5) {
+        // 진화 조건 충족!
+        const success = this.weaponSystem.evolveWeapon(evo.weaponId, evo.resultId);
+        if (success) {
+          this.weaponEvolutions++;
+          SoundSystem.play('evolution');
+          this._showEvolutionPopup(evo.resultNameKey);
+        }
+      } else if (passiveLv > 0) {
+        // 무기는 Max인데 패시브가 부족 → 힌트 표시
+        this._showEvolutionHint(evo);
       }
     }
   }
@@ -877,6 +883,43 @@ export default class GameScene extends Phaser.Scene {
       duration: 500,
       delay: 1500,
       onComplete: () => popupText.destroy(),
+    });
+  }
+
+  /**
+   * 무기 Max 달성 시 진화 조건 힌트를 화면 상단에 토스트로 표시한다.
+   * 동일 진화에 대해 한 번만 표시한다.
+   * @param {Object} evo - 진화 레시피 데이터
+   * @private
+   */
+  _showEvolutionHint(evo) {
+    // 이미 힌트를 보여준 진화는 건너뛴다
+    if (this._shownHints.has(evo.resultId)) return;
+    this._shownHints.add(evo.resultId);
+
+    const weaponName = t(`weapon.${evo.weaponId}.name`);
+    const passiveName = t(`passive.${evo.passiveId}.name`);
+    const msg = t('hint.evolutionReady', weaponName, passiveName);
+
+    const hintText = this.add.text(
+      GAME_WIDTH / 2, 30,
+      msg,
+      {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonOrange,
+        stroke: '#000000',
+        strokeThickness: 2,
+      }
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(250);
+
+    // 2초 후 fade out 후 자동 소멸
+    this.tweens.add({
+      targets: hintText,
+      alpha: 0,
+      duration: 500,
+      delay: 1500,
+      onComplete: () => hintText.destroy(),
     });
   }
 

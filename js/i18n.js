@@ -98,6 +98,13 @@ const TRANSLATIONS = {
     'collection.back': '뒤로',
     'collection.undiscovered': '???',
     'collection.maxLevelReached': '최대 달성: Lv{0}',
+    'collection.evolutions': '진화',
+    'collection.evoRecipe': '{0} Lv8 + {1} Lv5',
+    'collection.discovered': '발견됨',
+    'collection.notDiscovered': '미발견',
+
+    // ── 힌트 ──
+    'hint.evolutionReady': '{0} MAX! {1} Lv5로 진화!',
 
     // ── 무기: 블래스터 ──
     'weapon.blaster.name': '블래스터',
@@ -633,6 +640,13 @@ const TRANSLATIONS = {
     'collection.back': 'Back',
     'collection.undiscovered': '???',
     'collection.maxLevelReached': 'Max Reached: Lv{0}',
+    'collection.evolutions': 'Evolution',
+    'collection.evoRecipe': '{0} Lv8 + {1} Lv5',
+    'collection.discovered': 'Discovered',
+    'collection.notDiscovered': 'Not Found',
+
+    // ── Hints ──
+    'hint.evolutionReady': '{0} MAX! Evolves with {1} Lv5!',
 
     // ── Weapons: Blaster ──
     'weapon.blaster.name': 'Blaster',

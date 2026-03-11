@@ -1,7 +1,7 @@
 /**
  * @fileoverview 도감 화면 씬.
  *
- * 4개 탭(무기/패시브/적/도전과제)으로 구성된 도감을 표시한다.
+ * 5개 탭(무기/패시브/적/도전과제/진화)으로 구성된 도감을 표시한다.
  * 발견된 항목은 이름, 설명, 스탯을 보여주고,
  * 미발견 항목은 ???로 마스킹한다.
  */
@@ -30,6 +30,7 @@ const TABS = [
   { key: 'passives', labelKey: 'collection.passives' },
   { key: 'enemies', labelKey: 'collection.enemies' },
   { key: 'achievements', labelKey: 'collection.achievements' },
+  { key: 'evolutions', labelKey: 'collection.evolutions' },
 ];
 
 // ── 레이아웃 상수 ──
@@ -94,12 +95,12 @@ export default class CollectionScene extends Phaser.Scene {
   // ── 탭 ──
 
   /**
-   * 탭 버튼 4개를 생성한다.
+   * 탭 버튼 5개를 생성한다.
    * @private
    */
   _createTabs() {
     const tabY = 60;
-    const tabW = 78;
+    const tabW = 62;
     const tabH = 26;
     const totalW = TABS.length * tabW + (TABS.length - 1) * 4;
     const startX = (GAME_WIDTH - totalW) / 2 + tabW / 2;
@@ -190,6 +191,9 @@ export default class CollectionScene extends Phaser.Scene {
         break;
       case 'achievements':
         items = this._getAchievementItems();
+        break;
+      case 'evolutions':
+        items = this._getEvolutionItems(collection);
         break;
     }
 
@@ -306,6 +310,30 @@ export default class CollectionScene extends Phaser.Scene {
       desc: t(a.descKey),
       discovered: a.completed,
     }));
+  }
+
+  /**
+   * 진화 탭 항목을 반환한다.
+   * 조합식은 항상 공개하되, 진화 무기 이름은 발견 여부에 따라 마스킹한다.
+   * @param {Object} collection - 도감 데이터
+   * @returns {Array<Object>} 항목 배열
+   * @private
+   */
+  _getEvolutionItems(collection) {
+    const seen = new Set(collection.weaponsSeen || []);
+    return WEAPON_EVOLUTIONS.map(evo => {
+      const discovered = seen.has(evo.resultId);
+      // 무기 이름과 패시브 이름으로 조합식 텍스트 생성 (항상 공개)
+      const weaponName = t(`weapon.${evo.weaponId}.name`);
+      const passiveName = t(`passive.${evo.passiveId}.name`);
+      const recipe = t('collection.evoRecipe', weaponName, passiveName);
+
+      return {
+        name: discovered ? `\u2605 ${t(evo.resultNameKey)}` : '\u2605 ???',
+        desc: recipe,
+        discovered,
+      };
+    });
   }
 
   // ── 리스트 카드 ──

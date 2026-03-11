@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-11 (전체 무기 진화 11종 완성)
+> 최종 업데이트: 2026-03-11 (진화 조합표 UI + 인게임 힌트)
 
 ## 프로젝트 개요
 
@@ -57,12 +57,12 @@ neon-exodus/
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화, 진화 힌트, 엔들리스 모드, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드, 카테고리 아이콘)
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (13개, 진행률)
-│   │   └── CollectionScene.js     # 도감 화면 (4탭: 무기/패시브/적/도전과제)
+│   │   └── CollectionScene.js     # 도감 화면 (5탭: 무기/패시브/적/도전과제/진화)
 │   ├── entities/
 │   │   ├── Player.js              # 플레이어 (이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드)
 │   │   ├── Enemy.js               # 적 기본 클래스 (초기화, 이동, 데미지, 사망)
@@ -231,7 +231,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
-| 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/도전과제) |
+| 도감 | `js/scenes/CollectionScene.js` | 5탭 도감 (무기/패시브/적/도전과제/진화) |
 | 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑) |
 | IAP 관리 | `js/managers/IAPManager.js` | Google Play IAP 구매/복원, Mock 모드 |
 
@@ -560,9 +560,10 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 이미 진화한 무기는 중복 진화 방지 (weapon._evolvedId 체크)
 - `getWeaponStats()` 최상단에서 `_evolvedStats` 공통 체크 (모든 무기 타입 자동 지원)
 - `beamCount` 신규 속성: 이온 캐논 진화 시 가장 가까운 적 3명에게 빔 동시 발사 (`findClosestEnemies()` 유틸 메서드). 기본값 1 (기존 동작 유지)
+- **인게임 진화 힌트**: 무기 Lv8(Max) + 대응 패시브 Lv1~4 상태에서 `"[무기명] MAX! [패시브명] Lv5로 진화!"` 토스트 표시. neonOrange 12px, 화면 상단(y=30) 고정, 1.5초 후 fade out(500ms). `_shownHints` Set으로 동일 진화 중복 힌트 방지. 패시브 미보유(Lv0) 시 힌트 미표시
 - 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`, `js/scenes/GameScene.js`
 - 구현 일자: 2026-03-09 (전체 11종 완성: 2026-03-11)
-- 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase3.md`, `.claude/specs/2026-03-11-weapon-evolution-all.md`
+- 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase3.md`, `.claude/specs/2026-03-11-weapon-evolution-all.md`, `.claude/specs/2026-03-11-evolution-recipe-ui.md`
 
 #### 치명타 시스템
 - `_rollCrit(baseDamage)`: critChance > 0이고 Math.random() < critChance일 때 치명타 발생
@@ -835,14 +836,16 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/scenes/AchievementScene.js`
 - 구현 일자: 2026-03-09
 
-#### 도감 (4탭)
-- CollectionScene: 무기 / 패시브 / 적 / 도전과제 4개 탭
+#### 도감 (5탭)
+- CollectionScene: 무기 / 패시브 / 적 / 도전과제 / 진화 5개 탭 (tabW=62)
 - 미발견 항목은 이름과 설명을 모두 ???로 마스킹
 - 발견된 항목은 이름, 설명, 스탯 표시. 진화 무기도 별도 항목으로 포함 (진화 조건 표시)
+- **진화 탭**: 11개 진화 레시피를 카드 형태로 나열. 조합식(`[무기명] Lv8 + [패시브명] Lv5`)은 발견 여부 무관하게 항상 공개. 미발견 진화 무기 이름은 `★ ???`로 마스킹, 발견 시 `★ [실제이름]` 표시. 미발견 카드는 배경 alpha 0.5로 시각적 구분. CARD_H=56, CARD_W=320
 - 자동 등록: WeaponSystem.addWeapon()에서 weaponsSeen, LevelUpScene._addPassive()에서 passivesSeen, GameScene.onEnemyKilled()에서 enemiesSeen, evolveWeapon()에서 진화 무기 weaponsSeen 등록
 - MenuScene 도감 버튼으로 진입
 - 관련 파일: `js/scenes/CollectionScene.js`
-- 구현 일자: 2026-03-09
+- 구현 일자: 2026-03-09 (진화 탭 추가: 2026-03-11)
+- 스펙 문서: `.claude/specs/2026-03-11-evolution-recipe-ui.md`
 
 ### 사운드 시스템
 
@@ -1136,7 +1139,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 캐릭터 고유 패시브 (스나이퍼 critDamage+30%, 버서커 저HP 공격+40%)
 - [x] 치명타 시스템 전체 구현 (_rollCrit, 5개 데미지 지점 적용, CRIT! 시각 효과)
 - [x] 도전과제 화면 (AchievementScene, 13개, 진행률 표시)
-- [x] 도감 화면 (CollectionScene, 4탭: 무기/패시브/적/도전과제, 자동 등록)
+- [x] 도감 화면 (CollectionScene, 5탭: 무기/패시브/적/도전과제/진화, 자동 등록)
 - [x] 통계 확장 (totalBossKills, 세이브 v1->v2 마이그레이션)
 - [x] 무기 풀 확장 (getAvailableWeapons(3), Phase 3 무기 레벨업 선택지)
 - [x] 부활(Revive) 기능 (Phase 2 미완성분)
@@ -1194,6 +1197,18 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] GameScene._tryEvolutionCheck() 자동 동작 (데이터 추가만으로 동작)
 - [x] 기존 3개 진화 (precision_cannon, plasma_storm, nuke_missile) 회귀 PASS
 - [x] Playwright 35/35 테스트 전체 통과
+
+### 진화 조합표 UI + 인게임 힌트 -- 완료 (2026-03-11)
+- [x] CollectionScene에 5번째 "진화" 탭 추가 (TABS 배열에 evolutions, tabW를 78에서 62로 축소)
+- [x] _getEvolutionItems(): WEAPON_EVOLUTIONS 11개 레시피를 카드로 나열, 조합식 항상 공개
+- [x] 미발견 진화 무기 이름 `★ ???` 마스킹, 발견 시 `★ [실제이름]` 표시
+- [x] 미발견 카드 배경 alpha 0.5, 텍스트 alpha 낮음으로 시각적 구분
+- [x] GameScene._showEvolutionHint(): 무기 Max + 패시브 Lv1~4 시 토스트 힌트 표시
+- [x] _shownHints Set으로 동일 진화 힌트 중복 방지
+- [x] 힌트 스타일: neonOrange 12px, y=30 고정, scrollFactor(0), depth(250), delay 1500ms + fade out 500ms
+- [x] 패시브 미보유(Lv0) 시 힌트 미표시 (passiveLv > 0 조건)
+- [x] i18n 5개 키 ko/en 추가 (collection.evolutions, collection.evoRecipe, collection.discovered, collection.notDiscovered, hint.evolutionReady)
+- [x] Playwright 34/34 테스트 전체 통과
 
 ### 무기별 결과 리포트 -- 완료 (2026-03-09)
 - [x] WeaponSystem.weaponStats Map으로 무기별 킬/데미지 추적

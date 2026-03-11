@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-11 -- 진화 조합표 UI + 인게임 힌트
+
+### 추가
+- CollectionScene 5번째 "진화" 탭 (`js/scenes/CollectionScene.js`): TABS 배열에 evolutions 추가, `_getEvolutionItems()` 메서드로 11개 진화 레시피 카드 생성. 조합식(`[무기명] Lv8 + [패시브명] Lv5`)은 발견 여부 무관하게 항상 공개. 미발견 시 이름 `★ ???` 마스킹, 발견 시 `★ [실제이름]` 표시
+- GameScene `_showEvolutionHint()` (`js/scenes/GameScene.js`): 무기 Max + 패시브 Lv1~4 상태에서 진화 힌트 토스트 표시. neonOrange 12px, 화면 상단(y=30) 고정, 1.5초 후 fade out(500ms). `_shownHints` Set으로 동일 진화 중복 힌트 방지. 패시브 미보유(Lv0) 시 미표시
+- i18n 5개 키 ko/en (`js/i18n.js`): collection.evolutions, collection.evoRecipe, collection.discovered, collection.notDiscovered, hint.evolutionReady
+- Playwright 테스트 (`tests/evolution-recipe-ui.spec.js`, `tests/evolution-recipe-visual.spec.js`): 34개 테스트
+
+### 변경
+- CollectionScene tabW 78 -> 62 축소 (5개 탭 수용)
+- GameScene._tryEvolutionCheck()에 패시브 부족 시 힌트 분기(`else if (passiveLv > 0)`) 추가
+
+### 참고
+- 스펙: `.claude/specs/2026-03-11-evolution-recipe-ui.md`
+- 구현 리포트: `.claude/specs/2026-03-11-evolution-recipe-ui-report.md`
+- QA: `.claude/specs/2026-03-11-evolution-recipe-ui-qa.md`
+- QA 결과: 수용기준 11/11 PASS, 예외 시나리오 10/10 PASS, Playwright 34/34 전체 통과. 시각적 검증 스크린샷 6건 확인
+- `collection.discovered`와 `collection.notDiscovered` 키는 향후 확장용으로 준비됨 (현재 카드 UI에서 직접 사용하지 않음)
+
 ## 2026-03-11 -- 전체 무기 진화 11종 완성
 
 ### 추가
