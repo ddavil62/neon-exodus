@@ -101,8 +101,8 @@ export default class LevelUpScene extends Phaser.Scene {
       return;
     }
 
-    const cardWidth = 96;
-    const cardSpacing = 12;
+    const cardWidth = 105;
+    const cardSpacing = 8;
     const totalWidth = choices.length * cardWidth + (choices.length - 1) * cardSpacing;
     const startX = centerX - totalWidth / 2 + cardWidth / 2;
 
@@ -475,8 +475,8 @@ export default class LevelUpScene extends Phaser.Scene {
    * @private
    */
   _createCard(x, y, choice) {
-    const cardW = 96;
-    const cardH = 160;
+    const cardW = 105;
+    const cardH = 175;
 
     // 카드 배경
     const bg = this.add.graphics();
@@ -499,8 +499,8 @@ export default class LevelUpScene extends Phaser.Scene {
       labelColor = UI_COLORS.neonCyan;
     }
 
-    const labelText = this.add.text(x, y - cardH / 2 + 14, choice.label || '', {
-      fontSize: '8px',
+    const labelText = this.add.text(x, y - cardH / 2 + 16, choice.label || '', {
+      fontSize: '9px',
       fontFamily: 'Galmuri11, monospace',
       color: labelColor,
     }).setOrigin(0.5).setDepth(3);
@@ -525,10 +525,10 @@ export default class LevelUpScene extends Phaser.Scene {
 
     // 이름
     const nameText = this.add.text(x, y - 5, choice.name || '', {
-      fontSize: '10px',
+      fontSize: '11px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
-      wordWrap: { width: cardW - 8 },
+      wordWrap: { width: cardW - 10 },
       align: 'center',
     }).setOrigin(0.5).setDepth(3);
     this._cardElements.push(nameText);
@@ -549,12 +549,12 @@ export default class LevelUpScene extends Phaser.Scene {
 
     // 효과 설명
     const descText = this.add.text(x, y + 45, choice.desc || '', {
-      fontSize: '7px',
+      fontSize: '9px',
       fontFamily: 'Galmuri11, monospace',
-      color: UI_COLORS.textSecondary,
-      wordWrap: { width: cardW - 12 },
+      color: UI_COLORS.textPrimary,
+      wordWrap: { width: cardW - 14 },
       align: 'center',
-    }).setOrigin(0.5, 0).setDepth(3);
+    }).setOrigin(0.5, 0).setDepth(3).setAlpha(0.85);
     this._cardElements.push(descText);
 
     // 터치 영역
