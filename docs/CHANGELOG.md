@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-03-11 -- 폰트 크기 가독성 개선
+
+### 변경
+- GameScene HUD 무기 레벨 라벨 fontSize 9px -> 10px (`js/scenes/GameScene.js` L.1508)
+- GameScene HUD 패시브 레벨 라벨 fontSize 8px -> 11px (`js/scenes/GameScene.js` L.1551)
+- UpgradeScene 탭 버튼 fontSize 9px -> 10px (`js/scenes/UpgradeScene.js` L.144)
+- UpgradeScene 잠금 힌트 fontSize 8px -> 10px (`js/scenes/UpgradeScene.js` L.247)
+- UpgradeScene 효과 설명 fontSize 9px -> 10px (`js/scenes/UpgradeScene.js` L.284)
+- CollectionScene 탭 버튼 fontSize 9px -> 10px (`js/scenes/CollectionScene.js` L.124)
+- CollectionScene 아이템 설명 fontSize 10px -> 11px (`js/scenes/CollectionScene.js` L.365)
+- CollectionScene CARD_H 56 -> 60 (`js/scenes/CollectionScene.js` L.39)
+- CharacterScene 고유 패시브 설명 fontSize 10px -> 11px (`js/scenes/CharacterScene.js` L.213)
+- CharacterScene 캐릭터 설명 fontSize 9px -> 11px (`js/scenes/CharacterScene.js` L.222)
+- CharacterScene CARD_H 80 -> 88 (`js/scenes/CharacterScene.js` L.16)
+- ResultScene 무기별 킬/DPS fontSize 9px -> 10px (`js/scenes/ResultScene.js` L.432)
+- ResultScene 데미지 수치 fontSize 9px -> 10px (`js/scenes/ResultScene.js` L.456)
+- StageSelectScene 스테이지 설명 fontSize 9px -> 11px (`js/scenes/StageSelectScene.js` L.153)
+- StageSelectScene CARD_H 85 -> 92 (`js/scenes/StageSelectScene.js` L.17)
+- AchievementScene 도전과제 설명 fontSize 9px -> 10px (`js/scenes/AchievementScene.js` L.144)
+- AchievementScene 진행도 텍스트 fontSize 9px -> 10px (`js/scenes/AchievementScene.js` L.164)
+- AchievementScene CARD_H 60 -> 64 (`js/scenes/AchievementScene.js` L.16)
+- LevelUpScene 카드 라벨 fontSize -> 10px (`js/scenes/LevelUpScene.js` L.503)
+- LevelUpScene 레벨 표시 fontSize -> 10px (`js/scenes/LevelUpScene.js` L.544)
+- LevelUpScene 효과 설명 fontSize -> 10px (`js/scenes/LevelUpScene.js` L.552)
+
+### 참고
+- 스펙: `.claude/specs/2026-03-11-font-readability.md`
+- 구현 리포트: `.claude/specs/2026-03-11-font-readability-report.md`
+- QA: `.claude/specs/2026-03-11-font-readability-qa.md`
+- QA 결과: 수용기준 20/20 PASS, 예외 시나리오 10/10 PASS, Playwright 11/11 전체 통과. 시각적 검증 스크린샷 8건 확인
+- 8개 씬 전체에서 10px 미만 fontSize 완전 제거 확인 (grep 검증)
+- LevelUpScene 기존 값이 스펙(9px)과 다르게 일부 8px/7px이었으나, 최종 10px 적용으로 스펙 요구사항 충족
+
 ## 2026-03-11 -- 시각적 인지성 개선 (Visual Clarity)
 
 ### 추가

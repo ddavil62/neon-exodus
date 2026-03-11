@@ -1505,7 +1505,7 @@ export default class GameScene extends Phaser.Scene {
         weaponY + weaponSize / 2 - 1,    // 하단 기준 1px 안쪽
         `${w.level}`,
         {
-          fontSize: '9px',
+          fontSize: '10px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.xpYellow,
         }
@@ -1548,7 +1548,7 @@ export default class GameScene extends Phaser.Scene {
         passiveY + passiveSize / 2 - 1,   // 하단 기준 1px 안쪽
         `${plevel}`,
         {
-          fontSize: '8px',
+          fontSize: '11px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.neonCyan,
         }

@@ -13,7 +13,7 @@ import { CHARACTERS, getCharacterById } from '../data/characters.js';
 // ── 레이아웃 상수 ──
 
 const CARD_W = 300;
-const CARD_H = 80;
+const CARD_H = 88;
 const CARD_GAP = 10;
 const LIST_START_Y = 100;
 
@@ -210,7 +210,7 @@ export default class CharacterScene extends Phaser.Scene {
 
       // 고유 패시브 설명
       const passiveText = this.add.text(x - CARD_W / 2 + 16, y, t(charData.passiveKey), {
-        fontSize: '10px',
+        fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
         wordWrap: { width: CARD_W - 32 },
@@ -219,7 +219,7 @@ export default class CharacterScene extends Phaser.Scene {
 
       // 설명
       const descText = this.add.text(x - CARD_W / 2 + 16, y + 18, t(charData.descKey), {
-        fontSize: '9px',
+        fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
         wordWrap: { width: CARD_W - 32 },

@@ -141,7 +141,7 @@ export default class UpgradeScene extends Phaser.Scene {
       }
 
       const label = this.add.text(tabX, tabY, t(tab.labelKey), {
-        fontSize: '9px',
+        fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: textColor,
       }).setOrigin(0.5);
@@ -244,7 +244,7 @@ export default class UpgradeScene extends Phaser.Scene {
 
       // 잠금 안내 텍스트
       const hintText = this.add.text(x, y + 18, t('upgrade.limitBreakHint'), {
-        fontSize: '8px',
+        fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
         wordWrap: { width: w - 12 },
@@ -282,7 +282,7 @@ export default class UpgradeScene extends Phaser.Scene {
 
     // 효과 설명
     const descText = this.add.text(x, y + 2, t(upgrade.descKey), {
-      fontSize: '9px',
+      fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
       color: '#BBBBBB',
       wordWrap: { width: w - 16 },

@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-11 (시각적 인지성 개선)
+> 최종 업데이트: 2026-03-11 (폰트 크기 가독성 개선)
 
 ## 프로젝트 개요
 
@@ -192,7 +192,8 @@ neon-exodus/
 │   ├── art-phase2.spec.js         # 아트 Phase 2 UI/배경/아이콘 테스트 (36개)
 │   ├── art-phase4-weapons.spec.js # 아트 Phase 4 무기 이펙트 테스트 (18개)
 │   ├── auto-move-item-weight.spec.js # AutoPilot 아이템 수집 가중치 테스트 (29개)
-│   └── visual-clarity.spec.js       # 시각적 인지성 개선 테스트 (29개)
+│   ├── visual-clarity.spec.js       # 시각적 인지성 개선 테스트 (29개)
+│   └── font-readability.spec.js     # 폰트 크기 가독성 개선 테스트 (11개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -1070,8 +1071,8 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 
 | 행 | 중심 Y | 슬롯 크기 | stride | 최대 수 | 레벨 색상 |
 |---|---|---|---|---|---|
-| 무기 행 | 560 (GAME_HEIGHT-80) | 32x32, 반경 5 | 60px | 6 | xpYellow (#FFDD00) |
-| 패시브 행 | 594 (GAME_HEIGHT-46) | 28x28, 반경 4 | 36px | 10 | neonCyan (#00FFFF) |
+| 무기 행 | 560 (GAME_HEIGHT-80) | 32x32, 반경 5 | 60px | 6 | xpYellow (#FFDD00), 10px |
+| 패시브 행 | 594 (GAME_HEIGHT-46) | 28x28, 반경 4 | 36px | 10 | neonCyan (#00FFFF), 11px |
 
 - 각 슬롯: 반투명 검정 둥근 사각형 배경(무기 55%, 패시브 50%) + 이모지 아이콘 + 우하단 레벨 숫자
 - 무기 아이콘: WEAPON_ICON_MAP 상수로 매핑 (10종 + fallback), 진화 무기는 `w._evolvedId`로 진화 아이콘 자동 교체
@@ -1103,6 +1104,28 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - 관련 파일: `js/scenes/GameScene.js`, `js/scenes/LevelUpScene.js`, `js/scenes/ResultScene.js`
 - 구현 일자: 2026-03-08
 
+#### UI 폰트 가이드라인
+360px 모바일 뷰포트 기준 최소 가독성 확보를 위해 모든 UI 텍스트는 10px 이상을 유지한다.
+
+| 용도 | 폰트 크기 | 적용 예시 |
+|---|---|---|
+| 라벨/캡션 | 10px | 탭 버튼, 레벨 표시, 진행도, 킬/DPS |
+| 본문/설명 | 10~11px | 카드 설명, 도전과제 설명, 스테이지 설명 |
+| 타이틀 | 12px 이상 | 씬 제목, 카드 이름 (변경 없음) |
+
+카드 높이(CARD_H) 현황:
+
+| 씬 | CARD_H | 비고 |
+|---|---|---|
+| CollectionScene | 60 | 아이템 설명 11px 2줄 수용 |
+| CharacterScene | 88 | 캐릭터 설명 11px 3줄 수용 |
+| StageSelectScene | 92 | 스테이지 설명 11px 2줄 + 하단 요소 여백 |
+| AchievementScene | 64 | 도전과제 설명 10px 2줄 수용 |
+
+- 관련 파일: `js/scenes/GameScene.js`, `js/scenes/UpgradeScene.js`, `js/scenes/CollectionScene.js`, `js/scenes/CharacterScene.js`, `js/scenes/ResultScene.js`, `js/scenes/StageSelectScene.js`, `js/scenes/AchievementScene.js`, `js/scenes/LevelUpScene.js`
+- 구현 일자: 2026-03-11
+- 스펙 문서: `.claude/specs/2026-03-11-font-readability.md`
+
 #### 무기별 결과 리포트
 게임 종료(사망/승리/포기) 시 ResultScene에서 런 동안 장착한 무기별 통계를 표시한다.
 
@@ -1116,7 +1139,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
   - 데미지 높은 순 정렬
 - **UI 렌더링**: ResultScene._renderWeaponReport()
   - 최대 6개 무기 표시 (`slice(0, 6)`)
-  - 각 무기: 이름 (11px), 킬 수 + DPS (9px), 데미지 비율 바 (높이 6px, NEON_CYAN), 데미지 수치
+  - 각 무기: 이름 (11px), 킬 수 + DPS (10px), 데미지 비율 바 (높이 6px, NEON_CYAN), 데미지 수치 (10px)
   - 행 높이: 28px
   - 등장 애니메이션 (알파 페이드, 딜레이 100ms씩)
 - **전달 경로**: _goToResult(), 일시정지 포기 (일반/엔들리스 모두) 3곳에서 weaponReport 전달
@@ -1274,6 +1297,19 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 피격 플래시: alpha 0.9, 150ms 후 정상 펄스 복귀 (Player.takeDamage)
 - [x] GameScene update에서 글로우 서클 위치 동기화, _cleanup에서 destroy + null
 - [x] Playwright 29/29 테스트 전체 통과
+
+### 폰트 크기 가독성 개선 -- 완료 (2026-03-11)
+- [x] GameScene: 무기 레벨 라벨 9px->10px, 패시브 레벨 라벨 8px->11px
+- [x] UpgradeScene: 탭 버튼 9px->10px, 잠금 힌트 8px->10px, 효과 설명 9px->10px
+- [x] CollectionScene: 탭 버튼 9px->10px, 아이템 설명 10px->11px, CARD_H 56->60
+- [x] CharacterScene: 캐릭터 설명 9px->11px, 고유 패시브 설명 10px->11px, CARD_H 80->88
+- [x] ResultScene: 무기별 킬/DPS 9px->10px, 데미지 수치 9px->10px
+- [x] StageSelectScene: 스테이지 설명 9px->11px, CARD_H 85->92
+- [x] AchievementScene: 도전과제 설명 9px->10px, 진행도 텍스트 9px->10px, CARD_H 60->64
+- [x] LevelUpScene: 카드 라벨 10px, 레벨 표시 10px, 효과 설명 10px
+- [x] 8개 씬 전체에서 10px 미만 fontSize 잔존 없음 (grep 검증)
+- [x] CARD_W 미변경, i18n 텍스트 미변경, 타이틀 폰트 미변경
+- [x] Playwright 11/11 테스트 전체 통과
 
 ### 무기별 결과 리포트 -- 완료 (2026-03-09)
 - [x] WeaponSystem.weaponStats Map으로 무기별 킬/데미지 추적

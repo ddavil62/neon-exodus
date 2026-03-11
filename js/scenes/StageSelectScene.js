@@ -14,7 +14,7 @@ import { STAGES, STAGE_ORDER } from '../data/stages.js';
 // ── 레이아웃 상수 ──
 
 const CARD_W = 300;
-const CARD_H = 85;
+const CARD_H = 92;
 const CARD_GAP = 10;
 const LIST_START_Y = 90;
 
@@ -150,7 +150,7 @@ export default class StageSelectScene extends Phaser.Scene {
 
       // 설명
       const descText = this.add.text(x - CARD_W / 2 + 20, y - 4, t(stageData.descKey), {
-        fontSize: '9px',
+        fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
         wordWrap: { width: CARD_W - 40 },

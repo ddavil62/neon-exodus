@@ -13,7 +13,7 @@ import { SaveManager } from '../managers/SaveManager.js';
 // ── 레이아웃 상수 ──
 
 const CARD_W = 320;
-const CARD_H = 60;
+const CARD_H = 64;
 const CARD_GAP = 6;
 const LIST_START_Y = 70;
 
@@ -141,7 +141,7 @@ export default class AchievementScene extends Phaser.Scene {
 
     // 설명
     const descText = this.add.text(x - CARD_W / 2 + 38, y, t(achievement.descKey), {
-      fontSize: '9px',
+      fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textSecondary,
       wordWrap: { width: CARD_W - 80 },
@@ -161,7 +161,7 @@ export default class AchievementScene extends Phaser.Scene {
       const progress = this._getProgress(achievement, stats);
       if (progress) {
         const progressText = this.add.text(x + CARD_W / 2 - 12, y, progress, {
-          fontSize: '9px',
+          fontSize: '10px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.textSecondary,
         }).setOrigin(1, 0.5);

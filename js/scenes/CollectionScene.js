@@ -36,7 +36,7 @@ const TABS = [
 // ── 레이아웃 상수 ──
 
 const CARD_W = 320;
-const CARD_H = 56;
+const CARD_H = 60;
 const CARD_GAP = 4;
 const LIST_START_Y = 110;
 
@@ -121,7 +121,7 @@ export default class CollectionScene extends Phaser.Scene {
       }
 
       const label = this.add.text(tabX, tabY, t(tab.labelKey), {
-        fontSize: '9px',
+        fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: textColor,
       }).setOrigin(0.5);
@@ -362,7 +362,7 @@ export default class CollectionScene extends Phaser.Scene {
     this._container.add(nameText);
 
     const descText = this.add.text(x - CARD_W / 2 + 12, y + 6, item.desc, {
-      fontSize: '10px',
+      fontSize: '11px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
       wordWrap: { width: CARD_W - 24 },

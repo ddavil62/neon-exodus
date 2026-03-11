@@ -429,7 +429,7 @@ export default class ResultScene extends Phaser.Scene {
       // 킬 수 / DPS 텍스트 (오른쪽)
       const infoStr = t('result.weaponKills', weapon.kills) + '  ' + t('result.weaponDps', weapon.dps);
       const infoText = this.add.text(centerX + 110, rowY, infoStr, {
-        fontSize: '9px',
+        fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
       }).setOrigin(1, 0).setAlpha(0);
@@ -453,7 +453,7 @@ export default class ResultScene extends Phaser.Scene {
         leftX + barWidth + 6, barY - 1,
         this._formatNumber(weapon.damage),
         {
-          fontSize: '9px',
+          fontSize: '10px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.neonOrange,
         }

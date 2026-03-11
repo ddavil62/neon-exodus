@@ -500,7 +500,7 @@ export default class LevelUpScene extends Phaser.Scene {
     }
 
     const labelText = this.add.text(x, y - cardH / 2 + 16, choice.label || '', {
-      fontSize: '9px',
+      fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
       color: labelColor,
     }).setOrigin(0.5).setDepth(3);
@@ -541,7 +541,7 @@ export default class LevelUpScene extends Phaser.Scene {
       lvText = t('levelup.nextLevel', choice.currentLv, choice.nextLv);
     }
     const lvLabel = this.add.text(x, y + 20, lvText, {
-      fontSize: '9px',
+      fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonGreen,
     }).setOrigin(0.5).setDepth(3);
@@ -549,7 +549,7 @@ export default class LevelUpScene extends Phaser.Scene {
 
     // 효과 설명
     const descText = this.add.text(x, y + 45, choice.desc || '', {
-      fontSize: '9px',
+      fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
       wordWrap: { width: cardW - 14 },
