@@ -434,10 +434,15 @@ export default class LevelUpScene extends Phaser.Scene {
       case 'defense':
         p.armor = totalEffect;
         break;
-      case 'maxHp':
+      case 'maxHp': {
+        const oldMaxHp = p.maxHp;
         p.maxHp = 100 + totalEffect; // 기본 HP + 패시브 보너스
+        // maxHp 증가분만큼 currentHp도 함께 상승 (체력이 줄어드는 느낌 방지)
+        const hpDiff = p.maxHp - oldMaxHp;
+        if (hpDiff > 0) p.currentHp = Math.min(p.currentHp + hpDiff, p.maxHp);
         if (p.currentHp > p.maxHp) p.currentHp = p.maxHp;
         break;
+      }
       case 'attackSpeed':
         p.cooldownMultiplier = 1 - totalEffect;
         break;

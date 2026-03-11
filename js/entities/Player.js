@@ -437,7 +437,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
           break;
         case 'maxHp': {
           const newMaxHp = PLAYER_BASE_HP + totalEffect;
+          // maxHp 증가분만큼 currentHp도 함께 상승 (체력이 줄어드는 느낌 방지)
+          const hpDiff = newMaxHp - this.maxHp;
           this.maxHp = newMaxHp;
+          if (hpDiff > 0) this.currentHp = Math.min(this.currentHp + hpDiff, this.maxHp);
           if (this.currentHp > this.maxHp) this.currentHp = this.maxHp;
           break;
         }
