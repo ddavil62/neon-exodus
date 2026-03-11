@@ -238,9 +238,9 @@ export default class ResultScene extends Phaser.Scene {
     // 메뉴 버튼 하단이 GAME_HEIGHT 이내에 들어오도록 상한 적용
     const contentEndY = rewardEndY + 20;
     const btnGap = 44;
-    // 메뉴 버튼 중심 = adBtnY + btnGap*2, 하단 = +20 → adBtnY <= GAME_HEIGHT - btnGap*2 - 20
-    const maxAdBtnY = GAME_HEIGHT - btnGap * 2 - 20;
-    const adBtnY = Math.min(Math.max(contentEndY, GAME_HEIGHT - 200), maxAdBtnY);
+    // 메뉴 버튼 중심 = adBtnY + btnGap*2, 하단 = +20 → adBtnY <= GAME_HEIGHT - btnGap*2 - 24
+    const maxAdBtnY = GAME_HEIGHT - btnGap * 2 - 24;
+    const adBtnY = Math.min(Math.max(contentEndY, GAME_HEIGHT - 180), maxAdBtnY);
     const retryBtnY = adBtnY + btnGap;
     const menuBtnY = retryBtnY + btnGap;
 
@@ -553,7 +553,7 @@ export default class ResultScene extends Phaser.Scene {
       repeat: 2,
     });
 
-    return bannerY + bannerHeight / 2 + 8;
+    return bannerY + bannerHeight / 2 + 20;
   }
 
   /**
