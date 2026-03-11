@@ -126,6 +126,17 @@ export default class GameScene extends Phaser.Scene {
     // ── 플레이어 (선택된 캐릭터 ID에 따른 스프라이트 적용) ──
     this.player = new Player(this, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, this.characterId);
 
+    // ── 플레이어 발밑 글로우 서클 ──
+    // depth 9: 플레이어(depth 10) 아래, 배경(depth 0~1) 위
+    this._playerGlowCircle = this.add.graphics();
+    this._playerGlowCircle.fillStyle(0x00FFFF, 1);
+    this._playerGlowCircle.fillCircle(0, 0, 22);
+    this._playerGlowCircle.setPosition(this.player.x, this.player.y);
+    this._playerGlowCircle.setDepth(9);
+    this._playerGlowCircle.setAlpha(0.35);
+    // 플레이어에 참조 주입 (피격 플래시 및 펄스 처리용)
+    this.player.glowCircle = this._playerGlowCircle;
+
     // ── 카메라 설정 ──
     this.cameras.main.startFollow(this.player, true, CAMERA_LERP, CAMERA_LERP);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -326,6 +337,12 @@ export default class GameScene extends Phaser.Scene {
       this.autoPilot.update(time, delta);
     }
     this.player.update(time, delta);
+
+    // 플레이어 글로우 서클 위치 동기화 (alpha는 Player.update에서 처리)
+    if (this._playerGlowCircle && this.player && this.player.active) {
+      this._playerGlowCircle.setPosition(this.player.x, this.player.y);
+    }
+
     this.weaponSystem.update(time, delta);
     this.weaponSystem.renderBeams();
     this.waveSystem.update(time, delta);
@@ -1726,6 +1743,12 @@ export default class GameScene extends Phaser.Scene {
     if (this.xpGemPool) this.xpGemPool.destroy();
     if (this.consumablePool) this.consumablePool.destroy();
     this._contactCooldowns.clear();
+
+    // 플레이어 글로우 서클 정리
+    if (this._playerGlowCircle) {
+      this._playerGlowCircle.destroy();
+      this._playerGlowCircle = null;
+    }
 
     // destroy 후 참조를 null로 설정하여 use-after-destroy 방지
     this.joystick = null;

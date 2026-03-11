@@ -55,9 +55,18 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.setScale(SPRITE_SCALE);
 
     // 충돌체 설정: 원형 (반경 4px)
-    // SPRITE_SCALE=1이면 offset = frameW/2 - radius (scale 나눗셈 없음)
-    const projBodyOff = Math.max(0, 12 / 2 - 4); // =2
+    // 텍스처 프레임의 실제 너비를 기반으로 body offset 계산
+    // (플레이스홀더 16x16이든, 에셋 12x12이든 올바르게 동작)
+    const frameW = this.frame ? this.frame.width : 16;
+    const projBodyOff = Math.max(0, frameW / 2 - 4);
     this.body.setCircle(4, projBodyOff, projBodyOff);
+
+    // 글로우 오버레이 (풀 생성 시 1회 생성, fire/deactivate 시 visible 토글)
+    this._glowGfx = scene.add.graphics();
+    this._glowGfx.fillStyle(0x39FF14, 0.35);
+    this._glowGfx.fillCircle(0, 0, 8);
+    this._glowGfx.setDepth(7);  // 투사체보다 한 단계 아래
+    this._glowGfx.setVisible(false);
 
     // 초기 비활성 상태
     this.setActive(false);
@@ -98,6 +107,12 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
 
     // 방향에 따른 회전 (라디안)
     this.setRotation(Math.atan2(dirY, dirX));
+
+    // 글로우 오버레이 활성화
+    if (this._glowGfx) {
+      this._glowGfx.setPosition(x, y);
+      this._glowGfx.setVisible(true);
+    }
   }
 
   /**
@@ -114,6 +129,11 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
     if (this.aliveTime > this.lifespan) {
       this._deactivate();
       return;
+    }
+
+    // 글로우 위치 동기화
+    if (this._glowGfx && this._glowGfx.visible) {
+      this._glowGfx.setPosition(this.x, this.y);
     }
 
     // 월드 바운드 밖 체크
@@ -150,6 +170,22 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
     if (this.body) {
       this.body.enable = false;
       this.body.setVelocity(0, 0);
+    }
+    // 글로우 오버레이 숨김
+    if (this._glowGfx) {
+      this._glowGfx.setVisible(false);
+    }
+  }
+
+  /**
+   * 씬 종료/오브젝트 파괴 시 글로우 그래픽 정리.
+   * ObjectPool.destroy() 호출 시 _glowGfx가 명시적으로 파괴되도록 한다.
+   * @private
+   */
+  preDestroy() {
+    if (this._glowGfx) {
+      this._glowGfx.destroy();
+      this._glowGfx = null;
     }
   }
 }

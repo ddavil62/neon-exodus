@@ -207,6 +207,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // depth 설정 (적 위에 표시)
     this.setDepth(10);
 
+    /** 발밑 글로우 서클 (GameScene에서 주입) */
+    this.glowCircle = null;
+
+    /** 글로우 펄스 시간 누적 (ms) */
+    this._glowPulseTime = 0;
+
+    /** 글로우 피격 플래시 진행 중 여부 */
+    this._glowFlashing = false;
+
     // ── 걷기 애니메이션 상태 ──
 
     /** 현재 이동 중 여부 (걷기/idle 전환 판단용) */
@@ -234,6 +243,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 4. 소모성 아이템 버프 타이머 갱신
     this._updateBuffs(delta);
+
+    // 5. 글로우 서클 펄스
+    this._updateGlowPulse(delta);
   }
 
   /**
@@ -257,6 +269,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(150, () => {
       if (this.active) this.clearTint();
     });
+
+    // 글로우 서클 피격 플래시
+    if (this.glowCircle) {
+      this._glowFlashing = true;
+      this.glowCircle.setAlpha(0.9);
+      this.scene.time.delayedCall(150, () => {
+        if (this.active) this._glowFlashing = false;
+      });
+    }
 
     // 사망 판정
     if (this.currentHp <= 0) {
@@ -441,6 +462,22 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // projectileRange, creditDropBonus: 외부 시스템에서 처리
       }
     }
+  }
+
+  // ── 글로우 서클 펄스 ──
+
+  /**
+   * 발밑 글로우 서클의 알파를 사인파로 진동시킨다.
+   * 피격 플래시 중에는 동작하지 않는다.
+   * @param {number} delta - 프레임 간격 (ms)
+   * @private
+   */
+  _updateGlowPulse(delta) {
+    if (!this.glowCircle || this._glowFlashing) return;
+    this._glowPulseTime += delta;
+    // 주기 1500ms, alpha 범위 0.25 ~ 0.40
+    const alpha = 0.325 + 0.075 * Math.sin(this._glowPulseTime / 1500 * Math.PI * 2);
+    this.glowCircle.setAlpha(alpha);
   }
 
   // ── 소모성 아이템 버프 ──

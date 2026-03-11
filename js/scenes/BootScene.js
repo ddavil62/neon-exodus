@@ -502,12 +502,14 @@ export default class BootScene extends Phaser.Scene {
       }
     }
 
-    // 투사체: 12x12 네온그린 원
+    // 투사체: 16x16 네온그린 글로우 + 코어
     if (!this.textures.exists('projectile')) {
       gfx.clear();
+      gfx.fillStyle(COLORS.NEON_GREEN, 0.4);
+      gfx.fillCircle(8, 8, 7);  // 외곽 글로우
       gfx.fillStyle(COLORS.NEON_GREEN, 1);
-      gfx.fillCircle(6, 6, 5);
-      gfx.generateTexture('projectile', 12, 12);
+      gfx.fillCircle(8, 8, 4);  // 코어
+      gfx.generateTexture('projectile', 16, 16);
     }
 
     // XP 보석: 크기별 다이아몬드 (벡터 에셋 크기 기준)
@@ -581,9 +583,8 @@ export default class BootScene extends Phaser.Scene {
       gfx.generateTexture('joystick_thumb', 64, 64);
     }
 
-    // ── Phase 4 이펙트 스프라이트 폴백 (10종) ──
+    // ── Phase 4 이펙트 스프라이트 폴백 (9종 + effect_projectile 별도 처리) ──
     const effectFallbacks = {
-      effect_projectile:    { color: 0x00FFFF, dim: 16, shape: 'circle' },
       effect_plasma_orb:   { color: 0xFF00FF, dim: 24, shape: 'circle' },
       effect_missile:      { color: 0xFF6600, dim: 20, shape: 'rect' },
       effect_explosion:    { color: 0xFF6600, dim: 64, shape: 'circle' },
@@ -609,6 +610,17 @@ export default class BootScene extends Phaser.Scene {
         gfx2.generateTexture(texKey, cfg.dim, cfg.dim);
       }
     }
+
+    // effect_projectile: 글로우 레이어 별도 처리 (16x16, 외곽 글로우 + 코어)
+    if (!this.textures.exists('effect_projectile')) {
+      gfx2.clear();
+      gfx2.fillStyle(0x39FF14, 0.4);
+      gfx2.fillCircle(8, 8, 7);  // 외곽 글로우
+      gfx2.fillStyle(0x39FF14, 1.0);
+      gfx2.fillCircle(8, 8, 4);  // 코어
+      gfx2.generateTexture('effect_projectile', 16, 16);
+    }
+
     gfx2.destroy();
 
     gfx.destroy();

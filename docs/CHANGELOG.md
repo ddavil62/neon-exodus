@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-11 -- 시각적 인지성 개선 (Visual Clarity)
+
+### 추가
+- 적 탄환 3레이어 글로우 (`js/entities/EnemyTypes.js` _spawnEnemyProjectile): 기존 단색 주황(0xFF6600 r4) -> 외곽(0xFF4400 r8 a0.3) + 중간(0xFF5500 r6 a0.7) + 코어(0xFF2200 r5 a1.0)
+- 적 탄환 트레일 잔상 (`js/entities/EnemyTypes.js`): 67ms 간격 Graphics 생성(r3 0xFF4400 a0.4), 120ms tween fadeout 후 destroy. trailTimer 필드 추가
+- 플레이어 탄환 글로우 오버레이 (`js/entities/Projectile.js`): _glowGfx Graphics(0x39FF14 a0.35 r8, depth 7). 풀 인스턴스별 1개 생성, fire/update/_deactivate에서 visible 토글 + 위치 동기화
+- Projectile.preDestroy() (`js/entities/Projectile.js`): 씬 종료 시 _glowGfx 명시적 destroy + null 처리
+- 플레이어 발밑 글로우 서클 (`js/scenes/GameScene.js`): 0x00FFFF r22, depth 9, alpha 0.35. create에서 생성 + player.glowCircle 참조 주입, update에서 위치 동기화, _cleanup에서 destroy
+- Player 글로우 펄스 (`js/entities/Player.js`): _updateGlowPulse() sin파 alpha 0.25~0.40, 주기 1500ms
+- Player 피격 글로우 플래시 (`js/entities/Player.js`): takeDamage에서 alpha 0.9, 150ms 후 _glowFlashing=false로 정상 펄스 복귀
+- Player 글로우 필드 3개 (`js/entities/Player.js`): glowCircle, _glowPulseTime, _glowFlashing
+- Playwright 테스트 (`tests/visual-clarity.spec.js`): 29개 테스트
+
+### 변경
+- projectile 플레이스홀더 텍스처 (`js/scenes/BootScene.js`): 12x12 -> 16x16 확대, 외곽 글로우(NEON_GREEN r7 a0.4) + 코어(r4 a1.0) 2레이어
+- effect_projectile 텍스처 (`js/scenes/BootScene.js`): effectFallbacks 루프에서 분리, 별도 글로우 레이어 처리 (16x16)
+- Projectile body offset (`js/entities/Projectile.js`): 하드코딩(offset=2) -> `Math.max(0, this.frame.width / 2 - 4)` 동적 계산. 16x16=offset 4, 12x12=offset 2
+
+### 참고
+- 스펙: `.claude/specs/2026-03-11-visual-clarity.md`
+- 구현 리포트: `.claude/specs/2026-03-11-visual-clarity-report.md`
+- 수정 리포트: `.claude/specs/2026-03-11-visual-clarity-fix-report.md`
+- QA: `.claude/specs/2026-03-11-visual-clarity-qa.md`
+- QA 결과: 수용기준 13/13 PASS, 예외 시나리오 10/10 PASS, Playwright 29/29 전체 통과. 시각적 검증 스크린샷 4건 확인
+- QA 이슈 2건 수정 완료: ISSUE-1(body offset 동적 계산), ISSUE-2(preDestroy 추가)
+
 ## 2026-03-11 -- 진화 조합표 UI + 인게임 힌트
 
 ### 추가

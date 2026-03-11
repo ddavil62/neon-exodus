@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-11 (진화 조합표 UI + 인게임 힌트)
+> 최종 업데이트: 2026-03-11 (시각적 인지성 개선)
 
 ## 프로젝트 개요
 
@@ -64,10 +64,10 @@ neon-exodus/
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (13개, 진행률)
 │   │   └── CollectionScene.js     # 도감 화면 (5탭: 무기/패시브/적/도전과제/진화)
 │   ├── entities/
-│   │   ├── Player.js              # 플레이어 (이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드)
+│   │   ├── Player.js              # 플레이어 (이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드, 발밑 글로우 서클 펄스/피격 플래시)
 │   │   ├── Enemy.js               # 적 기본 클래스 (초기화, 이동, 데미지, 사망)
-│   │   ├── EnemyTypes.js          # 적 유형별 AI 15종
-│   │   ├── Projectile.js          # 투사체 (발사, 피격, 관통)
+│   │   ├── EnemyTypes.js          # 적 유형별 AI 15종, 적 탄환 3레이어 글로우 + 트레일
+│   │   ├── Projectile.js          # 투사체 (발사, 피격, 관통, 글로우 오버레이)
 │   │   ├── Consumable.js          # 소모성 아이템 (6종, ObjectPool, 10초 수명, 직접 밟아 수집)
 │   │   ├── WeaponDropItem.js      # 스테이지 무기 드롭 아이템 (ObjectPool, 영구/비영구 소멸, 깜빡임)
 │   │   └── XPGem.js               # XP 보석 (소/중/대, 자석 흡수, 소멸)
@@ -124,7 +124,7 @@ neon-exodus/
 │       ├── hidden.png             # hidden idle (48x48, 퍼플 #AA00FF)
 │       ├── hidden_walk.png        # hidden 걷기 스프라이트시트 (240x192)
 │       ├── walk_frames/           # 걷기 개별 프레임 PNG (캐릭터별 서브폴더, 디버깅용)
-│       ├── projectile.png         # 투사체 정적 이미지 (12x12)
+│       ├── projectile.png         # 투사체 정적 이미지 (12x12, effect_projectile 16x16 폴백용)
 │       ├── enemies/               # 잡몹 10종 정적 이미지
 │       │   ├── nano_drone.png     # 32x32
 │       │   ├── scout_bot.png      # 32x32
@@ -191,7 +191,8 @@ neon-exodus/
 │   ├── char-sprites.spec.js       # 캐릭터별 고유 스프라이트 테스트 (46개)
 │   ├── art-phase2.spec.js         # 아트 Phase 2 UI/배경/아이콘 테스트 (36개)
 │   ├── art-phase4-weapons.spec.js # 아트 Phase 4 무기 이펙트 테스트 (18개)
-│   └── auto-move-item-weight.spec.js # AutoPilot 아이템 수집 가중치 테스트 (29개)
+│   ├── auto-move-item-weight.spec.js # AutoPilot 아이템 수집 가중치 테스트 (29개)
+│   └── visual-clarity.spec.js       # 시각적 인지성 개선 테스트 (29개)
 └── docs/
     ├── PROJECT.md                 # 이 문서
     ├── CHANGELOG.md               # 변경 이력
@@ -220,9 +221,9 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 다국어 | `js/i18n.js` | ko/en 375키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
 | 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 무기 드롭 스케줄, 난이도 배수 |
-| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 소모성 아이템 풀/수집/효과, 무기 드롭 스케줄 |
-| 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리 |
-| 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭 |
+| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 소모성 아이템 풀/수집/효과, 무기 드롭 스케줄, 플레이어 글로우 서클 생성/동기화/파괴 |
+| 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
+| 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 드론 AI |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
 | 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡 |
@@ -253,7 +254,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | Enemy (잡몹 대형 48px) | 48x48 | circle(14, offset=10) | 900ms |
 | Enemy (미니보스) | 80x80 | circle(18, offset=22) | 700ms |
 | Enemy (보스) | 128x128 | circle(26, offset=38) | 600ms |
-| Projectile | 12x12 | circle(4, offset=2) | - |
+| Projectile | 16x16 (effect_projectile 우선, 12x12 projectile.png 폴백) | circle(4, offset=동적: frameW/2-4) | - |
 | XP Gem (small) | 12x12 | circle(3, offset=3) | - |
 | XP Gem (medium) | 20x20 | circle(5, offset=5) | - |
 | XP Gem (large) | 28x28 | circle(7, offset=7) | - |
@@ -722,6 +723,56 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 
 - 관련 파일: `js/data/enemies.js`, `js/entities/Enemy.js`, `js/entities/EnemyTypes.js`, `js/scenes/GameScene.js`
 - 구현 일자: 2026-03-08 (보스/미니보스 등장 연출 및 피격 복원 로직: 2026-03-09)
+
+### 시각적 인지성 (Visual Clarity)
+
+적 탄환, 플레이어 탄환, 플레이어 캐릭터 3종의 시각적 인지성을 네온 글로우 이펙트로 강화한다.
+
+#### 적 탄환 시각 강화 (EnemyTypes.js _spawnEnemyProjectile)
+
+기존 단색 주황(0xFF6600 r4) 원에서 3레이어 글로우 + 트레일 잔상으로 변경.
+
+| 레이어 | 색상 | 반경 | Alpha |
+|---|---|---|---|
+| 외곽 글로우 | 0xFF4400 | 8px | 0.3 |
+| 중간 | 0xFF5500 | 6px | 0.7 |
+| 코어 | 0xFF2200 | 5px | 1.0 |
+
+- 트레일 잔상: 67ms 간격, r3 0xFF4400 a0.4, 120ms tween fadeout 후 destroy
+- 탄환 depth: 4, 트레일 depth: 3
+- Graphics 생성/tween/destroy 방식 (적 탄환 수가 적어 성능 영향 최소)
+
+#### 플레이어 탄환 글로우 (Projectile.js + BootScene.js)
+
+- **projectile 텍스처**: 12x12 -> 16x16 확대, 중심(8,8), 외곽 글로우(NEON_GREEN r7 a0.4) + 코어(NEON_GREEN r4 a1.0)
+- **effect_projectile 텍스처**: effectFallbacks 루프에서 분리하여 별도 처리, 동일 글로우 레이어 적용 (16x16)
+- **_glowGfx 오버레이**: Projectile 생성자에서 풀 인스턴스별 1개 생성 (0x39FF14 a0.35 r8, depth 7). fire() 시 visible=true + 위치 설정, update()에서 위치 동기화, _deactivate() 시 visible=false
+- **body offset 동적 계산**: `frameW = this.frame ? this.frame.width : 16`, `projBodyOff = Math.max(0, frameW / 2 - 4)`. 16x16이면 offset=4, 12x12이면 offset=2
+- **preDestroy()**: 씬 종료/풀 파괴 시 _glowGfx 명시적 destroy + null 처리
+
+#### 플레이어 캐릭터 발밑 글로우 서클 (GameScene.js + Player.js)
+
+| 속성 | 값 |
+|---|---|
+| 색상 | 0x00FFFF (시안) |
+| 반경 | 22px |
+| depth | 9 (플레이어 depth 10 아래) |
+| 초기 alpha | 0.35 |
+| 펄스 범위 | 0.25 ~ 0.40 |
+| 펄스 주기 | 1500ms (sin파) |
+| 펄스 공식 | `0.325 + 0.075 * sin(t / 1500 * 2PI)` |
+| 피격 플래시 alpha | 0.9 |
+| 피격 플래시 지속 | 150ms |
+
+- GameScene.create()에서 단일 Graphics 인스턴스 생성 후 player.glowCircle에 참조 주입
+- GameScene.update()에서 매 프레임 위치 동기화
+- Player.update()에서 _updateGlowPulse() 호출 (피격 플래시 중에는 펄스 비활성)
+- Player.takeDamage()에서 _glowFlashing=true, alpha 0.9 설정, 150ms 후 _glowFlashing=false
+- GameScene._cleanup()에서 destroy + null 처리
+
+- 관련 파일: `js/entities/EnemyTypes.js`, `js/scenes/BootScene.js`, `js/entities/Projectile.js`, `js/entities/Player.js`, `js/scenes/GameScene.js`
+- 구현 일자: 2026-03-11
+- 스펙 문서: `.claude/specs/2026-03-11-visual-clarity.md`
 
 ### 스폰 시스템
 
@@ -1209,6 +1260,20 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 패시브 미보유(Lv0) 시 힌트 미표시 (passiveLv > 0 조건)
 - [x] i18n 5개 키 ko/en 추가 (collection.evolutions, collection.evoRecipe, collection.discovered, collection.notDiscovered, hint.evolutionReady)
 - [x] Playwright 34/34 테스트 전체 통과
+
+### 시각적 인지성 개선 (Visual Clarity) -- 완료 (2026-03-11)
+- [x] 적 탄환 3레이어 글로우: 외곽(0xFF4400 r8 a0.3) + 중간(0xFF5500 r6 a0.7) + 코어(0xFF2200 r5 a1.0)
+- [x] 적 탄환 트레일 잔상: 67ms 간격, r3 0xFF4400 a0.4, 120ms fadeout, Graphics 생성/tween/destroy 방식
+- [x] projectile 텍스처 12x12 -> 16x16 확대, 외곽 글로우(NEON_GREEN r7 a0.4) + 코어(r4 a1.0) 2레이어
+- [x] effect_projectile 텍스처: effectFallbacks 루프에서 분리, 동일 글로우 레이어(16x16) 별도 생성
+- [x] Projectile._glowGfx 오버레이: 풀 인스턴스별 1개(0x39FF14 a0.35 r8, depth 7), fire/update/_deactivate에서 visible 토글 + 위치 동기화
+- [x] Projectile body offset 동적 계산: `Math.max(0, frameW / 2 - 4)` (this.frame.width 기반, 16x16=offset 4, 12x12=offset 2)
+- [x] Projectile.preDestroy(): 씬 종료 시 _glowGfx 명시적 destroy + null
+- [x] 플레이어 발밑 글로우 서클: 0x00FFFF r22, depth 9, alpha 0.35 (GameScene에서 생성, player.glowCircle에 참조 주입)
+- [x] 글로우 펄스: sin파 alpha 0.25~0.40, 주기 1500ms (Player._updateGlowPulse)
+- [x] 피격 플래시: alpha 0.9, 150ms 후 정상 펄스 복귀 (Player.takeDamage)
+- [x] GameScene update에서 글로우 서클 위치 동기화, _cleanup에서 destroy + null
+- [x] Playwright 29/29 테스트 전체 통과
 
 ### 무기별 결과 리포트 -- 완료 (2026-03-09)
 - [x] WeaponSystem.weaponStats Map으로 무기별 킬/데미지 추적

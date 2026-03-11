@@ -734,13 +734,20 @@ export const ENEMY_BEHAVIORS = {
  */
 function _spawnEnemyProjectile(scene, x, y, dirX, dirY, speed, damage) {
   const gfx = scene.add.graphics();
-  gfx.fillStyle(0xFF6600, 1);
-  gfx.fillCircle(0, 0, 4);
+  // 외곽 글로우 링 (반경 8px, 30% alpha)
+  gfx.fillStyle(0xFF4400, 0.3);
+  gfx.fillCircle(0, 0, 8);
+  // 중간 레이어 (반경 6px, 70% alpha)
+  gfx.fillStyle(0xFF5500, 0.7);
+  gfx.fillCircle(0, 0, 6);
+  // 코어 (반경 5px, 100% alpha)
+  gfx.fillStyle(0xFF2200, 1);
+  gfx.fillCircle(0, 0, 5);
   gfx.setPosition(x, y);
   gfx.setDepth(4);
 
-  // 물리 바디 없이 수동 이동
-  const proj = { x, y, dirX, dirY, speed, damage, gfx, alive: true, timer: 0 };
+  // 물리 바디 없이 수동 이동 (trailTimer: 트레일 잔상 생성 간격 추적용)
+  const proj = { x, y, dirX, dirY, speed, damage, gfx, alive: true, timer: 0, trailTimer: 0 };
 
   // 업데이트 루프에 추가
   const updateEvent = scene.time.addEvent({
@@ -756,6 +763,23 @@ function _spawnEnemyProjectile(scene, x, y, dirX, dirY, speed, damage) {
       proj.x += proj.dirX * proj.speed * (16 / 1000);
       proj.y += proj.dirY * proj.speed * (16 / 1000);
       proj.gfx.setPosition(proj.x, proj.y);
+
+      // 트레일 잔상 생성 (67ms마다)
+      proj.trailTimer += 16;
+      if (proj.trailTimer >= 67) {
+        proj.trailTimer = 0;
+        const trail = scene.add.graphics();
+        trail.fillStyle(0xFF4400, 0.4);
+        trail.fillCircle(0, 0, 3);
+        trail.setPosition(proj.x, proj.y);
+        trail.setDepth(3);
+        scene.tweens.add({
+          targets: trail,
+          alpha: 0,
+          duration: 120,
+          onComplete: () => trail.destroy(),
+        });
+      }
 
       // 수명 3초
       if (proj.timer > 3000) {
