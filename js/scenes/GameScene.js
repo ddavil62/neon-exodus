@@ -1648,12 +1648,20 @@ export default class GameScene extends Phaser.Scene {
 
     // ── 무기 행 (Y = GAME_HEIGHT - 80 = 560) ──
     const weaponY = GAME_HEIGHT - 80;   // 중심 Y
-    const weaponSize = 32;              // 슬롯 크기 (px)
     const weaponRadius = 5;             // 둥근 모서리 반경
-    const weaponStride = 60;            // 슬롯 간격 (px)
-    const weaponStartX = 30;            // 첫 슬롯 중심 X
 
     const weapons = this.weaponSystem ? this.weaponSystem.weapons : [];
+    const wCount = weapons.length || 1;
+
+    // 무기 수에 따라 슬롯 크기·간격을 동적으로 축소 (최대 10개까지 360px 화면에 수용)
+    const weaponSize = wCount > 7 ? 26 : 32;
+    const maxStride = wCount > 7 ? 34 : 60;
+    const totalWidth = GAME_WIDTH - 20;          // 좌우 여백 10px
+    const weaponStride = Math.min(maxStride, totalWidth / wCount);
+    const weaponStartX = 10 + weaponStride / 2;  // 좌측 여백 + 반슬롯
+    const iconSize = wCount > 7 ? '14px' : '18px';
+    const lvlSize = wCount > 7 ? '8px' : '10px';
+
     weapons.forEach((w, idx) => {
       const cx = weaponStartX + idx * weaponStride;
 
@@ -1670,7 +1678,7 @@ export default class GameScene extends Phaser.Scene {
       const iconKey = w._evolvedId || w.id;
       const emoji = WEAPON_ICON_MAP[iconKey] || WEAPON_ICON_FALLBACK;
       const icon = this.add.text(cx, weaponY, emoji, {
-        fontSize: '18px',
+        fontSize: iconSize,
         fontFamily: 'Galmuri11, monospace',
       }).setOrigin(0.5).setScrollFactor(0).setDepth(106);
 
@@ -1680,7 +1688,7 @@ export default class GameScene extends Phaser.Scene {
         weaponY + weaponSize / 2 - 1,    // 하단 기준 1px 안쪽
         `${w.level}`,
         {
-          fontSize: '10px',
+          fontSize: lvlSize,
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.xpYellow,
         }

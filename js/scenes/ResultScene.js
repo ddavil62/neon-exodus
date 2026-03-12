@@ -418,12 +418,13 @@ export default class ResultScene extends Phaser.Scene {
     // 총 데미지 합산 (비율 바 계산용)
     const maxDamage = Math.max(1, ...this.weaponReport.map(w => w.damage));
 
-    // 최대 6개까지만 표시 (화면 공간 제한)
-    const maxDisplay = 6;
+    // 무기 수에 따라 표시 개수·행 높이를 동적으로 조절 (최대 10개 수용)
+    const totalWeapons = this.weaponReport.length;
+    const maxDisplay = Math.min(totalWeapons, 10);
     const displayWeapons = this.weaponReport.slice(0, maxDisplay);
 
     let curY = titleY + 18;
-    const rowHeight = 28;
+    const rowHeight = totalWeapons > 6 ? 22 : 28;
     const barWidth = 160;
     const barHeight = 6;
     const leftX = centerX - 110;
