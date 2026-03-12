@@ -71,15 +71,16 @@ async function main() {
     console.log(`✅ 업로드 완료 — versionCode: ${versionCode}`);
 
     // ── 3. 내부 테스트 트랙에 출시 ──
+    // Draft 앱에서는 'completed' 상태 불가 → 먼저 'completed' 시도, 실패 시 'draft'로 폴백
     console.log('🚀 내부 테스트 트랙에 출시 중...');
-    await api.edits.tracks.update({
+    const releasePayload = (status) => ({
       packageName: PACKAGE_NAME,
       editId,
       track: 'internal',
       requestBody: {
         track: 'internal',
         releases: [{
-          status: 'completed',
+          status,
           versionCodes: [String(versionCode)],
           releaseNotes: [
             { language: 'ko-KR', text: `빌드 v${versionCode}` },
@@ -89,10 +90,28 @@ async function main() {
       },
     });
 
+    let releaseStatus = 'completed';
+    try {
+      await api.edits.tracks.update(releasePayload('completed'));
+    } catch (trackErr) {
+      // Draft 앱 에러 시 draft 상태로 폴백
+      if (trackErr.message?.includes('draft app')) {
+        console.log('⚠️ Draft 앱 감지 — draft 상태로 배포합니다.');
+        releaseStatus = 'draft';
+        await api.edits.tracks.update(releasePayload('draft'));
+      } else {
+        throw trackErr;
+      }
+    }
+
     // ── 4. 커밋 ──
     await api.edits.commit({ packageName: PACKAGE_NAME, editId });
-    console.log(`\n🎉 내부 테스트 배포 완료! (versionCode: ${versionCode})`);
-    console.log('   테스터 기기에서 Play Store 업데이트 가능.');
+    console.log(`\n🎉 내부 테스트 배포 완료! (versionCode: ${versionCode}, status: ${releaseStatus})`);
+    if (releaseStatus === 'draft') {
+      console.log('   ⚠️ Draft 앱이므로 Play Console에서 수동으로 출시 검토가 필요합니다.');
+    } else {
+      console.log('   테스터 기기에서 Play Store 업데이트 가능.');
+    }
 
   } catch (err) {
     console.error('❌ 배포 실패:', err.message);
