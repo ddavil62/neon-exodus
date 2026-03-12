@@ -92,11 +92,6 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Add Play Billing Library dependency
-        working-directory: android/app
-        run: |
-          sed -i '/dependencies {/a\    implementation "com.android.billingclient:billing:7.1.1"' build.gradle
-
       - name: Configure release signing & versionCode
         working-directory: android/app
         run: |

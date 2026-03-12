@@ -166,8 +166,8 @@ export default class MenuScene extends Phaser.Scene {
         msg.destroy();
         this.scene.restart();
       });
-    } else {
-      // 실패 메시지 표시
+    } else if (result.error !== 'cancelled') {
+      // 실패 메시지 표시 (사용자 취소 시에는 표시하지 않음)
       const msg = this.add.text(
         GAME_WIDTH / 2, GAME_HEIGHT / 2,
         t('autoHunt.purchaseFail'),

@@ -1,6 +1,6 @@
 /**
  * @fileoverview IAPManager - Google Play 인앱결제(IAP) 관리자.
- * @nicegram/capacitor-iap 또는 기본 Capacitor 인앱결제 플러그인을 래핑한다.
+ * @capgo/native-purchases 플러그인을 통해 실제 Google Play Billing을 처리한다.
  * 웹(브라우저/Playwright) 환경에서는 Mock 모드로 동작하여 오류 없이 실행된다.
  * 구매 상태는 SaveManager를 통해 로컬스토리지에도 이중 저장한다.
  */
@@ -12,7 +12,7 @@ import { SaveManager } from './SaveManager.js';
 
 /**
  * Google Play 인앱결제 생명주기 관리자.
- * 네이티브(Capacitor) 환경에서는 실제 IAP 플러그인을 호출하고,
+ * 네이티브(Capacitor) 환경에서는 @capgo/native-purchases 플러그인을 호출하고,
  * 웹 환경에서는 Mock 모드로 즉시 resolve한다.
  * 싱글톤 인스턴스로 export된다.
  */
@@ -25,7 +25,7 @@ class IAPManagerClass {
     /** @type {boolean} Mock 모드 여부 (웹 환경이면 true) */
     this.isMock = true;
 
-    /** @type {object|null} InAppPurchase 플러그인 참조 */
+    /** @type {object|null} NativePurchases 플러그인 참조 */
     this._iap = null;
 
     /** @type {boolean} 구매 진행 중 여부 (중복 호출 차단용) */
@@ -33,6 +33,9 @@ class IAPManagerClass {
 
     /** @type {boolean} 초기화 완료 여부 */
     this._initialized = false;
+
+    /** @type {object|null} 스토어에서 로드한 상품 정보 */
+    this._productInfo = null;
 
     // 플랫폼 감지: Capacitor 전역 객체가 있고 네이티브 플랫폼이면 실제 모드
     try {
@@ -52,6 +55,8 @@ class IAPManagerClass {
 
   /**
    * IAP 플러그인을 초기화한다.
+   * NativePurchases 플러그인을 전역 Capacitor 브리지에서 가져오고,
+   * isBillingSupported 확인 후 상품 정보를 프리로드한다.
    * Mock 모드에서는 즉시 resolve한다.
    * @returns {Promise<void>}
    */
@@ -65,15 +70,35 @@ class IAPManagerClass {
     }
 
     try {
-      // Capacitor 전역 플러그인 브리지에서 InAppPurchase 참조 (번들러 없이 동작)
-      const InAppPurchase = window.Capacitor?.Plugins?.InAppPurchase;
-      if (!InAppPurchase) {
-        throw new Error('InAppPurchase 플러그인이 Capacitor에 등록되지 않음');
+      // Capacitor 전역 플러그인 브리지에서 NativePurchases 참조 (번들러 없이 동작)
+      const NativePurchases = window.Capacitor?.Plugins?.NativePurchases;
+      if (!NativePurchases) {
+        throw new Error('NativePurchases 플러그인이 Capacitor에 등록되지 않음');
       }
-      this._iap = InAppPurchase;
+      this._iap = NativePurchases;
+
+      // Google Play Billing 지원 여부 확인
+      const { isBillingSupported } = await this._iap.isBillingSupported();
+      if (!isBillingSupported) {
+        throw new Error('Google Play Billing 미지원 기기');
+      }
+
+      // 상품 정보 프리로드
+      try {
+        const { product } = await this._iap.getProduct({
+          productIdentifier: IAP_PRODUCTS.autoHunt,
+          productType: 'inapp',
+        });
+        this._productInfo = product; // { title, priceString, price, ... }
+        console.log('[IAPManager] 상품 정보 로드 완료:', this._productInfo?.priceString);
+      } catch {
+        // 상품 로드 실패 시 무시 (구매 시도는 허용)
+        console.warn('[IAPManager] 상품 정보 프리로드 실패 (구매는 계속 가능)');
+        this._productInfo = null;
+      }
 
       this._initialized = true;
-      console.log('[IAPManager] IAP 초기화 완료');
+      console.log('[IAPManager] IAP 초기화 완료 (NativePurchases)');
     } catch (e) {
       // 초기화 실패 시 Mock 모드로 폴백
       console.warn('[IAPManager] IAP 초기화 실패, Mock 모드로 폴백:', e.message);
@@ -88,6 +113,7 @@ class IAPManagerClass {
    * 영구 상품을 구매한다.
    * Mock 모드에서는 즉시 `{ purchased: true }` resolve한다.
    * 실패 시 reject하지 않고 `{ purchased: false, error }` resolve한다.
+   * 사용자 취소 시 `{ purchased: false, error: 'cancelled' }` 반환한다.
    * @param {string} productId - Google Play 상품 ID
    * @returns {Promise<{purchased: boolean, error?: string}>} 구매 결과
    */
@@ -106,19 +132,24 @@ class IAPManagerClass {
     }
 
     try {
-      // Google Play Billing 구매 요청
-      const result = await this._iap.purchase({ productId, productType: 'inapp' });
+      // Google Play Billing 구매 요청 (@capgo/native-purchases API)
+      const result = await this._iap.purchaseProduct({
+        productIdentifier: productId,
+        productType: 'inapp',
+        quantity: 1,
+      });
       console.log('[IAPManager] 구매 완료:', result);
 
-      // 구매 확인(acknowledge) — 소모형이 아닌 영구 상품
-      if (result && result.purchaseToken) {
-        await this._iap.acknowledgePurchase({
-          purchaseToken: result.purchaseToken,
-        });
-      }
-
+      // acknowledgePurchase 별도 호출 불필요 — 플러그인이 내부 처리
       return { purchased: true };
     } catch (e) {
+      // 취소 감지: 에러 메시지에 'cancel' 포함 여부 확인
+      const isCancel = /cancel/i.test(e.message || '');
+      if (isCancel) {
+        console.log('[IAPManager] 사용자가 구매를 취소함');
+        return { purchased: false, error: 'cancelled' };
+      }
+
       console.warn('[IAPManager] 구매 실패:', e.message);
       return { purchased: false, error: e.message };
     } finally {
@@ -141,13 +172,15 @@ class IAPManagerClass {
     }
 
     try {
-      const result = await this._iap.getPurchases({ productType: 'inapp' });
-      const purchases = result?.purchases || [];
+      const { purchases } = await this._iap.getPurchases({
+        productType: 'inapp',
+      });
 
       let autoHuntRestored = false;
 
-      for (const purchase of purchases) {
-        if (purchase.productId === IAP_PRODUCTS.autoHunt) {
+      for (const purchase of (purchases || [])) {
+        // @capgo/native-purchases는 productIdentifier 필드를 사용
+        if (purchase.productIdentifier === IAP_PRODUCTS.autoHunt) {
           autoHuntRestored = true;
         }
       }
@@ -164,6 +197,17 @@ class IAPManagerClass {
       console.warn('[IAPManager] 복원 실패:', e.message);
       return { restored: false, error: e.message };
     }
+  }
+
+  // ── 가격 정보 ──
+
+  /**
+   * 스토어에서 가져온 현지화 가격 문자열을 반환한다.
+   * 상품 정보가 없으면 폴백 문자열을 반환한다.
+   * @returns {string} 현지화 가격 (예: "₩1,100", "$0.99")
+   */
+  getLocalizedPrice() {
+    return this._productInfo?.priceString ?? '$ 0.99';
   }
 
   // ── 해금 상태 확인 ──

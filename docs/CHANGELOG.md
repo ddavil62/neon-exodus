@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-03-12 -- IAP 실제 Google Play Billing 연동
+
+### 변경
+- `IAPManager.js` 플러그인 교체: `window.Capacitor.Plugins.InAppPurchase` (미등록 상태) -> `@capgo/native-purchases` v8 (`window.Capacitor.Plugins.NativePurchases` 전역 참조)
+- `IAPManager.js` initialize(): `isBillingSupported()` 확인 + `getProduct()` 상품 정보 프리로드 추가
+- `IAPManager.js` purchase(): `purchaseProduct({ productIdentifier, productType: 'inapp', quantity: 1 })` API로 전환. 실제 Google Play 결제 다이얼로그 표시
+- `IAPManager.js` 취소 감지: `/cancel/i.test(e.message)` -> `{ purchased: false, error: 'cancelled' }` 반환
+- `IAPManager.js` restorePurchases(): `getPurchases({ productType: 'inapp' })` -> `purchase.productIdentifier` 비교
+- `MenuScene.js` _showAutoHuntPurchase(): `} else {` -> `} else if (result.error !== 'cancelled') {` (취소 시 실패 메시지 미표시)
+- `build-apk.yml`: "Add Play Billing Library dependency" 단계 완전 제거 (플러그인이 Billing Library 7.x 내장)
+
+### 추가
+- `IAPManager.js` getLocalizedPrice(): 프리로드된 상품의 현지화 가격 문자열 반환, 폴백 `'$ 0.99'`
+- `IAPManager.js` `_productInfo` 필드: 스토어 상품 정보 캐싱
+- `package.json` dependencies: `@capgo/native-purchases: ^8.2.2`
+- `tests/iap-real-billing.spec.js`: IAP Billing 연동 Playwright 테스트 16개
+
+### 참고
+- 스펙: `.claude/specs/2026-03-12-iap-real-billing.md`
+- 구현 리포트: `.claude/specs/2026-03-12-iap-real-billing-report.md`
+- QA: `.claude/specs/2026-03-12-iap-real-billing-qa.md`
+- QA 결과: 수용기준 7/7 충족 (네이티브 결제 다이얼로그는 N/A, 코드 구조 검증), Playwright 16/16 PASS
+- 스펙 대비 구현 차이: `PURCHASE_TYPE` enum 동적 import 대신 문자열 `'inapp'` 직접 사용 (번들러 미사용 환경 대응). `this._PURCHASE_TYPE` 필드 제거
+- FAIL-1 수정: 취소 시 실패 메시지 표시 방지 (MenuScene.js L169)
+- `getLocalizedPrice()`는 현재 호출되지 않으나 향후 구매 버튼에 가격 표시 시 활용 가능
+- 서버사이드 영수증 검증 미구현 (클라이언트 측 트랜잭션 확인만)
+
 ## 2026-03-12 -- AdMob 보상형 광고 실 연동
 
 ### 변경
