@@ -240,7 +240,7 @@ export const AD_LIMITS = {
 /** Google Play 인앱 상품 ID 맵 */
 export const IAP_PRODUCTS = {
   /** 자동 사냥 영구 해금 */
-  autoHunt: 'com.antigravity.neonexodus.auto_hunt',
+  autoHunt: 'auto_hunt',
 };
 
 // ── 자동 사냥 (Auto Hunt) 설정 ──
