@@ -1095,7 +1095,7 @@ const TRANSLATIONS = {
 
 // ── 현재 언어 ──
 
-let currentLocale = 'ko';
+let currentLocale = 'en';
 
 /**
  * 현재 언어를 반환한다.
