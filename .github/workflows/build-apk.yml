@@ -88,10 +88,10 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Configure release signing
+      - name: Configure release signing & versionCode
         working-directory: android/app
         run: |
-          cat >> build.gradle << 'SIGNING'
+          cat >> build.gradle << SIGNING
 
           android {
               signingConfigs {
@@ -106,6 +106,10 @@ jobs:
                   release {
                       signingConfig signingConfigs.release
                   }
+              }
+              defaultConfig {
+                  versionCode ${GITHUB_RUN_NUMBER}
+                  versionName "0.1.${GITHUB_RUN_NUMBER}"
               }
           }
           SIGNING
