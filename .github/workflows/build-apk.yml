@@ -50,10 +50,13 @@ jobs:
           cp assets/icons/ic_launcher_xxhdpi_144x144.png  android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
           cp assets/icons/ic_launcher_xxxhdpi_192x192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-      - name: Add AdMob APPLICATION_ID to AndroidManifest
+      - name: Add BILLING permission & AdMob APPLICATION_ID to AndroidManifest
         run: |
-          sed -i 's|</application>|<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-9149509805250873~5179575681" />\n</application>|' \
-            android/app/src/main/AndroidManifest.xml
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          # Google Play 인앱결제 권한 추가
+          sed -i 's|<application|<uses-permission android:name="com.android.vending.BILLING" />\n\n    <application|' "$MANIFEST"
+          # AdMob APPLICATION_ID 메타데이터 추가
+          sed -i 's|</application>|<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-9149509805250873~5179575681" />\n</application>|' "$MANIFEST"
 
       # 키스토어: KEYSTORE_BASE64 시크릿이 있으면 사용, 없으면 캐시, 없으면 신규 생성
       - name: Restore keystore from cache
