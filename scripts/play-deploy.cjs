@@ -71,9 +71,9 @@ async function main() {
     console.log(`✅ 업로드 완료 — versionCode: ${versionCode}`);
 
     // ── 3. 내부 테스트 트랙에 출시 ──
-    // Draft 앱에서는 'completed' 상태 불가 → 먼저 'completed' 시도, 실패 시 'draft'로 폴백
+    // Draft 앱에서는 'completed' 상태 불가 → 'completed' 시도, 실패 시 'draft'로 폴백
     console.log('🚀 내부 테스트 트랙에 출시 중...');
-    const releasePayload = (status) => ({
+    const makeRelease = (status) => ({
       packageName: PACKAGE_NAME,
       editId,
       track: 'internal',
@@ -92,26 +92,47 @@ async function main() {
 
     let releaseStatus = 'completed';
     try {
-      await api.edits.tracks.update(releasePayload('completed'));
+      await api.edits.tracks.update(makeRelease('completed'));
     } catch (trackErr) {
-      // Draft 앱 에러 시 draft 상태로 폴백
-      if (trackErr.message?.includes('draft app')) {
-        console.log('⚠️ Draft 앱 감지 — draft 상태로 배포합니다.');
-        releaseStatus = 'draft';
-        await api.edits.tracks.update(releasePayload('draft'));
-      } else {
-        throw trackErr;
+      const errMsg = String(trackErr.message || '');
+      console.log('⚠️ completed 상태 실패:', errMsg);
+      // Draft 앱이면 draft 상태로 재시도 (새 편집 세션 필요)
+      if (errMsg.includes('draft app') || errMsg.includes('draft')) {
+        console.log('⚠️ Draft 앱 감지 — 새 편집 세션으로 draft 배포를 시도합니다.');
+        // 기존 편집 세션 폐기, 새 세션으로 재시도
+        const edit2 = await api.edits.insert({ packageName: PACKAGE_NAME, requestBody: {} });
+        const editId2 = edit2.data.id;
+        // AAB 재업로드
+        const upload2 = await api.edits.bundles.upload({
+          packageName: PACKAGE_NAME, editId: editId2,
+          media: { mimeType: 'application/octet-stream', body: fs.createReadStream(aabPath) },
+        });
+        const vc2 = upload2.data.versionCode;
+        await api.edits.tracks.update({
+          packageName: PACKAGE_NAME, editId: editId2, track: 'internal',
+          requestBody: {
+            track: 'internal',
+            releases: [{
+              status: 'draft', versionCodes: [String(vc2)],
+              releaseNotes: [
+                { language: 'ko-KR', text: `빌드 v${vc2}` },
+                { language: 'en-US', text: `Build v${vc2}` },
+              ],
+            }],
+          },
+        });
+        await api.edits.commit({ packageName: PACKAGE_NAME, editId: editId2 });
+        console.log(`\n🎉 내부 테스트 배포 완료! (versionCode: ${vc2}, status: draft)`);
+        console.log('   ⚠️ Draft 앱이므로 Play Console에서 수동으로 출시 검토가 필요합니다.');
+        return;
       }
+      throw trackErr;
     }
 
     // ── 4. 커밋 ──
     await api.edits.commit({ packageName: PACKAGE_NAME, editId });
     console.log(`\n🎉 내부 테스트 배포 완료! (versionCode: ${versionCode}, status: ${releaseStatus})`);
-    if (releaseStatus === 'draft') {
-      console.log('   ⚠️ Draft 앱이므로 Play Console에서 수동으로 출시 검토가 필요합니다.');
-    } else {
-      console.log('   테스터 기기에서 Play Store 업데이트 가능.');
-    }
+    console.log('   테스터 기기에서 Play Store 업데이트 가능.');
 
   } catch (err) {
     console.error('❌ 배포 실패:', err.message);
