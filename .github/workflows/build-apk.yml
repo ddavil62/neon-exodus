@@ -37,6 +37,19 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Apply app icon to mipmap directories
+        run: |
+          cp assets/icons/ic_launcher_mdpi_48x48.png    android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp assets/icons/ic_launcher_hdpi_72x72.png    android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp assets/icons/ic_launcher_xhdpi_96x96.png   android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp assets/icons/ic_launcher_xxhdpi_144x144.png  android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp assets/icons/ic_launcher_xxxhdpi_192x192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp assets/icons/ic_launcher_mdpi_48x48.png    android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp assets/icons/ic_launcher_hdpi_72x72.png    android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp assets/icons/ic_launcher_xhdpi_96x96.png   android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp assets/icons/ic_launcher_xxhdpi_144x144.png  android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp assets/icons/ic_launcher_xxxhdpi_192x192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
       - name: Add AdMob APPLICATION_ID to AndroidManifest
         run: |
           sed -i 's|</application>|<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-9149509805250873~5179575681" />\n</application>|' \

@@ -258,8 +258,15 @@ export default class ResultScene extends Phaser.Scene {
       this.scene.start('MenuScene');
     }, 1400);
 
+    // ── 입력 잠금 플래그 (광고 로딩 중 다른 버튼 차단) ──
+    /** @type {boolean} 광고 로딩 중 입력 잠금 여부 */
+    this._inputLocked = false;
+
     // ── ESC 키로 메뉴 복귀 ──
-    this.input.keyboard.on('keydown-ESC', () => this._onBack());
+    this.input.keyboard.on('keydown-ESC', () => {
+      if (this._inputLocked) return;
+      this._onBack();
+    });
   }
 
   /** 메뉴 화면으로 돌아간다. */
@@ -331,8 +338,11 @@ export default class ResultScene extends Phaser.Scene {
     });
     zone.on('pointerup', async () => {
       this._adBtnText.setAlpha(1);
-      if (!pressed || this._adUsed) return;
+      if (!pressed || this._adUsed || this._inputLocked) return;
       pressed = false;
+
+      // 광고 로딩 중 전체 입력 잠금
+      this._inputLocked = true;
 
       // 광고 시청
       const result = await AdManager.showRewarded(ADMOB_UNITS.creditDouble);
@@ -358,6 +368,9 @@ export default class ResultScene extends Phaser.Scene {
         this._adBtnText.setColor(UI_COLORS.textSecondary);
         zone.disableInteractive();
       }
+
+      // 광고 완료 후 입력 잠금 해제
+      this._inputLocked = false;
     });
     zone.on('pointerout', () => {
       pressed = false;
@@ -616,10 +629,14 @@ export default class ResultScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     let pressed = false;
-    zone.on('pointerdown', () => { pressed = true; text.setAlpha(0.6); });
+    zone.on('pointerdown', () => {
+      if (this._inputLocked) return;
+      pressed = true;
+      text.setAlpha(0.6);
+    });
     zone.on('pointerup', () => {
       text.setAlpha(1);
-      if (pressed && callback) callback();
+      if (pressed && callback && !this._inputLocked) callback();
       pressed = false;
     });
     zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
