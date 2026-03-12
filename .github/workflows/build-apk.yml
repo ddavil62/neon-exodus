@@ -39,6 +39,10 @@ jobs:
 
       - name: Apply app icon to mipmap directories
         run: |
+          # 적응형 아이콘 XML 제거 (PNG 폴백 사용)
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          # PNG 아이콘 복사
           cp assets/icons/ic_launcher_mdpi_48x48.png    android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           cp assets/icons/ic_launcher_hdpi_72x72.png    android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           cp assets/icons/ic_launcher_xhdpi_96x96.png   android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
