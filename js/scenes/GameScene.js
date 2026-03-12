@@ -55,6 +55,7 @@ const CONTACT_DAMAGE_COOLDOWN = 500;
 // ── 무기 아이콘 맵 ──
 /** @type {Object.<string, string>} 무기 ID -> 표시 이모지 */
 const WEAPON_ICON_MAP = {
+  // 기본 무기 11종
   blaster:          '\u{1F52B}',
   laser_gun:        '\u26A1',
   plasma_orb:       '\u{1F49C}',
@@ -62,13 +63,22 @@ const WEAPON_ICON_MAP = {
   missile:          '\u{1F680}',
   drone:            '\u{1F916}',
   emp_blast:        '\u{1F4A5}',
-  precision_cannon: '\u{1F3AF}',
-  plasma_storm:     '\u{1F300}',
-  nuke_missile:     '\u2622\uFE0F',
   force_blade:      '\u2694\uFE0F',
   nano_swarm:       '\u{1F9EA}',
   vortex_cannon:    '\u{1F300}',
   reaper_field:     '\u{1FA93}',
+  // 진화 무기 11종
+  precision_cannon: '\u{1F3AF}',
+  plasma_storm:     '\u{1F300}',
+  nuke_missile:     '\u2622\uFE0F',
+  ion_cannon:       '\u{1F4A0}',
+  guardian_sphere:  '\u{1F6E1}\uFE0F',
+  hivemind:         '\u{1F41D}',
+  perpetual_emp:    '\u{1F4AB}',
+  phantom_strike:   '\u{1F47B}',
+  bioplasma:        '\u{1F9EC}',
+  event_horizon:    '\u{1F573}\uFE0F',
+  death_blossom:    '\u2620\uFE0F',
 };
 
 /** 무기 아이콘 맵에 없는 무기의 fallback 아이콘 */

@@ -151,6 +151,12 @@ export default class BootScene extends Phaser.Scene {
       this.load.image('icon_weapon_' + id, 'assets/ui/icons/weapon_' + id + '.png');
     }
 
+    // 진화 무기 아이콘 11종 (32x32) — Canvas 생성 PNG
+    const EVOLVED_ICON_IDS = ['precision_cannon', 'plasma_storm', 'nuke_missile', 'ion_cannon', 'guardian_sphere', 'hivemind', 'perpetual_emp', 'phantom_strike', 'bioplasma', 'event_horizon', 'death_blossom'];
+    for (const id of EVOLVED_ICON_IDS) {
+      this.load.image('icon_weapon_' + id, 'assets/ui/icons/weapon_' + id + '.png');
+    }
+
     // 패시브 아이콘 10종 (Group B, 32x32)
     const PASSIVE_ICON_IDS = ['booster', 'armor_plate', 'battery_pack', 'overclock', 'magnet_module', 'regen_module', 'aim_module', 'critical_chip', 'cooldown_chip', 'luck_module'];
     for (const id of PASSIVE_ICON_IDS) {
