@@ -77,7 +77,9 @@ export default class MenuScene extends Phaser.Scene {
 
     // ── 자동 사냥 구매 버튼 (미해금 시 표시) ──
     if (!IAPManager.isAutoHuntUnlocked()) {
-      this._createButton(centerX, 550, t('autoHunt.purchase'), COLORS.NEON_ORANGE, () => {
+      const price = IAPManager.getLocalizedPrice();
+      const btnLabel = `${t('autoHunt.purchase')} (${price})`;
+      this._createButton(centerX, 550, btnLabel, COLORS.NEON_ORANGE, () => {
         this._showAutoHuntPurchase();
       });
     } else {

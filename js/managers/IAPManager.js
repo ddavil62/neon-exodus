@@ -207,7 +207,7 @@ class IAPManagerClass {
    * @returns {string} 현지화 가격 (예: "₩1,100", "$0.99")
    */
   getLocalizedPrice() {
-    return this._productInfo?.priceString ?? '$ 0.99';
+    return this._productInfo?.priceString ?? '$2.99';
   }
 
   // ── 해금 상태 확인 ──
