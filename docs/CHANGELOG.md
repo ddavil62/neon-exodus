@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-13 -- ResultScene 하단 UI 요소 겹침 수정
+
+### 변경
+- `ResultScene.js` 버튼 Y좌표 계산 전면 교체: 기존 `btnGap`/`maxAdBtnY` 지역 변수 제거, `BTN_GAP(44)`, `MAX_AD_BTN_Y(524)`, `BTN_CONTENT_GAP(12)`, `MIN_CONTENT_SCALE(0.78)` 상수로 교체
+- `ResultScene.js` `_renderWeaponReport()` 시그니처에 `scale=1.0` 파라미터 추가, titleY/curY/rowHeight/trail에 `Math.round(... * scale)` 적용
+- `ResultScene.js` `_renderWeaponUnlockBanner()` 시그니처에 `scale=1.0` 파라미터 추가, stageCleared Y/bannerY/return trail에 `Math.round(... * scale)` 적용
+- `ResultScene.js` 보상 섹션 간격(rewardY +6, rewardEndY +24/+44)에 contentScale 적용
+- `ResultScene.js` 하단 버튼 Y좌표를 `contentEndY + BTN_CONTENT_GAP` 기반으로 동적 계산, `MAX_AD_BTN_Y` 상한 유지
+
+### 추가
+- `ResultScene.js` `_calcRawScalable(statsCount)` 메서드 신규: scale=1.0 기준 스케일 가능 구간 픽셀 합계 계산
+- `ResultScene.js` `contentScale` 계산 로직: `rawScalable > scalableTarget` 시 압축 배율 산출 (최소 0.78)
+
+### 수정
+- 무기 7개 + 스테이지 클리어 + 무기 해금 배너 동시 표시 시 해금 배너와 광고 버튼이 24px 겹치는 레이아웃 버그 해소
+- 수정 후: 배너-버튼 간격 19px (겹침 없음), 메뉴 버튼 하단 632px (640px 이내)
+- 엔들리스 4행 통계 최악 케이스에서도 배너-버튼 간격 7px 유지 (MIN_CONTENT_SCALE=0.78 적용)
+
+### 참고
+- 스펙: `.claude/specs/2026-03-13-result-ui-overlap.md`
+- 구현 리포트: `.claude/specs/2026-03-13-result-ui-overlap-report.md`
+- QA: `.claude/specs/2026-03-13-result-ui-overlap-qa.md`
+- QA 결과: 수용기준 7/7 충족, 예외 시나리오 6/6 PASS (10무기 극한 케이스 INFO), Playwright 15/15 전체 통과
+- 변경 파일: `js/scenes/ResultScene.js` 1개
+- 10개 무기 + 배너 극한 케이스에서 MIN_CONTENT_SCALE 클램프로 배너-버튼 18px 겹침 발생하나, WEAPON_SLOTS=6 기준 정상 플레이에서는 도달 불가
+
 ## 2026-03-12 -- IAP 실제 Google Play Billing 연동
 
 ### 변경

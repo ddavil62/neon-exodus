@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-12 (IAP 실제 Google Play Billing 연동)
+> 최종 업데이트: 2026-03-13 (ResultScene 하단 UI 요소 겹침 수정)
 
 ## 프로젝트 개요
 
@@ -59,7 +59,7 @@ neon-exodus/
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
-│   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과)
+│   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드, 카테고리 아이콘)
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (13개, 진행률)
 │   │   └── CollectionScene.js     # 도감 화면 (5탭: 무기/패시브/적/도전과제/진화)
@@ -1154,10 +1154,12 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - 엔들리스 모드: "ENDLESS OVER!" + 경과 분 표시
 - 재도전/메인 메뉴 버튼, 등장 애니메이션
 - 무기별 결과 리포트 (아래 참조)
-- 하단 버튼 동적 Y좌표 계산 (콘텐츠 끝 위치 기준, GAME_HEIGHT 640px 이내 보장)
+- 하단 버튼 동적 Y좌표 계산 (콘텐츠 끝 위치 기반, GAME_HEIGHT 640px 이내 보장)
+- 콘텐츠 압축(contentScale) 시스템: 콘텐츠가 허용 공간 초과 시 간격/행높이를 동적 축소 (최소 0.78배)
+- 레이아웃 상수: BTN_GAP=44, MAX_AD_BTN_Y=524, BTN_CONTENT_GAP=12, MIN_CONTENT_SCALE=0.78
 
 - 관련 파일: `js/scenes/GameScene.js`, `js/scenes/LevelUpScene.js`, `js/scenes/ResultScene.js`
-- 구현 일자: 2026-03-08
+- 구현 일자: 2026-03-08 (UI 겹침 수정: 2026-03-13)
 
 #### UI 폰트 가이드라인
 360px 모바일 뷰포트 기준 최소 가독성 확보를 위해 모든 UI 텍스트는 10px 이상을 유지한다.
@@ -1192,10 +1194,10 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
   - DPS = Math.round(damage / Math.max(1, runTimeSec)), 0 나누기 방지
   - 진화 무기는 `_evolvedNameKey` 사용
   - 데미지 높은 순 정렬
-- **UI 렌더링**: ResultScene._renderWeaponReport()
-  - 최대 6개 무기 표시 (`slice(0, 6)`)
+- **UI 렌더링**: ResultScene._renderWeaponReport(centerX, startY, statsCount, scale)
+  - 최대 10개 무기 표시 (`slice(0, 10)`)
   - 각 무기: 이름 (11px), 킬 수 + DPS (10px), 데미지 비율 바 (높이 6px, NEON_CYAN), 데미지 수치 (10px)
-  - 행 높이: 28px
+  - 행 높이: 6개 이하 28px, 7개 이상 22px (scale 적용 시 Math.round로 축소)
   - 등장 애니메이션 (알파 페이드, 딜레이 100ms씩)
 - **전달 경로**: _goToResult(), 일시정지 포기 (일반/엔들리스 모두) 3곳에서 weaponReport 전달
 - **폴백**: weaponReport가 undefined이면 빈 배열, 길이 0이면 섹션 미렌더링
@@ -1386,8 +1388,8 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 7개 데미지 경로(projectile/beam/orbital/chain/homing/summon/aoe)에서 weaponId 전달 및 recordDamage 호출
 - [x] Projectile.weaponId / Enemy._lastHitWeaponId 필드 추가
 - [x] GameScene._buildWeaponReport() 구현 (DPS 계산, 진화 무기 nameKey, 데미지 순 정렬)
-- [x] ResultScene._renderWeaponReport() 구현 (무기명, 킬 수, DPS, 데미지 비율 바, 최대 6개)
-- [x] 하단 버튼 동적 Y좌표 계산 (레이아웃 겹침 수정)
+- [x] ResultScene._renderWeaponReport() 구현 (무기명, 킬 수, DPS, 데미지 비율 바, 최대 10개, 7개 이상 행높이 22px)
+- [x] 하단 버튼 동적 Y좌표 계산 (콘텐츠 압축 contentScale 시스템, MAX_AD_BTN_Y 클램프)
 - [x] _goToResult(), 일시정지 포기 (일반/엔들리스) 3개 경로에서 weaponReport 전달
 - [x] i18n 3키 추가 (result.weaponReport/weaponKills/weaponDps, ko/en 총 351키 -> 375키)
 

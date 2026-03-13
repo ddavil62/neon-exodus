@@ -175,12 +175,43 @@ export default class ResultScene extends Phaser.Scene {
       });
     });
 
+    // ── 버튼 레이아웃 상수 ──
+    /** 버튼 간 간격 (px) */
+    const BTN_GAP = 44;
+    /**
+     * 광고 버튼 중심의 최대 Y 좌표.
+     * menuBtn 하단(adBtnY + BTN_GAP*2 + 20) + 8px 여백 <= GAME_HEIGHT 를 만족하는 상한.
+     * 계산: 640 - 44*2 - 20 - 8 = 524
+     */
+    const MAX_AD_BTN_Y = GAME_HEIGHT - BTN_GAP * 2 - 28; // 524
+    /** 콘텐츠 끝과 광고버튼 간 최소 여백 (px) */
+    const BTN_CONTENT_GAP = 12;
+    /** 콘텐츠 압축 최솟값 (텍스트 가독성 유지) */
+    const MIN_CONTENT_SCALE = 0.78;
+
+    // ── 콘텐츠 압축 스케일 계산 ──
+    // 통계 구간 끝 Y (고정: statsY=160 + lines*26)
+    const fixedStatsEnd = 160 + stats.length * 26;
+    // 배너 자체 반높이 (고정, 배너 크기는 압축하지 않음)
+    const bannerHalf = 16;
+    // 허용 스케일 가능 픽셀 = MAX_AD_BTN_Y - BTN_CONTENT_GAP - fixedStatsEnd - bannerHalf
+    const scalableTarget = MAX_AD_BTN_Y - BTN_CONTENT_GAP - fixedStatsEnd - bannerHalf;
+    const rawScalable = this._calcRawScalable(stats.length);
+    /**
+     * 레이아웃 압축 배율.
+     * rawScalable이 scalableTarget 초과 시 1.0 미만으로 설정된다.
+     * MIN_CONTENT_SCALE으로 하한이 보장된다.
+     */
+    const contentScale = rawScalable > scalableTarget
+      ? Math.max(MIN_CONTENT_SCALE, scalableTarget / rawScalable)
+      : 1.0;
+
     // ── 무기별 리포트 섹션 ──
     const weaponReportStartY = statsY + stats.length * lineHeight + 10;
-    const weaponReportEndY = this._renderWeaponReport(centerX, weaponReportStartY, stats.length);
+    const weaponReportEndY = this._renderWeaponReport(centerX, weaponReportStartY, stats.length, contentScale);
 
     // ── 보상 섹션 ──
-    const rewardY = weaponReportEndY + 6;
+    const rewardY = weaponReportEndY + Math.round(6 * contentScale);
 
     // 구분선
     const divider = this.add.graphics();
@@ -207,7 +238,7 @@ export default class ResultScene extends Phaser.Scene {
 
     // 클리어 보너스 (승리 시) -- 크레딧 옆에 인라인 표시
     /** 보상 섹션 끝 Y 좌표 */
-    let rewardEndY = rewardY + 24;
+    let rewardEndY = rewardY + Math.round(24 * contentScale);
     if (this.victory) {
       const bonusText = this.add.text(
         centerX, rewardY + 28,
@@ -225,24 +256,24 @@ export default class ResultScene extends Phaser.Scene {
         duration: 500,
         delay: 1000,
       });
-      rewardEndY = rewardY + 44;
+      rewardEndY = rewardY + Math.round(44 * contentScale);
     }
 
     // ── 무기 해금 배너 (스테이지 클리어 시) ──
     if (this.newWeaponUnlocked) {
-      rewardEndY = this._renderWeaponUnlockBanner(centerX, rewardEndY);
+      rewardEndY = this._renderWeaponUnlockBanner(centerX, rewardEndY, contentScale);
     }
 
     // ── 하단 버튼 Y좌표 동적 계산 ──
-    // 콘텐츠 끝 위치 기준으로 버튼 배치하되, 기존 고정 위치보다 위로 올라가지 않도록 보장
-    // 메뉴 버튼 하단이 GAME_HEIGHT 이내에 들어오도록 상한 적용
-    const contentEndY = rewardEndY + 20;
-    const btnGap = 44;
-    // 메뉴 버튼 중심 = adBtnY + btnGap*2, 하단 = +20 → adBtnY <= GAME_HEIGHT - btnGap*2 - 24
-    const maxAdBtnY = GAME_HEIGHT - btnGap * 2 - 24;
-    const adBtnY = Math.min(Math.max(contentEndY, GAME_HEIGHT - 180), maxAdBtnY);
-    const retryBtnY = adBtnY + btnGap;
-    const menuBtnY = retryBtnY + btnGap;
+    // contentScale 적용으로 contentEndY <= MAX_AD_BTN_Y - BTN_CONTENT_GAP 가 보장된다.
+    const contentEndY = rewardEndY + Math.round(20 * contentScale);
+    // 콘텐츠 끝 + 여백 기준 배치, 최소 화면 하단 180px 구간 활용, MAX_AD_BTN_Y 상한 적용
+    const adBtnY = Math.min(
+      Math.max(contentEndY + BTN_CONTENT_GAP, GAME_HEIGHT - 180),
+      MAX_AD_BTN_Y
+    );
+    const retryBtnY = adBtnY + BTN_GAP;
+    const menuBtnY = retryBtnY + BTN_GAP;
 
     // ── 광고 보고 2배 버튼 ──
     this._createAdDoubleButton(centerX, adBtnY, 1000);
@@ -378,6 +409,35 @@ export default class ResultScene extends Phaser.Scene {
     });
   }
 
+  // ── 콘텐츠 스케일 계산 ──
+
+  /**
+   * scale=1.0 기준 콘텐츠의 스케일 가능한 구간 픽셀 합계를 계산한다.
+   * create()에서 contentScale을 결정하기 위해 실제 렌더링 전에 호출한다.
+   * 통계 구간(fixedStatsEnd)과 배너 자체 반높이(16px)는 고정값이므로 제외한다.
+   * @param {number} statsCount - 통계 항목 수
+   * @returns {number} 스케일 가능한 총 픽셀
+   * @private
+   */
+  _calcRawScalable(statsCount) {
+    const totalWeapons = this.weaponReport ? this.weaponReport.length : 0;
+    const rowHeight = totalWeapons > 6 ? 22 : 28;
+    const displayCount = Math.min(totalWeapons, 10);
+    // 무기 리포트: stat_gap + title + gap + rows + trail
+    const weaponSection = totalWeapons > 0
+      ? (10 + 12 + 18 + displayCount * rowHeight + 4)
+      : 10;
+    // 보상 구간: reward_gap + height
+    const rewardSection = this.victory ? (6 + 44) : (6 + 24);
+    // 해금 배너 구간 (있을 때만)
+    let bannerSection = 0;
+    if (this.newWeaponUnlocked) {
+      const stageData = this.stageId ? STAGES[this.stageId] : null;
+      bannerSection = stageData ? (8 + 32 + 20) : (8 + 20);
+    }
+    return weaponSection + rewardSection + bannerSection;
+  }
+
   // ── 무기별 리포트 렌더링 ──
 
   /**
@@ -386,10 +446,11 @@ export default class ResultScene extends Phaser.Scene {
    * @param {number} centerX - 중심 X 좌표
    * @param {number} startY - 시작 Y 좌표
    * @param {number} statsCount - 상단 통계 항목 수 (애니메이션 딜레이 계산용)
+   * @param {number} [scale=1.0] - 레이아웃 압축 배율 (간격·행높이에 적용)
    * @returns {number} 렌더링 후 다음 Y 좌표
    * @private
    */
-  _renderWeaponReport(centerX, startY, statsCount) {
+  _renderWeaponReport(centerX, startY, statsCount, scale = 1.0) {
     if (!this.weaponReport || this.weaponReport.length === 0) {
       return startY;
     }
@@ -400,7 +461,7 @@ export default class ResultScene extends Phaser.Scene {
     divGfx.lineBetween(centerX - 100, startY, centerX + 100, startY);
 
     // 섹션 타이틀
-    const titleY = startY + 12;
+    const titleY = startY + Math.round(12 * scale);
     const sectionTitle = this.add.text(centerX, titleY, t('result.weaponReport'), {
       fontSize: '12px',
       fontFamily: 'Galmuri11, monospace',
@@ -423,8 +484,8 @@ export default class ResultScene extends Phaser.Scene {
     const maxDisplay = Math.min(totalWeapons, 10);
     const displayWeapons = this.weaponReport.slice(0, maxDisplay);
 
-    let curY = titleY + 18;
-    const rowHeight = totalWeapons > 6 ? 22 : 28;
+    let curY = titleY + Math.round(18 * scale);
+    const rowHeight = Math.round((totalWeapons > 6 ? 22 : 28) * scale);
     const barWidth = 160;
     const barHeight = 6;
     const leftX = centerX - 110;
@@ -482,7 +543,7 @@ export default class ResultScene extends Phaser.Scene {
       });
     });
 
-    return curY + displayWeapons.length * rowHeight + 4;
+    return curY + displayWeapons.length * rowHeight + Math.round(4 * scale);
   }
 
   // ── 무기 해금 배너 ──
@@ -492,10 +553,11 @@ export default class ResultScene extends Phaser.Scene {
    * 네온 시안 글로우 텍스트로 해금된 무기명을 표시한다.
    * @param {number} centerX - 중심 X 좌표
    * @param {number} startY - 시작 Y 좌표
+   * @param {number} [scale=1.0] - 레이아웃 압축 배율 (Y 오프셋에 적용)
    * @returns {number} 렌더링 후 다음 Y 좌표
    * @private
    */
-  _renderWeaponUnlockBanner(centerX, startY) {
+  _renderWeaponUnlockBanner(centerX, startY, scale = 1.0) {
     const weaponData = getWeaponById(this.newWeaponUnlocked);
     const weaponName = weaponData ? t(weaponData.nameKey) : this.newWeaponUnlocked;
 
@@ -503,7 +565,7 @@ export default class ResultScene extends Phaser.Scene {
     const stageData = this.stageId ? STAGES[this.stageId] : null;
     if (stageData) {
       const stageName = t(stageData.nameKey);
-      const clearText = this.add.text(centerX, startY + 8, t('result.stageCleared', stageName), {
+      const clearText = this.add.text(centerX, startY + Math.round(8 * scale), t('result.stageCleared', stageName), {
         fontSize: '12px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonGreen,
@@ -518,7 +580,7 @@ export default class ResultScene extends Phaser.Scene {
     }
 
     // 무기 해금 배너 배경 (네온 글로우 효과)
-    const bannerY = startY + (stageData ? 32 : 8);
+    const bannerY = startY + Math.round((stageData ? 32 : 8) * scale);
     const bannerWidth = 220;
     const bannerHeight = 32;
 
@@ -567,7 +629,7 @@ export default class ResultScene extends Phaser.Scene {
       repeat: 2,
     });
 
-    return bannerY + bannerHeight / 2 + 20;
+    return bannerY + bannerHeight / 2 + Math.round(20 * scale);
   }
 
   /**
