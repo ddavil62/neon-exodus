@@ -70,6 +70,14 @@ export default class VirtualJoystick {
     /** 현재 추적 중인 포인터 ID */
     this._pointerId = null;
 
+    // ── 키보드 입력 상태 ──
+
+    /** @type {{ up: boolean, down: boolean, left: boolean, right: boolean }} WASD/방향키 상태 */
+    this._keys = { up: false, down: false, left: false, right: false };
+
+    /** @type {boolean} 키보드로 이동 중인지 여부 */
+    this._keyboardActive = false;
+
     // ── 입력 이벤트 바인딩 ──
     this._bindInput();
   }
@@ -86,6 +94,14 @@ export default class VirtualJoystick {
     input.on('pointerdown', this._onPointerDown, this);
     input.on('pointermove', this._onPointerMove, this);
     input.on('pointerup', this._onPointerUp, this);
+
+    // ── WASD / 방향키 바인딩 ──
+    if (input.keyboard) {
+      this._onKeyDown = this._onKeyDown.bind(this);
+      this._onKeyUp = this._onKeyUp.bind(this);
+      input.keyboard.on('keydown', this._onKeyDown);
+      input.keyboard.on('keyup', this._onKeyUp);
+    }
   }
 
   /**
@@ -163,6 +179,76 @@ export default class VirtualJoystick {
 
     this.base.setVisible(false);
     this.thumb.setVisible(false);
+
+    // 터치 해제 시 키보드 입력이 남아있으면 키보드 방향 복원
+    this._updateKeyboardDirection();
+  }
+
+  // ── 키보드 입력 처리 ──
+
+  /** @type {Object<string, string>} 키코드 → 방향 매핑 */
+  static KEY_MAP = {
+    KeyW: 'up', ArrowUp: 'up',
+    KeyS: 'down', ArrowDown: 'down',
+    KeyA: 'left', ArrowLeft: 'left',
+    KeyD: 'right', ArrowRight: 'right',
+  };
+
+  /**
+   * 키 누름 처리. WASD/방향키를 방향 상태에 반영한다.
+   * @param {KeyboardEvent} event
+   * @private
+   */
+  _onKeyDown(event) {
+    const dir = VirtualJoystick.KEY_MAP[event.code];
+    if (!dir) return;
+    this._keys[dir] = true;
+    this._updateKeyboardDirection();
+  }
+
+  /**
+   * 키 뗌 처리.
+   * @param {KeyboardEvent} event
+   * @private
+   */
+  _onKeyUp(event) {
+    const dir = VirtualJoystick.KEY_MAP[event.code];
+    if (!dir) return;
+    this._keys[dir] = false;
+    this._updateKeyboardDirection();
+  }
+
+  /**
+   * 키보드 상태로부터 direction 벡터를 갱신한다.
+   * 터치 조이스틱이 활성 상태이면 키보드를 무시한다.
+   * @private
+   */
+  _updateKeyboardDirection() {
+    // 터치 조이스틱이 활성 상태이면 터치 우선
+    if (this._pointerId !== null) return;
+
+    let dx = 0;
+    let dy = 0;
+    if (this._keys.left) dx -= 1;
+    if (this._keys.right) dx += 1;
+    if (this._keys.up) dy -= 1;
+    if (this._keys.down) dy += 1;
+
+    if (dx === 0 && dy === 0) {
+      this.direction.x = 0;
+      this.direction.y = 0;
+      this.force = 0;
+      this.isActive = false;
+      this._keyboardActive = false;
+    } else {
+      // 대각선 이동 시 정규화
+      const len = Math.sqrt(dx * dx + dy * dy);
+      this.direction.x = dx / len;
+      this.direction.y = dy / len;
+      this.force = 1;
+      this.isActive = true;
+      this._keyboardActive = true;
+    }
   }
 
   // ── 정리 ──
@@ -175,6 +261,11 @@ export default class VirtualJoystick {
     input.off('pointerdown', this._onPointerDown, this);
     input.off('pointermove', this._onPointerMove, this);
     input.off('pointerup', this._onPointerUp, this);
+
+    if (input.keyboard) {
+      input.keyboard.off('keydown', this._onKeyDown);
+      input.keyboard.off('keyup', this._onKeyUp);
+    }
 
     this.base.destroy();
     this.thumb.destroy();
