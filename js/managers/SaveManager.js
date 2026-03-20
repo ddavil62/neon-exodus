@@ -46,6 +46,9 @@ const DEFAULT_SAVE = {
     locale: 'ko',
     sfxVolume: 1,
     bgmVolume: 0.7,
+    hapticEnabled: true,
+    bgmEnabled: true,
+    sfxEnabled: true,
   },
 };
 
@@ -507,8 +510,17 @@ export class SaveManager {
       data.version = 5;
     }
 
+    // v5 → v6: 설정 메뉴 (햅틱/BGM/SFX 토글) 필드 추가
+    if (data.version < 6) {
+      if (!data.settings) data.settings = {};
+      if (data.settings.hapticEnabled === undefined) data.settings.hapticEnabled = true;
+      if (data.settings.bgmEnabled === undefined) data.settings.bgmEnabled = true;
+      if (data.settings.sfxEnabled === undefined) data.settings.sfxEnabled = true;
+      data.version = 6;
+    }
+
     // 이후 버전 추가 시 체인 패턴:
-    // if (data.version < 6) { ... data.version = 6; }
+    // if (data.version < 7) { ... data.version = 7; }
 
     data.version = SAVE_DATA_VERSION;
     return data;

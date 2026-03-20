@@ -417,6 +417,14 @@ const TRANSLATIONS = {
     'ui.critical': '크리티컬',
     'ui.level': '레벨',
 
+    // ── 설정 ──
+    'settings.title': '설정',
+    'settings.bgm': 'BGM',
+    'settings.sfx': '효과음',
+    'settings.haptic': '햅틱',
+    'settings.on': 'ON',
+    'settings.off': 'OFF',
+
     // ── 엔들리스 모드 ──
     'game.endlessMode': 'ENDLESS MODE!',
     'game.endlessModeDesc': '적이 끝없이 밀려온다.\n60초마다 더욱 강해진다.',
@@ -960,6 +968,14 @@ const TRANSLATIONS = {
     'ui.attackSpeed': 'Attack Speed',
     'ui.critical': 'Critical',
     'ui.level': 'Level',
+
+    // ── Settings ──
+    'settings.title': 'Settings',
+    'settings.bgm': 'BGM',
+    'settings.sfx': 'SFX',
+    'settings.haptic': 'Haptic',
+    'settings.on': 'ON',
+    'settings.off': 'OFF',
 
     // ── Endless Mode ──
     'game.endlessMode': 'ENDLESS MODE!',

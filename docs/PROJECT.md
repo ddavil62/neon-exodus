@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-20 (난이도 상향 -- 3구간 선형 스케일링 재설계)
+> 최종 업데이트: 2026-03-20 (설정 메뉴 -- BGM/SFX/햅틱 ON/OFF 토글, SaveData v6)
 
 ## 프로젝트 개요
 
@@ -53,8 +53,9 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화
-│   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, BGM, 자동 사냥 구매)
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
+│   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, 설정, 자동 사냥 구매)
+│   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭)
@@ -81,7 +82,8 @@ neon-exodus/
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
-│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드
+│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v6, 설정 포함)
+│   │   ├── HapticManager.js       # 햅틱 진동 관리 (Capacitor, enabled 플래그)
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
 │   │   ├── AdManager.js            # Google AdMob 보상형 광고 관리 (동적 import, 이벤트 기반 보상 판단, Mock 모드)
@@ -210,7 +212,8 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
                │                                                    ↓
                ├── UpgradeScene                               ← ResultScene
                ├── AchievementScene
-               └── CollectionScene
+               ├── CollectionScene
+               └── SettingsScene
 ```
 
 - StageSelectScene에서 선택한 stageId를 CharacterScene에 전달
@@ -222,7 +225,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
-| 다국어 | `js/i18n.js` | ko/en 376키, `t()` 함수로 참조 |
+| 다국어 | `js/i18n.js` | ko/en 382키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
 | 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 무기 드롭 스케줄, 난이도 배수 |
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 스케줄, 플레이어 글로우 서클 생성/동기화/파괴 |
@@ -230,9 +233,11 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 드론 AI |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
-| 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡 |
+| 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡, BGM/SFX enabled 토글 |
+| 설정 | `js/scenes/SettingsScene.js` | BGM/SFX/햅틱 ON/OFF 토글 UI, SaveManager 연동 |
+| 햅틱 | `js/managers/HapticManager.js` | Capacitor Haptics 래퍼, enabled 플래그 제어 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 8종 (기존 6종 + consumableCollect + empBlast) |
-| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장, 크레딧/통계/도감/스테이지 클리어/무기 해금 관리 |
+| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v6), 크레딧/통계/도감/스테이지 클리어/무기 해금/설정 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
@@ -932,9 +937,54 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - GameScene/MenuScene 터치 이벤트에서 SoundSystem.resume() 호출
 - GameScene 사망/포기 시 SoundSystem.stopBgm() 호출
 - 설정에서 sfxVolume/bgmVolume 실시간 변경 가능
+- BGM/SFX ON/OFF 토글: _bgmEnabled/_sfxEnabled boolean 플래그로 제어. OFF 시 볼륨값(sfxVol/bgmVol) 보존, ON 복귀 시 원래 볼륨으로 재생. setBgmEnabled()/setSfxEnabled() static 메서드.
+- BGM OFF->ON 재시작: _lastBgmId에 마지막 요청 BGM을 기록하여 setBgmEnabled(true) 시 자동 재개.
 - 관련 파일: `js/systems/SoundSystem.js`
 - 구현 일자: 2026-03-09
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase4.md`
+
+### 설정 메뉴 (SettingsScene)
+
+메인 메뉴에서 접근 가능한 설정 씬. BGM/SFX/햅틱 세 항목을 ON/OFF 토글로 제어하고, SaveManager를 통해 즉시 영구 저장한다.
+
+#### 토글 항목
+
+| 항목 | getter | setter | 저장 키 | 기본값 |
+|---|---|---|---|---|
+| BGM | SoundSystem.isBgmEnabled() | SoundSystem.setBgmEnabled(bool) | settings.bgmEnabled | true |
+| SFX | SoundSystem.isSfxEnabled() | SoundSystem.setSfxEnabled(bool) | settings.sfxEnabled | true |
+| 햅틱 | isHapticEnabled() | setHapticEnabled(bool) | settings.hapticEnabled | true |
+
+- BGM OFF 시 stopBgm() 호출하여 즉시 정지. ON 시 _lastBgmId로 BGM 재시작.
+- SFX OFF 시 SoundSystem.play()가 즉시 return. 볼륨값(_sfxVol) 보존.
+- 햅틱 OFF 시 impactHaptic()이 즉시 return. Capacitor 네이티브 환경에서만 유효.
+- 토글 탭 시 SaveManager.setSetting()으로 즉시 localStorage 저장.
+
+#### UI 레이아웃 (SettingsScene)
+- 타이틀: y=110, 24px, neonCyan
+- BGM 토글 행: y=220
+- SFX 토글 행: y=310
+- 햅틱 토글 행: y=400
+- 뒤로가기 버튼: y=520
+- 토글 행 구조: 레이블(centerX-80, 좌정렬) + 상태 텍스트(centerX+80, ON=neonGreen/OFF=textSecondary)
+- 터치 영역: Zone 280x60px
+
+#### 씬 진입/복귀
+- 진입: MenuScene "설정" 버튼 탭 -> scene.start('SettingsScene')
+- 복귀: 뒤로가기 버튼, ESC 키, Android 하드웨어 백버튼 -> scene.start('MenuScene')
+
+#### MenuScene 버튼 Y좌표 (설정 버튼 추가 후)
+- 출격: y=280, 업그레이드: y=330, 도전과제: y=380, 도감: y=430, 자동사냥: y=480, 설정: y=530
+- 크레딧 텍스트: y=568, 데이터코어 텍스트: y=585
+
+#### 초기화 (BootScene)
+- SoundSystem.init(settings) 호출 후, settings.bgmEnabled === false 시 setBgmEnabled(false) 호출
+- settings.sfxEnabled === false 시 setSfxEnabled(false) 호출
+- initHaptics() 완료 후, settings.hapticEnabled === false 시 setHapticEnabled(false) 호출
+
+- 관련 파일: `js/scenes/SettingsScene.js`, `js/scenes/MenuScene.js`, `js/scenes/BootScene.js`, `js/systems/SoundSystem.js`, `js/managers/HapticManager.js`, `js/managers/SaveManager.js`, `js/config.js`, `js/i18n.js`, `js/main.js`
+- 구현 일자: 2026-03-20
+- 스펙 문서: `.claude/specs/2026-03-20-settings-menu.md`
 
 ### VFX 시스템
 
@@ -1105,10 +1155,15 @@ Google Play 인앱결제를 통한 유료 기능 해금. `@capgo/native-purchase
 3. 사용자 취소 시: 실패 메시지 미표시, 조용히 원래 화면 복귀 (MenuScene에서 `result.error !== 'cancelled'` 분기)
 4. BootScene.create()에서 IAPManager.initialize() + restorePurchases() 호출 (기기 변경 시 자동 복원)
 
-#### 세이브 데이터 (v4)
+#### 세이브 데이터 (v6)
 - `autoHuntUnlocked`: boolean, 자동 사냥 IAP 구매 여부 (기본: false)
 - `autoHuntEnabled`: boolean, 마지막 런의 자동 사냥 토글 상태 (기본: false)
-- v3->v4 마이그레이션: 두 필드가 undefined이면 false로 초기화
+- `settings.hapticEnabled`: boolean, 햅틱 ON/OFF (기본: true)
+- `settings.bgmEnabled`: boolean, BGM ON/OFF (기본: true)
+- `settings.sfxEnabled`: boolean, SFX ON/OFF (기본: true)
+- v3->v4 마이그레이션: autoHuntUnlocked, autoHuntEnabled 두 필드가 undefined이면 false로 초기화
+- v4->v5 마이그레이션: stageClears, unlockedWeapons, selectedStage 필드 추가
+- v5->v6 마이그레이션: settings 객체에 hapticEnabled/bgmEnabled/sfxEnabled 세 boolean 필드 추가 (기본값 true)
 
 - 관련 파일: `js/managers/IAPManager.js`, `js/config.js`, `js/scenes/BootScene.js`, `js/scenes/MenuScene.js`, `js/managers/SaveManager.js`
 - 구현 일자: 2026-03-09 (실 결제 연동: 2026-03-12)
@@ -1211,7 +1266,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 
 ### 세이브/매니저 시스템
 
-- SaveManager: 로컬스토리지 기반, 세이브 버전 v4. 크레딧/통계/도감/자동사냥 영구 저장 연동 완료. v1->v2 마이그레이션(totalBossKills), v2->v3 마이그레이션(totalSurviveMinutes), v3->v4 마이그레이션(autoHuntUnlocked, autoHuntEnabled) 구현.
+- SaveManager: 로컬스토리지 기반, 세이브 버전 v6. 크레딧/통계/도감/자동사냥/설정 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled).
 - MetaManager: 영구 업그레이드 구매/다운그레이드/적용 계산. canDowngrade(), getDowngradeRefund(), downgradeUpgrade() 메서드 제공. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
 - AchievementManager: 도전과제 조건 검사/보상 지급. ResultScene에서 checkAll() 호출.
 - IAPManager: `@capgo/native-purchases` v8 기반 Google Play 인앱결제 구매/복원/가격조회. 네이티브 환경에서 실제 결제 다이얼로그 표시, 취소 시 실패 메시지 미표시. 웹 환경 Mock 모드 지원. BootScene에서 초기화 및 구매 복원.

@@ -11,6 +11,9 @@ let _haptics = null;
 /** @type {boolean} 초기화 완료 여부 */
 let _initialized = false;
 
+/** @type {boolean} 햅틱 활성화 여부 (설정 메뉴에서 제어) */
+let _enabled = true;
+
 // ── 초기화 ──
 
 /**
@@ -40,6 +43,22 @@ export async function initHaptics() {
  * 플러그인이 비활성화 상태이면 아무 동작도 하지 않는다.
  */
 export function impactHaptic() {
-  if (!_haptics) return;
+  if (!_haptics || !_enabled) return;
   _haptics.impact({ style: 'MEDIUM' }).catch(() => {});
+}
+
+/**
+ * 햅틱 활성화 상태를 설정한다.
+ * @param {boolean} enabled - 활성화 여부
+ */
+export function setHapticEnabled(enabled) {
+  _enabled = enabled;
+}
+
+/**
+ * 햅틱 활성화 여부를 반환한다.
+ * @returns {boolean} 활성화 여부
+ */
+export function isHapticEnabled() {
+  return _enabled;
 }

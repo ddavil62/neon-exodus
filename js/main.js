@@ -8,6 +8,7 @@
 import { GAME_WIDTH, GAME_HEIGHT } from './config.js';
 import BootScene from './scenes/BootScene.js';
 import MenuScene from './scenes/MenuScene.js';
+import SettingsScene from './scenes/SettingsScene.js';
 import StageSelectScene from './scenes/StageSelectScene.js';
 import GameScene from './scenes/GameScene.js';
 import LevelUpScene from './scenes/LevelUpScene.js';
@@ -26,7 +27,7 @@ const config = {
   height: GAME_HEIGHT,
   backgroundColor: '#0A0A1A',
   parent: 'game',
-  scene: [BootScene, MenuScene, StageSelectScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene],
+  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

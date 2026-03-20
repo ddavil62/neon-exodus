@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-20 -- 설정 메뉴: BGM/SFX/햅틱 ON/OFF 토글
+
+### 추가
+- `js/scenes/SettingsScene.js` 신규 생성: BGM/SFX/햅틱 세 항목 ON/OFF 토글 UI, 뒤로가기 버튼, ESC 키 리스너
+- `js/main.js`에 SettingsScene import 및 scene 배열 등록
+- `js/systems/SoundSystem.js`에 _bgmEnabled/_sfxEnabled/_lastBgmId static 필드, setBgmEnabled/setSfxEnabled/isBgmEnabled/isSfxEnabled 메서드 추가
+- `js/managers/HapticManager.js`에 _enabled 모듈 변수, setHapticEnabled/isHapticEnabled export 함수 추가
+- `js/i18n.js`에 settings.title/bgm/sfx/haptic/on/off 6키 ko/en 추가
+- `js/managers/SaveManager.js` DEFAULT_SAVE.settings에 hapticEnabled/bgmEnabled/sfxEnabled 필드 추가 (기본값 true)
+- `js/managers/SaveManager.js` _migrate()에 v5->v6 마이그레이션 블록 추가
+
+### 변경
+- `js/config.js` SAVE_DATA_VERSION 5 -> 6
+- `js/scenes/MenuScene.js` 버튼 Y좌표 재배치 (출격 280, 업그레이드 330, 도전과제 380, 도감 430, 자동사냥 480, 설정 530), "설정" 버튼 추가
+- `js/scenes/BootScene.js` SoundSystem.init() 후 저장된 bgmEnabled/sfxEnabled 반영, initHaptics() 후 hapticEnabled 반영, setHapticEnabled import 추가
+- `js/systems/SoundSystem.js` play()에 _sfxEnabled 체크 추가, playBgm()에 _lastBgmId 갱신 + _bgmEnabled 체크 추가
+
+### 참고
+- 스펙: `.claude/specs/2026-03-20-settings-menu.md`
+- 구현 리포트: `.claude/specs/2026-03-20-settings-menu-report.md`
+- QA: `.claude/specs/2026-03-20-settings-menu-qa.md`
+- QA 결과: 수용기준 11/11 충족, 예외 시나리오 10/10 PASS, Playwright 20/20 전체 통과
+- 변경 파일: `js/scenes/SettingsScene.js`(신규), `js/config.js`, `js/managers/SaveManager.js`, `js/systems/SoundSystem.js`, `js/managers/HapticManager.js`, `js/scenes/MenuScene.js`, `js/main.js`, `js/i18n.js`, `js/scenes/BootScene.js` 총 9개
+- 스펙 대비 차이: MenuScene 자동사냥 y=490->480, 설정 y=545->530. 시각적으로 균일한 간격 확보, 크레딧 텍스트와 미겹침
+- BGM/SFX 볼륨값(_sfxVol/_bgmVol)을 0으로 변경하지 않고 enabled boolean 플래그로만 ON/OFF 처리. OFF->ON 복귀 시 원래 볼륨 보존
+
 ## 2026-03-20 -- 난이도 상향: 3구간 선형 스케일링 재설계
 
 ### 추가

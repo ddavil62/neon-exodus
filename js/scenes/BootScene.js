@@ -14,7 +14,7 @@ import { SaveManager } from '../managers/SaveManager.js';
 import { AdManager } from '../managers/AdManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
-import { initHaptics } from '../managers/HapticManager.js';
+import { initHaptics, setHapticEnabled } from '../managers/HapticManager.js';
 
 // ── BootScene 클래스 ──
 
@@ -203,8 +203,15 @@ export default class BootScene extends Phaser.Scene {
     // ── SoundSystem 초기화 ──
     SoundSystem.init(SaveManager.getSettings());
 
+    // 저장된 BGM/SFX 활성화 상태 반영
+    if (settings.bgmEnabled === false) SoundSystem.setBgmEnabled(false);
+    if (settings.sfxEnabled === false) SoundSystem.setSfxEnabled(false);
+
     // ── Haptics 초기화 ──
     await initHaptics();
+
+    // 저장된 햅틱 활성화 상태 반영
+    if (settings.hapticEnabled === false) setHapticEnabled(false);
 
     // ── AdManager 초기화 ──
     await AdManager.initialize();

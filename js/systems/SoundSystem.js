@@ -27,6 +27,15 @@ export default class SoundSystem {
   /** @type {number|null} BGM 루프 인터벌 ID */
   static _bgmInterval = null;
 
+  /** @type {boolean} BGM 활성화 여부 */
+  static _bgmEnabled = true;
+
+  /** @type {boolean} SFX 활성화 여부 */
+  static _sfxEnabled = true;
+
+  /** @type {string|null} 마지막으로 요청된 BGM ID (OFF→ON 재시작용) */
+  static _lastBgmId = null;
+
   /**
    * 사운드 시스템을 초기화한다.
    * @param {Object} [settings] - 설정 객체 (sfxVolume, bgmVolume)
@@ -42,6 +51,8 @@ export default class SoundSystem {
     if (settings) {
       SoundSystem._sfxVol = settings.sfxVolume ?? 1;
       SoundSystem._bgmVol = settings.bgmVolume ?? 0.7;
+      if (settings.bgmEnabled !== undefined) SoundSystem._bgmEnabled = settings.bgmEnabled;
+      if (settings.sfxEnabled !== undefined) SoundSystem._sfxEnabled = settings.sfxEnabled;
     }
 
     // suspended 상태이면 즉시 resume 시도
@@ -62,7 +73,7 @@ export default class SoundSystem {
    * @param {string} sfxId - SFX ID
    */
   static play(sfxId) {
-    if (!SoundSystem._ctx || SoundSystem._sfxVol <= 0) return;
+    if (!SoundSystem._ctx || SoundSystem._sfxVol <= 0 || !SoundSystem._sfxEnabled) return;
 
     const ctx = SoundSystem._ctx;
     const vol = SoundSystem._sfxVol;
@@ -105,7 +116,8 @@ export default class SoundSystem {
    */
   static playBgm(bgmId) {
     SoundSystem.stopBgm();
-    if (!SoundSystem._ctx || SoundSystem._bgmVol <= 0) return;
+    SoundSystem._lastBgmId = bgmId;
+    if (!SoundSystem._ctx || SoundSystem._bgmVol <= 0 || !SoundSystem._bgmEnabled) return;
 
     SoundSystem._currentBgmId = bgmId;
 
@@ -147,6 +159,44 @@ export default class SoundSystem {
    */
   static setBgmVolume(v) {
     SoundSystem._bgmVol = Math.max(0, Math.min(1, v));
+  }
+
+  /**
+   * BGM 활성화 상태를 설정한다.
+   * false이면 즉시 정지, true이면 마지막 BGM을 재시작한다.
+   * @param {boolean} enabled - 활성화 여부
+   */
+  static setBgmEnabled(enabled) {
+    SoundSystem._bgmEnabled = enabled;
+    if (!enabled) {
+      SoundSystem.stopBgm();
+    } else if (SoundSystem._lastBgmId) {
+      SoundSystem.playBgm(SoundSystem._lastBgmId);
+    }
+  }
+
+  /**
+   * SFX 활성화 상태를 설정한다.
+   * @param {boolean} enabled - 활성화 여부
+   */
+  static setSfxEnabled(enabled) {
+    SoundSystem._sfxEnabled = enabled;
+  }
+
+  /**
+   * BGM 활성화 여부를 반환한다.
+   * @returns {boolean} BGM 활성화 여부
+   */
+  static isBgmEnabled() {
+    return SoundSystem._bgmEnabled;
+  }
+
+  /**
+   * SFX 활성화 여부를 반환한다.
+   * @returns {boolean} SFX 활성화 여부
+   */
+  static isSfxEnabled() {
+    return SoundSystem._sfxEnabled;
   }
 
   // ── SFX 구현 ──

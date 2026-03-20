@@ -55,23 +55,23 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // ── 출격 버튼 (StageSelectScene으로 이동) ──
-    this._createButton(centerX, 310, t('menu.start'), UI_COLORS.btnPrimary, () => {
+    this._createButton(centerX, 280, t('menu.start'), UI_COLORS.btnPrimary, () => {
       SoundSystem.resume();
       this.scene.start('StageSelectScene');
     });
 
     // ── 업그레이드 버튼 (활성화) ──
-    this._createButton(centerX, 370, t('menu.upgrade'), UI_COLORS.btnPrimary, () => {
+    this._createButton(centerX, 330, t('menu.upgrade'), UI_COLORS.btnPrimary, () => {
       this.scene.start('UpgradeScene');
     });
 
     // ── 도전과제 버튼 (활성화) ──
-    this._createButton(centerX, 430, t('menu.achievements'), UI_COLORS.btnPrimary, () => {
+    this._createButton(centerX, 380, t('menu.achievements'), UI_COLORS.btnPrimary, () => {
       this.scene.start('AchievementScene');
     });
 
     // ── 도감 버튼 (활성화) ──
-    this._createButton(centerX, 490, t('menu.collection'), UI_COLORS.btnPrimary, () => {
+    this._createButton(centerX, 430, t('menu.collection'), UI_COLORS.btnPrimary, () => {
       this.scene.start('CollectionScene');
     });
 
@@ -79,22 +79,27 @@ export default class MenuScene extends Phaser.Scene {
     if (!IAPManager.isAutoHuntUnlocked()) {
       const price = IAPManager.getLocalizedPrice();
       const btnLabel = `${t('autoHunt.purchase')} (${price})`;
-      this._createButton(centerX, 550, btnLabel, COLORS.NEON_ORANGE, () => {
+      this._createButton(centerX, 480, btnLabel, COLORS.NEON_ORANGE, () => {
         this._showAutoHuntPurchase();
       });
     } else {
       // 해금 완료 표시
-      this.add.text(centerX, 550, t('autoHunt.on'), {
+      this.add.text(centerX, 480, t('autoHunt.on'), {
         fontSize: '12px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonGreen,
       }).setOrigin(0.5);
     }
 
+    // ── 설정 버튼 ──
+    this._createButton(centerX, 530, t('menu.settings'), UI_COLORS.btnSecondary, () => {
+      this.scene.start('SettingsScene');
+    });
+
     // ── 하단: 크레딧/데이터코어 보유량 ──
     /** @type {Phaser.GameObjects.Text} 크레딧 표시 텍스트 */
     this._creditText = this.add.text(
-      centerX, GAME_HEIGHT - 55,
+      centerX, GAME_HEIGHT - 72,
       t('menu.credits', SaveManager.getCredits()),
       {
         fontSize: '12px',
@@ -104,7 +109,7 @@ export default class MenuScene extends Phaser.Scene {
     ).setOrigin(0.5);
 
     this._dataCoreText = this.add.text(
-      centerX, GAME_HEIGHT - 37,
+      centerX, GAME_HEIGHT - 55,
       t('menu.dataCores', SaveManager.getDataCores()),
       {
         fontSize: '12px',
