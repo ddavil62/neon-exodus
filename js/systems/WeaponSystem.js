@@ -407,7 +407,11 @@ export default class WeaponSystem {
       );
 
       if (target) {
-        this.fireProjectile(weapon, stats, target);
+        // multiShot: 여러 발 동시 발사 (진화 무기 precision_cannon 등)
+        const shotCount = stats.multiShot || 1;
+        for (let i = 0; i < shotCount; i++) {
+          this.fireProjectile(weapon, stats, target);
+        }
         weapon.cooldownTimer = effectiveCooldown;
       } else {
         // 적이 없으면 쿨다운 리셋하지 않음 (다음 프레임에 재시도)
@@ -1972,8 +1976,8 @@ export default class WeaponSystem {
     // 치명타 판정 (투사체 발사 시점에 결정)
     const { damage: finalDamage, isCrit } = this._rollCrit(baseDamage);
 
-    // 투사체 속도에 플레이어 투사체 속도 배수 적용
-    const finalSpeed = stats.speed * (this.player.projectileSpeedMultiplier || 1);
+    // 투사체 속도에 플레이어 투사체 속도 배수 적용 (진화 무기는 projectileSpeed 필드 사용)
+    const finalSpeed = (stats.projectileSpeed || stats.speed) * (this.player.projectileSpeedMultiplier || 1);
 
     // 풀에서 투사체 획득
     const proj = this.projectilePool.get(this.player.x, this.player.y);
