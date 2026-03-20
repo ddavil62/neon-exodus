@@ -432,6 +432,7 @@ const TRANSLATIONS = {
     'ad.reviveBtn': '광고 보기',
     'ad.reviveBtnCount': '({0}/{1})',
     'ad.reviveGiveUp': '포기',
+    'ad.loadFailed': '광고를 불러올 수 없습니다',
 
     // ── 게임 상태 메시지 ──
     'game.start': '출격!',
@@ -975,6 +976,7 @@ const TRANSLATIONS = {
     'ad.reviveBtn': 'Watch Ad',
     'ad.reviveBtnCount': '({0}/{1})',
     'ad.reviveGiveUp': 'Give Up',
+    'ad.loadFailed': 'Ad unavailable right now',
 
     // ── Game State Messages ──
     'game.start': 'Deploy!',

@@ -398,6 +398,19 @@ export default class ResultScene extends Phaser.Scene {
         );
         this._adBtnText.setColor(UI_COLORS.textSecondary);
         zone.disableInteractive();
+      } else if (result.error !== 'busy') {
+        // 광고 로드/표시 실패 — 안내 메시지 표시 (2.5초 후 자동 제거)
+        this._adBtnText.setText(t('ad.loadFailed'));
+        this._adBtnText.setColor(UI_COLORS.hpRed);
+        this.time.delayedCall(2500, () => {
+          if (this._adUsed) return;
+          const remaining = AdManager.getRemainingAdCount('creditDouble');
+          const used = AD_LIMITS.creditDouble - remaining;
+          this._adBtnText.setText(
+            `${t('ad.creditDouble')} ${t('ad.creditDoubleCount', used, AD_LIMITS.creditDouble)}`
+          );
+          this._adBtnText.setColor(UI_COLORS.textPrimary);
+        });
       }
 
       // 광고 완료 후 입력 잠금 해제

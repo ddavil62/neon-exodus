@@ -826,6 +826,11 @@ export default class GameScene extends Phaser.Scene {
           adLoading = false;
           adBtnText.setAlpha(1);
           giveUpText.setAlpha(1);
+
+          // busy(중복 호출)가 아닌 경우에만 안내 메시지 표시
+          if (result.error !== 'busy') {
+            this._showWarning(t('ad.loadFailed'));
+          }
         }
       });
       adZone.on('pointerout', () => { adPressed = false; adBtnText.setAlpha(adLoading ? 0.4 : 1); });
