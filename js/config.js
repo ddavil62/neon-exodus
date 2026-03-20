@@ -58,9 +58,6 @@ export const XP_MAGNET_RADIUS = 50;
  */
 export const XP_FORMULA = (level) => 10 + level * 5;
 
-/** 화면 내 소모성 아이템 동시 존재 상한. 이 수를 초과하면 추가 드롭이 차단된다. */
-export const MAX_CONSUMABLES_ON_FIELD = 5;
-
 /** XP 보석 크기별 경험치량 */
 export const XP_GEM_VALUES = {
   small: 1,

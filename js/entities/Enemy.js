@@ -7,7 +7,7 @@
  * 오브젝트 풀에서 관리된다.
  */
 
-import { COLORS, CREDIT_DROP_CHANCE, CREDIT_DROP_AMOUNT, SPRITE_SCALE, MAX_CONSUMABLES_ON_FIELD } from '../config.js';
+import { COLORS, CREDIT_DROP_CHANCE, CREDIT_DROP_AMOUNT, SPRITE_SCALE } from '../config.js';
 import { ENEMIES, MINI_BOSSES, BOSSES } from '../data/enemies.js';
 import { ENEMY_BEHAVIORS } from './EnemyTypes.js';
 import { CONSUMABLES } from '../data/consumables.js';
@@ -395,15 +395,20 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   _dropConsumable() {
     if (!this.scene || !this.scene.spawnConsumable) return;
 
-    // 화면 내 소모성 아이템 동시 존재 상한 체크
-    const pool = this.scene.consumablePool;
-    if (pool && pool.getActiveCount() >= MAX_CONSUMABLES_ON_FIELD) return;
-
     // 플레이어 HP 비율 확인 (저체력 시 나노 수리킷 확률 상승)
     const player = this.scene.player;
     const isLowHp = player && player.active && (player.currentHp / player.maxHp) <= 0.5;
 
+    const pool = this.scene.consumablePool;
+
     for (const item of CONSUMABLES) {
+      // 아이템별 동시 존재 상한 체크
+      if (pool && item.maxOnField != null) {
+        let count = 0;
+        pool.forEach((c) => { if (c.itemId === item.id) count++; });
+        if (count >= item.maxOnField) continue;
+      }
+
       let chance = 0;
 
       if (this.isBoss) {
