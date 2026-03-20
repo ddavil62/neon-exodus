@@ -47,6 +47,7 @@ import AutoPilotSystem from '../systems/AutoPilotSystem.js';
 import { getPassiveById } from '../data/passives.js';
 import { STAGES, WEAPON_DROP_SCHEDULE } from '../data/stages.js';
 import WeaponDropItem from '../entities/WeaponDropItem.js';
+import { impactHaptic } from '../managers/HapticManager.js';
 
 // ── 접촉 데미지 쿨다운 (ms) ──
 /** 같은 적이 연속으로 접촉 데미지를 주지 않도록 하는 최소 간격 */
@@ -1086,9 +1087,10 @@ export default class GameScene extends Phaser.Scene {
 
     player.takeDamage(enemy.contactDamage);
 
-    // 플레이어 피격 VFX/SFX
+    // 플레이어 피격 VFX/SFX/Haptic
     VFXSystem.playerHit(this, player.x, player.y);
     SoundSystem.play('player_hit');
+    impactHaptic();
   }
 
   /**

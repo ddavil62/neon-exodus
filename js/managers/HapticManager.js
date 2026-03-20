@@ -1,0 +1,45 @@
+/**
+ * @fileoverview 햅틱(진동) 피드백을 관리한다. Capacitor Haptics 플러그인을 동적 로드하며,
+ * 웹 환경이나 플러그인 로드 실패 시 자동으로 비활성화된다.
+ */
+
+// ── 상태 ──
+
+/** @type {object|null} Capacitor Haptics 플러그인 인스턴스 */
+let _haptics = null;
+
+/** @type {boolean} 초기화 완료 여부 */
+let _initialized = false;
+
+// ── 초기화 ──
+
+/**
+ * Haptics 플러그인을 초기화한다.
+ * 네이티브 환경에서만 활성화되며, 웹에서는 자동으로 비활성화된다.
+ * @returns {Promise<void>}
+ */
+export async function initHaptics() {
+  if (_initialized) return;
+  _initialized = true;
+
+  try {
+    if (!window.Capacitor?.isNativePlatform()) return;
+    const mod = await import('@capacitor/haptics');
+    _haptics = mod.Haptics;
+    console.log('[Haptics] 초기화 완료');
+  } catch {
+    // 플러그인 미설치 또는 로드 실패 — 진동 비활성화
+    console.log('[Haptics] 플러그인 로드 실패 — 비활성화');
+  }
+}
+
+// ── 진동 피드백 ──
+
+/**
+ * 짧은 충격 진동을 발생시킨다 (피격 등).
+ * 플러그인이 비활성화 상태이면 아무 동작도 하지 않는다.
+ */
+export function impactHaptic() {
+  if (!_haptics) return;
+  _haptics.impact({ style: 'MEDIUM' }).catch(() => {});
+}

@@ -14,6 +14,7 @@ import { SaveManager } from '../managers/SaveManager.js';
 import { AdManager } from '../managers/AdManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
+import { initHaptics } from '../managers/HapticManager.js';
 
 // ── BootScene 클래스 ──
 
@@ -201,6 +202,9 @@ export default class BootScene extends Phaser.Scene {
 
     // ── SoundSystem 초기화 ──
     SoundSystem.init(SaveManager.getSettings());
+
+    // ── Haptics 초기화 ──
+    await initHaptics();
 
     // ── AdManager 초기화 ──
     await AdManager.initialize();
