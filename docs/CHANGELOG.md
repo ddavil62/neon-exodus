@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-03-20 -- 난이도 상향: 3구간 선형 스케일링 재설계
+
+### 추가
+- `config.js`에 `BASE_DIFFICULTY = 1.5` 상수 추가 (t=0 시점 기저 난이도 배수)
+
+### 변경
+- `config.js` `ENEMY_SCALE_PER_MINUTE` 0.05 -> 0.1111 (분당 +5% -> +11.11%)
+- `WaveSystem.js` 스케일링 공식 5곳에 `BASE_DIFFICULTY` 곱셈 적용: `spawnBatch`, `spawnMiniBoss`(HP/DMG), `spawnBoss`(HP/DMG), `spawnEndlessMiniboss`(HP/DMG)
+- `WaveSystem.js` 엔들리스 즉시 배율: HP x3.0 -> x2.5, DMG x2.0 -> x2.5 (t=15 기저 4.0 x 2.5 = 10.0배)
+- `waves.js` SPAWN_TABLE 후반 구간 밀도 하향 조정:
+  - 2~4분: countMin 5->4, countMax 8->7
+  - 4~6분: countMin 8->6, countMax 12->10
+  - 6~9분: countMin 12->8, countMax 16->12
+  - 9~12분: interval 0.6->0.7, countMin 16->10, countMax 22->15
+  - 12~15분: interval 0.4->0.6, countMin 22->12, countMax 30->20
+- `WaveSystem.js` `enterEndlessMode`, `applyEndlessScale` JSDoc 주석 갱신
+
+### 참고
+- 스펙: `.claude/specs/2026-03-20-difficulty-rebalance.md`
+- 구현 리포트: `.claude/specs/2026-03-20-difficulty-rebalance-report.md`
+- QA: `.claude/specs/2026-03-20-difficulty-rebalance-qa.md`
+- QA 결과: 수용기준 10/10 충족, 예외 시나리오 4/4 PASS, 코드 정적 검증
+- 배율 검증: t=0 1.50배, t=15 4.00배, 엔들리스 진입 10.00배 (오차 0.005% 이내)
+- 변경 파일: `js/config.js`, `js/systems/WaveSystem.js`, `js/data/waves.js` 3개
+- `applyEndlessScale` 분당 증가율(HP +15%, DMG +12%) 변경 없음
+- 보스 0.5 감쇄 계수 유지, BOSS_SCHEDULE/MINI_BOSS_SCHEDULE 변경 없음
+- ObjectPool은 자동 확장 방식이므로 60개 초과 시에도 크래시 없음. 모바일 실기기 성능 테스트 권장
+
 ## 2026-03-13 -- ResultScene 하단 UI 요소 겹침 수정
 
 ### 변경

@@ -12,6 +12,7 @@ import {
   SPAWN_OFFSET_MIN,
   SPAWN_OFFSET_MAX,
   ENEMY_SCALE_PER_MINUTE,
+  BASE_DIFFICULTY,
 } from '../config.js';
 import { SPAWN_TABLE, MINI_BOSS_SCHEDULE, BOSS_SCHEDULE } from '../data/waves.js';
 import ObjectPool from './ObjectPool.js';
@@ -132,7 +133,7 @@ export default class WaveSystem {
     );
 
     // 스케일링 계산 (스테이지 난이도 배수 + 엔들리스 모드 배수 적용)
-    const baseScale = 1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes;
+    const baseScale = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes);
     const stageScale = baseScale * this._stageDiffMult;
     const hpMultiplier = this._isEndless ? stageScale * this._hpMultiplier : stageScale;
     const dmgMultiplier = this._isEndless ? stageScale * this._dmgMultiplier : stageScale;
@@ -168,8 +169,8 @@ export default class WaveSystem {
   spawnMiniBoss(bossData) {
     const pos = this.getSpawnPosition();
     const elapsedMinutes = this.elapsedTime / 60;
-    const hpMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult;
-    const dmgMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult;
+    const hpMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult;
+    const dmgMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult;
 
     // waves.js는 enemyId 필드 사용
     const typeId = bossData.enemyId || bossData.typeId;
@@ -188,8 +189,8 @@ export default class WaveSystem {
     const pos = this.getSpawnPosition();
     const elapsedMinutes = this.elapsedTime / 60;
     // 보스는 스케일링 덜 적용 (이미 기본 스탯이 높으므로), 스테이지 난이도는 적용
-    const hpMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult;
-    const dmgMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult;
+    const hpMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult;
+    const dmgMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult;
 
     // waves.js는 enemyId 필드 사용
     const typeId = bossData.enemyId || bossData.typeId;
@@ -253,14 +254,14 @@ export default class WaveSystem {
    */
   enterEndlessMode() {
     this._isEndless = true;
-    // 엔들리스 진입 즉시 큰 상수 배율 적용 (시작부터 체감 난이도 급등)
-    this._hpMultiplier *= 3.0;
-    this._dmgMultiplier *= 2.0;
+    // t=15분 기저 4.0배 × 2.5 = 10.0배 달성
+    this._hpMultiplier *= 2.5;
+    this._dmgMultiplier *= 2.5;
   }
 
   /**
    * 엔들리스 스케일을 적용한다. 매 분 HP +15%, 데미지 +12% 누적.
-   * 10분 후 HP 12배, 데미지 6배 / 20분 후 HP 49배, 데미지 19배.
+   * 엔들리스 진입 시 HP ×2.5, DMG ×2.5 적용 후 분당 복리 증가.
    * @param {number} minutes - 엔들리스 경과 분
    */
   applyEndlessScale(minutes) {
@@ -278,8 +279,8 @@ export default class WaveSystem {
 
     const pos = this.getSpawnPosition();
     const elapsedMinutes = this.elapsedTime / 60;
-    const hpMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._hpMultiplier;
-    const dmgMult = (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._dmgMultiplier;
+    const hpMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._hpMultiplier;
+    const dmgMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._dmgMultiplier;
 
     const enemy = this.spawnEnemy(typeId, pos.x, pos.y, hpMult, dmgMult);
     if (enemy && this.scene.onMiniBossSpawn) {

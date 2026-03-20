@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-13 (ResultScene 하단 UI 요소 겹침 수정)
+> 최종 업데이트: 2026-03-20 (난이도 상향 -- 3구간 선형 스케일링 재설계)
 
 ## 프로젝트 개요
 
@@ -221,7 +221,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 
 | 모듈 | 파일 | 역할 |
 |---|---|---|
-| 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE=1 일괄 관리 |
+| 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 376키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
 | 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 무기 드롭 스케줄, 난이도 배수 |
@@ -710,7 +710,8 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 시즈 타이탄 | 1500 | 10분 | 광역 포격 (80px, 2초 딜레이, 35dmg) + 돌진 | 보물 상자 + 크레딧 x50 |
 | 코어 프로세서 | 3000 | 15분 | 회전 레이저 + 잡몹 소환 + 광역 EMP (150px, 20dmg) | 런 클리어 보상 |
 
-- 시간 경과에 따라 HP/데미지 +5%/분 스케일링
+- 시간 경과에 따라 HP/데미지 스케일링: `BASE_DIFFICULTY(1.5) * (1 + 0.1111 * t분)` (t=0: 1.5배, t=15: 4.0배)
+- 보스는 0.5 감쇄 적용: `BASE_DIFFICULTY * (1 + 0.1111 * t * 0.5)`
 
 #### 보스/미니보스 등장 연출
 | 연출 대상 | 카메라 플래시 | 카메라 흔들림 | SFX |
@@ -784,15 +785,16 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 시간대 | 스폰 간격 | 동시 스폰 수 |
 |---|---|---|
 | 0~2분 | 1.5초 | 3~5 |
-| 2~4분 | 1.2초 | 5~8 |
-| 4~6분 | 1.0초 | 8~12 |
-| 6~9분 | 0.8초 | 12~16 |
-| 9~12분 | 0.6초 | 16~22 |
-| 12~15분 | 0.4초 | 22~30 |
+| 2~4분 | 1.2초 | 4~7 |
+| 4~6분 | 1.0초 | 6~10 |
+| 6~9분 | 0.8초 | 8~12 |
+| 9~12분 | 0.7초 | 10~15 |
+| 12~15분 | 0.6초 | 12~20 |
 
 - 화면 밖 50~100px 위치에서 스폰
+- ObjectPool 60개 기준. 12~15분 구간 최대 동시 약 33마리 (pool 여유 유지). ObjectPool은 자동 확장 방식이므로 초과 시에도 크래시 없음.
 - 관련 파일: `js/data/waves.js`, `js/systems/WaveSystem.js`
-- 구현 일자: 2026-03-08
+- 구현 일자: 2026-03-08 (밀도 재조정: 2026-03-20)
 
 ### 런 내 성장
 
@@ -958,11 +960,12 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 코어 프로세서(최종 보스) 처치 시 게임이 종료되지 않고 엔들리스 모드로 진입
 - 게임 일시정지 + 모달 표시: 반투명 오버레이(depth 350) + NEON_MAGENTA 테두리 패널(220x160, depth 351) + 제목 `t('game.endlessMode')`(20px neonMagenta, depth 352) + 설명 `t('game.endlessModeDesc')`(12px, wordWrap 200px, depth 352) + 확인 버튼(NEON_CYAN, depth 352-353). 확인 클릭 시 모달 destroy + 게임 재개
 - HUD 타이머가 +MM:SS 형식으로 카운트업
-- ENDLESS_SCALE_INTERVAL(60초)마다 적 HP/데미지 +10% 누적 스케일링 (WaveSystem._hpMultiplier, _dmgMultiplier)
+- 엔들리스 진입 즉시 배율: HP x2.5, DMG x2.5 (t=15분 기저 4.0배 x 2.5 = 10.0배 달성)
+- ENDLESS_SCALE_INTERVAL(60초)마다 적 HP +15%, DMG +12% 누적 스케일링 (WaveSystem._hpMultiplier, _dmgMultiplier)
 - 5분(300초)마다 미니보스(guardian_drone 또는 assault_mech) 랜덤 스폰
 - 포기 또는 사망 시 ResultScene에 엔들리스 모드 결과 표시 (경과 분)
 - 관련 파일: `js/scenes/GameScene.js`, `js/systems/WaveSystem.js`, `js/config.js`
-- 구현 일자: 2026-03-09
+- 구현 일자: 2026-03-09 (엔들리스 즉시 배율 재조정: 2026-03-20)
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase4.md`
 
 ### 자동 사냥 (AutoPilot) 시스템
