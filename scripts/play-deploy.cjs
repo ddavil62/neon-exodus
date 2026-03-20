@@ -134,6 +134,31 @@ async function main() {
     console.log(`\n🎉 내부 테스트 배포 완료! (versionCode: ${versionCode}, status: ${releaseStatus})`);
     console.log('   테스터 기기에서 Play Store 업데이트 가능.');
 
+    // ── 5. 비공개 테스트(alpha) 자동 승격 ──
+    console.log('\n🚀 비공개 테스트(alpha) 승격 중...');
+    try {
+      const alphaEdit = await api.edits.insert({ packageName: PACKAGE_NAME, requestBody: {} });
+      const alphaEditId = alphaEdit.data.id;
+      await api.edits.tracks.update({
+        packageName: PACKAGE_NAME, editId: alphaEditId, track: 'alpha',
+        requestBody: {
+          track: 'alpha',
+          releases: [{
+            status: 'completed',
+            versionCodes: [String(versionCode)],
+            releaseNotes: [
+              { language: 'ko-KR', text: `빌드 v${versionCode}` },
+              { language: 'en-US', text: `Build v${versionCode}` },
+            ],
+          }],
+        },
+      });
+      await api.edits.commit({ packageName: PACKAGE_NAME, editId: alphaEditId });
+      console.log(`🎉 비공개 테스트(alpha) 승격 완료! (v${versionCode})`);
+    } catch (alphaErr) {
+      console.log('⚠️ alpha 승격 실패 (내부 테스트는 정상 배포됨):', alphaErr.message);
+    }
+
   } catch (err) {
     console.error('❌ 배포 실패:', err.message);
     if (err.response?.data) {
