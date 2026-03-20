@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-03-20 -- 진화 무기 DPS + 후반 적 HP 리밸런스
+
+### 변경
+- `js/data/weapons.js` EVOLVED_WEAPONS 11종 스탯 하향:
+  - Death Blossom: bladeCount 6->5, damage 110->60, tickInterval 130->210 (DPS 5,077->1,429)
+  - Guardian Sphere: orbCount 5->4, tickDamage 38->28, tickInterval 250->280 (DPS 760->400)
+  - Hivemind: droneCount 5->4, damage 55->40, cooldown 500->600 (DPS 550->267)
+  - Plasma Storm: damage 80->60 (DPS 114->86)
+  - Precision Cannon: damage 50->40 (DPS 357->286)
+  - Phantom Strike: damage 165->110 (DPS 344->229)
+  - Ion Cannon: tickDamage 40->30
+  - Nuke Missile: damage 130->100
+  - Bioplasma: tickDamage 35->25
+  - Event Horizon: damage 115->85, pullDamage 35->25
+  - Perpetual EMP: damage 95->70
+- `js/data/enemies.js` 잡몹 10종 HP 2~3.3배 상향 (nano_drone 10->20, scout_bot 20->40, spark_drone 15->30, battle_robot 60->150, shield_drone 30->70, rush_bot 40->100, repair_bot 25->55, heavy_bot 120->400, teleport_drone 35->90, suicide_bot 50->150)
+- `js/data/enemies.js` 미니보스 2종 HP 상향 (guardian_drone 300->1000, assault_mech 500->2000)
+- `js/data/enemies.js` 보스 6종 HP 상향 (commander_drone 800->3000, siege_titan 1500->8000, core_processor 3000->30000, siege_titan_mk2 2000->12000, data_phantom 2500->16000, omega_core 5000->30000)
+
+### 참고
+- 스펙: `.claude/specs/2026-03-20-evolved-weapon-rebalance.md`
+- 구현 리포트: `.claude/specs/2026-03-20-evolved-weapon-rebalance-report.md`
+- QA: `.claude/specs/2026-03-20-evolved-weapon-rebalance-qa.md`
+- QA 결과: 수용기준 5/5 충족, 예외 시나리오 10/10 PASS, Playwright 67/67 전체 통과
+- 변경 파일: `js/data/weapons.js`, `js/data/enemies.js` 총 2개
+- 상위 6종 합산 DPS: ~2,695 (기존 ~7,767에서 65% 하향)
+- t=15분 core_processor(S1) 생존 시간: ~30.6초 (기존 ~1.5초), omega_core(S4): ~61.2초
+- 스펙 대비 차이: core_processor HP 25,000->30,000 (QA에서 보스 half-scaling 고려 시 30초 미달 발견하여 상향)
+- 불변 항목: config.js BASE_DIFFICULTY/ENEMY_SCALE_PER_MINUTE, 기본 무기(비진화) 스탯, 보스 specialAttacks 패턴, 스폰 타이밍
+
 ## 2026-03-20 -- 설정 메뉴: BGM/SFX/햅틱 ON/OFF 토글
 
 ### 추가

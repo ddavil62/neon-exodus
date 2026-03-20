@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-20 (설정 메뉴 -- BGM/SFX/햅틱 ON/OFF 토글, SaveData v6)
+> 최종 업데이트: 2026-03-20 (진화 무기 DPS + 후반 적 HP 리밸런스)
 
 ## 프로젝트 개요
 
@@ -553,17 +553,17 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 #### 무기 진화 시스템 (11종 완성)
 | # | 진화 무기 | 조건 (무기 Lv8 + 패시브 Lv5) | 타입 | 주요 스탯 |
 |---|---|---|---|---|
-| 1 | 프리시전 캐논 | blaster + aim_module | projectile | dmg 60, cd 200ms, pierce 99, multiShot 3 |
-| 2 | 플라즈마 스톰 | electric_chain + overclock | chain | dmg 90, cd 600ms, chain 10, range 250, decay 0.92 |
-| 3 | 핵 미사일 | missile + critical_chip | homing | dmg 150, cd 1000ms, speed 320, radius 140 |
-| 4 | 이온 캐논 | laser_gun + battery_pack | beam | tickDmg 50, cd 600ms, dur 800ms, range 500, beamCount 3 |
-| 5 | 가디언 스피어 | plasma_orb + armor_plate | orbital | orbCount 6, tickDmg 45, orbRadius 120, angSpd 18.0, tick 200ms |
-| 6 | 하이브마인드 | drone + magnet_module | summon | droneCount 6, dmg 65, cd 400ms, range 200, spd 700 |
-| 7 | 퍼페츄얼 EMP | emp_blast + cooldown_chip | aoe | dmg 120, cd 2000ms, radius 250, slow 0.20, slowDur 3000ms |
-| 8 | 팬텀 스트라이크 | force_blade + booster | melee | dmg 200, cd 400ms, range 130, arc 360, knockback 50 |
-| 9 | 바이오플라즈마 | nano_swarm + regen_module | cloud | cloud 6, tickDmg 45, radius 100, dur 7000ms, cd 500ms, poison 8 |
-| 10 | 이벤트 호라이즌 | vortex_cannon + luck_module | gravity | dmg 140, pullDmg 40, pullRadius 160, vortexDur 5000ms, cd 1400ms, pullForce 200 |
-| 11 | 데스 블룸 | reaper_field + damage_amp | rotating_blade | blade 8, dmg 130, orbit 130, angSpd 14.0, tick 100ms, curse 5000ms |
+| 1 | 프리시전 캐논 | blaster + aim_module | projectile | dmg 40, cd 280ms, pierce 5, multiShot 2 |
+| 2 | 플라즈마 스톰 | electric_chain + overclock | chain | dmg 60, cd 700ms, chain 8, range 220, decay 0.88 |
+| 3 | 핵 미사일 | missile + critical_chip | homing | dmg 100, cd 1200ms, speed 320, radius 120 |
+| 4 | 이온 캐논 | laser_gun + battery_pack | beam | tickDmg 30, cd 800ms, dur 600ms, range 500, beamCount 2 |
+| 5 | 가디언 스피어 | plasma_orb + armor_plate | orbital | orbCount 4, tickDmg 28, orbRadius 100, angSpd 16.0, tick 280ms |
+| 6 | 하이브마인드 | drone + magnet_module | summon | droneCount 4, dmg 40, cd 600ms, range 180, spd 650 |
+| 7 | 퍼페츄얼 EMP | emp_blast + cooldown_chip | aoe | dmg 70, cd 2500ms, radius 220, slow 0.30, slowDur 2500ms |
+| 8 | 팬텀 스트라이크 | force_blade + booster | melee | dmg 110, cd 480ms, range 125, arc 240, knockback 42 |
+| 9 | 바이오플라즈마 | nano_swarm + regen_module | cloud | cloud 5, tickDmg 25, radius 120, dur 6000ms, cd 550ms, poison 6 |
+| 10 | 이벤트 호라이즌 | vortex_cannon + luck_module | gravity | dmg 85, pullDmg 25, pullRadius 140, vortexDur 4500ms, cd 1600ms, pullForce 170 |
+| 11 | 데스 블룸 | reaper_field + damage_amp | rotating_blade | blade 5, dmg 60, orbit 115, angSpd 12.5, tick 210ms, curse 4000ms |
 
 - 무기 최대 레벨 + 대응 패시브 Lv5 이상 시 즉시 자동 진화
 - LevelUpScene에서 무기/패시브 업그레이드 후 GameScene._tryEvolutionCheck() 호출
@@ -691,29 +691,32 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 #### 잡몹 (10종)
 | # | 이름 | HP | 이속 | 접촉 데미지 | XP | 등장 시점 | 특성 |
 |---|---|---|---|---|---|---|---|
-| 1 | 나노 드론 | 10 | 120 | 3 | 1 | 0분 | 대량 스폰 |
-| 2 | 정찰봇 | 20 | 80 | 5 | 2 | 0분 | 직선 추적 |
-| 3 | 스파크 드론 | 15 | 110 | 4 | 2 | 2분 | 사망 시 전기 폭발 (30px, 3dmg) |
-| 4 | 전투 로봇 | 60 | 50 | 12 | 4 | 4분 | 탱커 |
-| 5 | 실드 드론 | 30 | 70 | 6 | 3 | 4분 | 전면 실드 (50% 감소) |
-| 6 | 돌격봇 | 40 | 150 | 10 | 3 | 6분 | 돌진 + 벽 기절 |
-| 7 | 수리봇 | 25 | 60 | 2 | 5 | 6분 | 아군 초당 5HP 회복 (80px) |
-| 8 | 중장갑 봇 | 120 | 35 | 20 | 6 | 9분 | 넉백 저항 |
-| 9 | 텔레포트 드론 | 35 | 80 | 8 | 5 | 9분 | 3초마다 순간이동 (80px) |
-| 10 | 자폭봇 | 50 | 130 | 0 | 4 | 12분 | 자폭 (60px, 25dmg) |
+| 1 | 나노 드론 | 20 | 120 | 3 | 1 | 0분 | 대량 스폰 |
+| 2 | 정찰봇 | 40 | 80 | 5 | 2 | 0분 | 직선 추적 |
+| 3 | 스파크 드론 | 30 | 110 | 4 | 2 | 2분 | 사망 시 전기 폭발 (30px, 3dmg) |
+| 4 | 전투 로봇 | 150 | 50 | 12 | 4 | 4분 | 탱커 |
+| 5 | 실드 드론 | 70 | 70 | 6 | 3 | 4분 | 전면 실드 (50% 감소) |
+| 6 | 돌격봇 | 100 | 150 | 10 | 3 | 6분 | 돌진 + 벽 기절 |
+| 7 | 수리봇 | 55 | 60 | 2 | 5 | 6분 | 아군 초당 5HP 회복 (80px) |
+| 8 | 중장갑 봇 | 400 | 35 | 20 | 6 | 9분 | 넉백 저항 |
+| 9 | 텔레포트 드론 | 90 | 80 | 8 | 5 | 9분 | 3초마다 순간이동 (80px) |
+| 10 | 자폭봇 | 150 | 130 | 0 | 4 | 12분 | 자폭 (60px, 25dmg) |
 
 #### 미니보스 (2종)
 | 이름 | HP | 이속 | 등장 시점 | 특수 공격 | 드랍 |
 |---|---|---|---|---|---|
-| 가디언 드론 | 300 | 40 | 3분, 7분 | 회전 레이저 빔 (8dmg, 60px) | XP 보석 x5 |
-| 어썰트 메카 | 500 | 60 | 6분, 12분 | 3방향 미사일 (12dmg) | XP 보석 x8 |
+| 가디언 드론 | 1000 | 40 | 3분, 7분 | 회전 레이저 빔 (8dmg, 60px) | XP 보석 x5 |
+| 어썰트 메카 | 2000 | 60 | 6분, 12분 | 3방향 미사일 (12dmg) | XP 보석 x8 |
 
-#### 보스 (3종)
-| 이름 | HP | 등장 | 특수 패턴 | 드랍 |
-|---|---|---|---|---|
-| 커맨더 드론 | 800 | 5분 | 잡몹 4마리 소환 (10초 주기) + 돌진 | 보물 상자 |
-| 시즈 타이탄 | 1500 | 10분 | 광역 포격 (80px, 2초 딜레이, 35dmg) + 돌진 | 보물 상자 + 크레딧 x50 |
-| 코어 프로세서 | 3000 | 15분 | 회전 레이저 + 잡몹 소환 + 광역 EMP (150px, 20dmg) | 런 클리어 보상 |
+#### 보스 (6종)
+| 이름 | HP | 등장 | 스테이지 | 특수 패턴 | 드랍 |
+|---|---|---|---|---|---|
+| 커맨더 드론 | 3000 | 5분 | S1 | 잡몹 4마리 소환 (10초 주기) + 돌진 | 보물 상자 |
+| 시즈 타이탄 | 8000 | 10분 | S1 | 광역 포격 (80px, 2초 딜레이, 35dmg) + 돌진 | 보물 상자 + 크레딧 x50 |
+| 코어 프로세서 | 30000 | 15분 | S1 | 회전 레이저 + 잡몹 소환 + 광역 EMP (150px, 20dmg) | 런 클리어 보상 |
+| 시즈 타이탄 Mk2 | 12000 | 15분 | S2 | 광역 포격 (180px, 2초 딜레이, 35dmg) + 돌진 | 런 클리어 보상 |
+| 데이터 팬텀 | 16000 | 15분 | S3 | 텔레포트 + 분신 + 광역 EMP | 런 클리어 보상 |
+| 오메가 코어 | 30000 | 15분 | S4 | 회전 레이저 + 잡몹 소환 + 광역 EMP (200px, 30dmg) | 런 클리어 보상 |
 
 - 시간 경과에 따라 HP/데미지 스케일링: `BASE_DIFFICULTY(1.5) * (1 + 0.1111 * t분)` (t=0: 1.5배, t=15: 4.0배)
 - 보스는 0.5 감쇄 적용: `BASE_DIFFICULTY * (1 + 0.1111 * t * 0.5)`
