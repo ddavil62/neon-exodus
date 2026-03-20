@@ -78,6 +78,9 @@ export default class VirtualJoystick {
     /** @type {boolean} 키보드로 이동 중인지 여부 */
     this._keyboardActive = false;
 
+    /** @type {number} 입력 잠금 해제 시각 (ms). 이 시각 이전에는 포인터 입력을 무시한다. */
+    this._lockUntil = 0;
+
     // ── 입력 이벤트 바인딩 ──
     this._bindInput();
   }
@@ -110,6 +113,8 @@ export default class VirtualJoystick {
    * @private
    */
   _onPointerDown(pointer) {
+    // 입력 잠금 중이면 무시 (씬 전환 직후 pointerdown 전파 방지)
+    if (Date.now() < this._lockUntil) return;
     // 이미 다른 포인터가 조이스틱을 제어 중이면 무시
     if (this._pointerId !== null) return;
 
@@ -182,6 +187,23 @@ export default class VirtualJoystick {
 
     // 터치 해제 시 키보드 입력이 남아있으면 키보드 방향 복원
     this._updateKeyboardDirection();
+  }
+
+  /**
+   * 조이스틱 상태를 초기화하고 일정 시간 포인터 입력을 잠근다.
+   * 씬 전환 직후 pointerdown 이벤트가 조이스틱에 전파되는 것을 방지한다.
+   * @param {number} lockMs - 잠금 시간 (밀리초)
+   */
+  resetAndLock(lockMs = 300) {
+    this._pointerId = null;
+    this.isActive = false;
+    this.direction.x = 0;
+    this.direction.y = 0;
+    this.force = 0;
+    this._keyboardActive = false;
+    this.base.setVisible(false);
+    this.thumb.setVisible(false);
+    this._lockUntil = Date.now() + lockMs;
   }
 
   // ── 키보드 입력 처리 ──

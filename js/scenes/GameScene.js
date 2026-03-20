@@ -413,6 +413,15 @@ export default class GameScene extends Phaser.Scene {
       this._tryEvolutionCheck();
       // 인벤토리 HUD 갱신 (레벨업, 진화 반영)
       this._refreshInventoryHUD();
+
+      // 레벨업 선택 후 1초 무적 — 선택 직후 피격 방지
+      this.player.invincible = true;
+      this.player.invincibleTimer = 1000;
+
+      // 조이스틱 상태 리셋 + 300ms 입력 잠금 — LevelUpScene pointerdown 전파 방지
+      if (this.joystick) {
+        this.joystick.resetAndLock(300);
+      }
     });
   }
 
