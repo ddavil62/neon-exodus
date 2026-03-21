@@ -159,13 +159,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setScale(SPRITE_SCALE);
       this.clearTint();
 
-      // 가독성을 위한 외곽 글로우 (풀 재사용 시 기존 FX 제거 후 재적용)
-      if (this.preFX) {
-        this.preFX.clear();
-        const glowStrength = this.isBoss ? 3 : (this.isMiniBoss ? 2 : 1);
-        this.preFX.addGlow(0xFFFFFF, glowStrength, 0, false, 0.1, 12);
-      }
-
       // 풀 재사용 시 기존 tween 정리 후 새 맥동 tween 추가
       this.scene.tweens.killTweensOf(this);
       const tweenDuration = this.isBoss ? 600 : (this.isMiniBoss ? 700 : 900);
