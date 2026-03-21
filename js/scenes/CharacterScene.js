@@ -9,6 +9,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { CHARACTERS, getCharacterById } from '../data/characters.js';
+import SoundSystem from '../systems/SoundSystem.js';
 
 // ── 레이아웃 상수 ──
 
@@ -75,6 +76,9 @@ export default class CharacterScene extends Phaser.Scene {
     /** @type {Array<Object>} 카드 UI 요소 배열 */
     this._cardElements = [];
 
+    /** @type {Array<Object>} 이번 진입에서 새로 해금된 캐릭터 목록 */
+    this._newlyUnlocked = [];
+
     // ── 캐릭터 카드 생성 ──
     visibleChars.forEach((charData, i) => {
       const isUnlocked = this._isCharUnlocked(charData, stats);
@@ -82,6 +86,11 @@ export default class CharacterScene extends Phaser.Scene {
 
       this._createCharCard(centerX, cardY, charData, isUnlocked);
     });
+
+    // ── 신규 해금 알림 표시 ──
+    if (this._newlyUnlocked.length > 0) {
+      this._showUnlockNotifications();
+    }
 
     // ── 스크롤 처리 ──
     if (contentHeight > listHeight) {
@@ -130,6 +139,74 @@ export default class CharacterScene extends Phaser.Scene {
     this.scene.start('StageSelectScene');
   }
 
+  // ── 신규 해금 알림 ──
+
+  /**
+   * 새로 해금된 캐릭터 알림을 순차적으로 표시한다.
+   * @private
+   */
+  _showUnlockNotifications() {
+    const centerX = GAME_WIDTH / 2;
+    let delay = 300;
+
+    for (const charData of this._newlyUnlocked) {
+      this.time.delayedCall(delay, () => {
+        SoundSystem.play('levelup');
+        this._createUnlockToast(centerX, charData);
+      });
+      delay += 1500;
+    }
+  }
+
+  /**
+   * 캐릭터 해금 토스트 알림을 생성한다.
+   * @param {number} centerX - 중심 X 좌표
+   * @param {Object} charData - 캐릭터 데이터
+   * @private
+   */
+  _createUnlockToast(centerX, charData) {
+    const message = t('menu.characterUnlocked', t(charData.nameKey));
+    const toastY = 65;
+
+    // 배경 패널
+    const bg = this.add.graphics();
+    bg.fillStyle(0x002244, 0.9);
+    bg.fillRoundedRect(centerX - 130, toastY - 18, 260, 36, 8);
+    bg.lineStyle(2, COLORS.NEON_CYAN, 0.8);
+    bg.strokeRoundedRect(centerX - 130, toastY - 18, 260, 36, 8);
+    bg.setDepth(500).setAlpha(0);
+
+    // 텍스트
+    const text = this.add.text(centerX, toastY, message, {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+      stroke: '#000000',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(501).setAlpha(0);
+
+    // 페이드인 → 유지 → 페이드아웃
+    this.tweens.add({
+      targets: [bg, text],
+      alpha: 1,
+      duration: 300,
+      ease: 'Power2',
+      onComplete: () => {
+        this.tweens.add({
+          targets: [bg, text],
+          alpha: 0,
+          duration: 500,
+          delay: 2000,
+          ease: 'Power2',
+          onComplete: () => {
+            bg.destroy();
+            text.destroy();
+          },
+        });
+      },
+    });
+  }
+
   // ── 캐릭터 잠금 해제 판별 ──
 
   /**
@@ -161,9 +238,13 @@ export default class CharacterScene extends Phaser.Scene {
         unlocked = false;
     }
 
-    // 해금되었으면 SaveManager에 기록
+    // 해금되었으면 SaveManager에 기록 + 신규 해금 추적
     if (unlocked) {
+      const wasAlreadyUnlocked = SaveManager.isCharacterUnlocked(charData.id);
       SaveManager.unlockCharacter(charData.id);
+      if (!wasAlreadyUnlocked && this._newlyUnlocked) {
+        this._newlyUnlocked.push(charData);
+      }
     }
 
     return unlocked;
