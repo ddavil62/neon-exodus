@@ -134,7 +134,7 @@ export const OVERCLOCK_SPEED_MULT = 1.5;
 export const OVERCLOCK_COOLDOWN_MULT = 0.7;
 
 /** 쉴드 배터리 지속 시간 (ms) */
-export const SHIELD_DURATION = 30000;
+export const SHIELD_DURATION = 10000;
 
 /** 쉴드 접촉 반사 대미지 */
 export const SHIELD_REFLECT_DAMAGE = 5;

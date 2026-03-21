@@ -555,7 +555,7 @@ const TRANSLATIONS = {
     'consumable.overclock.name': '오버클럭 모듈',
     'consumable.overclock.desc': '5초간 이동속도 +50%, 공격속도 +30%.',
     'consumable.shield_battery.name': '쉴드 배터리',
-    'consumable.shield_battery.desc': '30초간 완전 무적 + 접촉 적에게 5 대미지.',
+    'consumable.shield_battery.desc': '10초간 완전 무적 + 접촉 적에게 5 대미지.',
   },
 
   en: {
@@ -1107,7 +1107,7 @@ const TRANSLATIONS = {
     'consumable.overclock.name': 'Overclock Module',
     'consumable.overclock.desc': '+50% move speed, +30% attack speed for 5 seconds.',
     'consumable.shield_battery.name': 'Shield Battery',
-    'consumable.shield_battery.desc': 'Full invincibility + 5 contact damage for 30 seconds.',
+    'consumable.shield_battery.desc': 'Full invincibility + 5 contact damage for 10 seconds.',
   },
 };
 
