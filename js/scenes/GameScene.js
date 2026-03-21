@@ -890,7 +890,7 @@ export default class GameScene extends Phaser.Scene {
         if (success) {
           this.weaponEvolutions++;
           SoundSystem.play('evolution');
-          this._showEvolutionPopup(evo.resultNameKey);
+          this._showEvolutionPopup(evo);
         }
       } else if (passiveLv > 0) {
         // 무기는 Max인데 패시브가 부족 → 힌트 표시
@@ -902,10 +902,11 @@ export default class GameScene extends Phaser.Scene {
   /**
    * 진화 성공 모달을 표시한다.
    * 게임을 일시정지하고, 플레이어가 "확인"을 눌러야 닫히는 모달 방식.
-   * @param {string} nameKey - 진화 무기 이름 i18n 키
+   * 조합 레시피(무기 + 패시브 → 진화무기)를 함께 표시한다.
+   * @param {object} evo - WEAPON_EVOLUTIONS 항목 (weaponId, passiveId, resultNameKey 등)
    * @private
    */
-  _showEvolutionPopup(nameKey) {
+  _showEvolutionPopup(evo) {
     // 이미 모달이 열려 있으면 중복 표시 방지
     if (this._modalOpen) return;
 
@@ -927,9 +928,14 @@ export default class GameScene extends Phaser.Scene {
     ).setScrollFactor(0).setDepth(350);
     popupElements.push(overlay);
 
-    // 중앙 패널 배경 + 테두리
-    const panelW = 220;
-    const panelH = 160;
+    // 조합 레시피 텍스트 (무기 + 패시브)
+    const weaponName = t(`weapon.${evo.weaponId}.name`);
+    const passiveName = t(`passive.${evo.passiveId}.name`);
+    const recipeStr = `${weaponName} + ${passiveName}`;
+
+    // 중앙 패널 배경 + 테두리 (레시피 행 추가로 높이 확장)
+    const panelW = 240;
+    const panelH = 190;
     const panelX = centerX - panelW / 2;
     const panelY = centerY - panelH / 2;
 
@@ -940,8 +946,26 @@ export default class GameScene extends Phaser.Scene {
     panelBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 8);
     popupElements.push(panelBg);
 
-    // 무기 이름 텍스트
-    const weaponNameText = this.add.text(centerX, centerY - 30, t(nameKey), {
+    // 조합 레시피 (무기 + 패시브)
+    const recipeText = this.add.text(centerX, centerY - 48, recipeStr, {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+      stroke: '#000000',
+      strokeThickness: 1,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(recipeText);
+
+    // 화살표
+    const arrowText = this.add.text(centerX, centerY - 28, '▼', {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonOrange,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(arrowText);
+
+    // 진화 무기 이름 텍스트
+    const weaponNameText = this.add.text(centerX, centerY - 6, t(evo.resultNameKey), {
       fontSize: '20px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonOrange,
@@ -951,7 +975,7 @@ export default class GameScene extends Phaser.Scene {
     popupElements.push(weaponNameText);
 
     // "EVOLVED!" 부제목
-    const evolvedText = this.add.text(centerX, centerY, 'EVOLVED!', {
+    const evolvedText = this.add.text(centerX, centerY + 20, 'EVOLVED!', {
       fontSize: '14px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textSecondary,
@@ -961,7 +985,7 @@ export default class GameScene extends Phaser.Scene {
     // 확인 버튼 배경
     const btnW = 120;
     const btnH = 36;
-    const btnY = centerY + 40;
+    const btnY = centerY + 58;
 
     const btnBg = this.add.graphics().setScrollFactor(0).setDepth(352);
     btnBg.fillStyle(COLORS.NEON_ORANGE, 0.8);
