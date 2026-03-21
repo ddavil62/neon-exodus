@@ -489,8 +489,9 @@ export default class ResultScene extends Phaser.Scene {
       delay: baseDelay,
     });
 
-    // 총 데미지 합산 (비율 바 계산용)
+    // 총 데미지 합산 (비율 계산용)
     const maxDamage = Math.max(1, ...this.weaponReport.map(w => w.damage));
+    const totalDamage = Math.max(1, this.weaponReport.reduce((sum, w) => sum + w.damage, 0));
 
     // 무기 수에 따라 표시 개수·행 높이를 동적으로 조절 (최대 10개 수용)
     const totalWeapons = this.weaponReport.length;
@@ -507,15 +508,22 @@ export default class ResultScene extends Phaser.Scene {
       const rowDelay = baseDelay + 100 + idx * 100;
       const rowY = curY + idx * rowHeight;
 
+      // 진화 무기: 이름 앞에 ★ 마커 + 마젠타 색상
+      const isEvolved = weapon.evolved;
+      const namePrefix = isEvolved ? '★ ' : '';
+      const nameColor = isEvolved ? UI_COLORS.neonMagenta : UI_COLORS.textPrimary;
+      const barColor = isEvolved ? 0xFF00FF : COLORS.NEON_CYAN;
+
       // 무기 이름
-      const nameText = this.add.text(leftX, rowY, t(weapon.nameKey), {
+      const nameText = this.add.text(leftX, rowY, namePrefix + t(weapon.nameKey), {
         fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
-        color: UI_COLORS.textPrimary,
+        color: nameColor,
       }).setOrigin(0, 0).setAlpha(0);
 
-      // 킬 수 / DPS 텍스트 (오른쪽)
-      const infoStr = t('result.weaponKills', weapon.kills) + '  ' + t('result.weaponDps', weapon.dps);
+      // 킬 수 / DPS / 데미지 비율(%) 텍스트 (오른쪽)
+      const pct = Math.round((weapon.damage / totalDamage) * 100);
+      const infoStr = t('result.weaponKills', weapon.kills) + '  ' + t('result.weaponDps', weapon.dps) + '  ' + pct + '%';
       const infoText = this.add.text(centerX + 110, rowY, infoStr, {
         fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
@@ -529,10 +537,10 @@ export default class ResultScene extends Phaser.Scene {
       barBg.fillRect(leftX, barY, barWidth, barHeight);
       barBg.setAlpha(0);
 
-      // 데미지 비율 바 (채움)
+      // 데미지 비율 바 (채움) — 진화 무기는 마젠타
       const damageRatio = weapon.damage / maxDamage;
       const barFill = this.add.graphics();
-      barFill.fillStyle(COLORS.NEON_CYAN, 0.8);
+      barFill.fillStyle(barColor, 0.8);
       barFill.fillRect(leftX, barY, barWidth * damageRatio, barHeight);
       barFill.setAlpha(0);
 

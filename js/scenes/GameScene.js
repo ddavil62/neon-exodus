@@ -503,6 +503,7 @@ export default class GameScene extends Phaser.Scene {
         kills: stats.kills,
         damage: stats.damage,
         dps: dps,
+        evolved: !!weapon._evolvedId,
       });
     }
 
