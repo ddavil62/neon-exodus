@@ -16,25 +16,25 @@ export const SPAWN_TABLE = [
   {
     fromMin: 0,
     toMin: 2,
-    interval: 1.5,
-    countMin: 3,
-    countMax: 5,
+    interval: 2.5,
+    countMin: 2,
+    countMax: 3,
     enemies: ['nano_drone', 'scout_bot'],
   },
   {
     fromMin: 2,
     toMin: 4,
-    interval: 1.2,
-    countMin: 4,
-    countMax: 7,
+    interval: 2.0,
+    countMin: 3,
+    countMax: 5,
     enemies: ['nano_drone', 'scout_bot', 'spark_drone'],
   },
   {
     fromMin: 4,
     toMin: 6,
-    interval: 1.0,
-    countMin: 6,
-    countMax: 10,
+    interval: 1.5,
+    countMin: 4,
+    countMax: 7,
     enemies: ['nano_drone', 'scout_bot', 'spark_drone', 'battle_robot', 'shield_drone'],
   },
   {
@@ -70,7 +70,7 @@ export const SPAWN_TABLE = [
  * @type {Array<{time: number, enemyId: string}>}
  */
 export const MINI_BOSS_SCHEDULE = [
-  { time: 180, enemyId: 'guardian_drone' },  // 3분
+  { time: 240, enemyId: 'guardian_drone' },  // 4분
   { time: 360, enemyId: 'assault_mech' },    // 6분
   { time: 420, enemyId: 'guardian_drone' },   // 7분
   { time: 720, enemyId: 'assault_mech' },     // 12분

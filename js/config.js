@@ -96,8 +96,8 @@ export const SPAWN_OFFSET_MAX = 100;
 /** 적 HP/데미지 분당 스케일링 비율 (+11.11%/분). BASE_DIFFICULTY 기저에 곱해져 t=15분에서 4.0배 달성. */
 export const ENEMY_SCALE_PER_MINUTE = 0.1111;
 
-/** 적 HP/데미지 기저 배수. t=0분 시점에서 현재 대비 1.5배 체감 난이도를 보장한다. */
-export const BASE_DIFFICULTY = 1.5;
+/** 적 HP/데미지 기저 배수. t=0분 시점의 기본 난이도. t=15분에서 (1 + 0.1111×15) = 2.67배 달성. */
+export const BASE_DIFFICULTY = 1.0;
 
 // ── 크레딧 (메타 재화) 설정 ──
 
