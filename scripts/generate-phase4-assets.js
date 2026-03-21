@@ -114,21 +114,21 @@ function createEffectSVG(effectId, w, h) {
   </g>
 </svg>`;
 
-    // 5. 시안 미니 드론 (24x24) — 드론
+    // 5. 골드 미니 드론 (24x24) — 드론
     case 'drone':
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   ${glowFilter}
   <g filter="url(#g)">
     <!-- 본체 (십자 암) -->
-    <rect x="10" y="4" width="4" height="16" rx="1" fill="#00FFFF" opacity="0.7"/>
-    <rect x="4" y="10" width="16" height="4" rx="1" fill="#00FFFF" opacity="0.7"/>
+    <rect x="10" y="4" width="4" height="16" rx="1" fill="#FFCC33" opacity="0.7"/>
+    <rect x="4" y="10" width="16" height="4" rx="1" fill="#FFCC33" opacity="0.7"/>
     <!-- 프로펠러 4개 -->
-    <circle cx="6" cy="6" r="3.5" fill="none" stroke="#00FFFF" stroke-width="1.2" opacity="0.6"/>
-    <circle cx="18" cy="6" r="3.5" fill="none" stroke="#00FFFF" stroke-width="1.2" opacity="0.6"/>
-    <circle cx="6" cy="18" r="3.5" fill="none" stroke="#00FFFF" stroke-width="1.2" opacity="0.6"/>
-    <circle cx="18" cy="18" r="3.5" fill="none" stroke="#00FFFF" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="6" cy="6" r="3.5" fill="none" stroke="#FFCC33" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="18" cy="6" r="3.5" fill="none" stroke="#FFCC33" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="6" cy="18" r="3.5" fill="none" stroke="#FFCC33" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="18" cy="18" r="3.5" fill="none" stroke="#FFCC33" stroke-width="1.2" opacity="0.6"/>
     <!-- 중심 코어 -->
-    <circle cx="12" cy="12" r="2.5" fill="#00FFFF" opacity="0.9"/>
+    <circle cx="12" cy="12" r="2.5" fill="#FFCC33" opacity="0.9"/>
     <circle cx="12" cy="12" r="1.5" fill="#FFFFFF" opacity="0.6"/>
   </g>
 </svg>`;
