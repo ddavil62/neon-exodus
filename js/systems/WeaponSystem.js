@@ -1254,6 +1254,8 @@ export default class WeaponSystem {
         targetEnemy: null,
         active: true,
         hoverOffset: Math.random() * Math.PI * 2,
+        /** 궤도 위상 각도 — 드론별 고유값으로 겹침 방지 */
+        orbitPhase: Math.random() * Math.PI * 2,
       };
 
       this._drones.push(drone);
@@ -1295,12 +1297,11 @@ export default class WeaponSystem {
           const moveY = (dy / dist) * stats.moveSpeed * deltaSec;
           gfx.setPosition(gfx.x + moveX, gfx.y + moveY);
         } else {
-          // 궤도 근처이면 적을 중심으로 원형 선회
-          const currentAngle = Math.atan2(gfx.y - drone.targetEnemy.y, gfx.x - drone.targetEnemy.x);
+          // 궤도 근처이면 적을 중심으로 원형 선회 (dronePhase로 드론별 위치 분산)
           const orbitSpeed = 1.8; // rad/sec — 선회 속도
-          const nextAngle = currentAngle + orbitSpeed * deltaSec;
-          const targetX = drone.targetEnemy.x + Math.cos(nextAngle) * orbitRadius;
-          const targetY = drone.targetEnemy.y + Math.sin(nextAngle) * orbitRadius;
+          drone.orbitPhase += orbitSpeed * deltaSec;
+          const targetX = drone.targetEnemy.x + Math.cos(drone.orbitPhase) * orbitRadius;
+          const targetY = drone.targetEnemy.y + Math.sin(drone.orbitPhase) * orbitRadius;
 
           const toDx = targetX - gfx.x;
           const toDy = targetY - gfx.y;
