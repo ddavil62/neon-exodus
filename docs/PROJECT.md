@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-20 (진화 무기 DPS + 후반 적 HP 리밸런스)
+> 최종 업데이트: 2026-03-21 (진화 무기 전용 이펙트 비주얼)
 
 ## 프로젝트 개요
 
@@ -53,7 +53,7 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종), 플레이스홀더 폴백, 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, 설정, 자동 사냥 구매)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
@@ -231,12 +231,12 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 스케줄, 플레이어 글로우 서클 생성/동기화/파괴 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
-| 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 드론 AI |
+| 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기, 드론 AI |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
 | 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡, BGM/SFX enabled 토글 |
 | 설정 | `js/scenes/SettingsScene.js` | BGM/SFX/햅틱 ON/OFF 토글 UI, SaveManager 연동 |
 | 햅틱 | `js/managers/HapticManager.js` | Capacitor Haptics 래퍼, enabled 플래그 제어 |
-| VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 8종 (기존 6종 + consumableCollect + empBlast) |
+| VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 8종 (기존 6종 + consumableCollect + empBlast), empRing/empBurst 진화 분기 |
 | 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v6), 크레딧/통계/도감/스테이지 클리어/무기 해금/설정 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
@@ -575,6 +575,45 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/data/weapons.js`, `js/systems/WeaponSystem.js`, `js/scenes/GameScene.js`
 - 구현 일자: 2026-03-09 (전체 11종 완성: 2026-03-11)
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase3.md`, `.claude/specs/2026-03-11-weapon-evolution-all.md`, `.claude/specs/2026-03-11-evolution-recipe-ui.md`
+
+#### 진화 무기 전용 이펙트 비주얼
+
+11종 진화 무기 각각에 원본과 색상/형태가 확연히 다른 전용 이펙트를 적용한다. BootScene에서 코드 생성 텍스처 10종을 만들고, WeaponSystem에서 `weapon._evolvedId` 분기로 진화 전용 텍스처/색상을 사용한다.
+
+##### 진화 전용 텍스처 (BootScene._generateEvolvedEffectTextures, 10종)
+
+| # | 텍스처 키 | 원본 무기 -> 진화 무기 | 색상 | 형태 | 크기 |
+|---|---|---|---|---|---|
+| 1 | effect_precision_cannon | blaster -> precision_cannon | 금색(0xFFD700) 코어 + 흰색 중간 + 금색 글로우 | 3레이어 원형 | 16x16 |
+| 2 | effect_guardian_sphere | plasma_orb -> guardian_sphere | 청록(0x00FFD0) | 이중 원(외곽 링 + 내부 구) | 28x28 |
+| 3 | effect_nuke_missile | missile -> nuke_missile | 적색(0xFF2222) 본체 + 오렌지 화염 | 대형 미사일 | 24x20 |
+| 4 | effect_nuke_explosion | missile explosion -> nuke explosion | 적색(0xFF2222) + 오렌지(0xFF6600) + 흰색 코어 | 3레이어 대형 폭발 원 | 80x80 |
+| 5 | effect_hivemind | drone -> hivemind | 진보라(0x9933FF) + 녹색(0x00FF66) 코어 | 삼각형 + 중심 원 | 24x24 |
+| 6 | effect_perpetual_emp | emp_blast -> perpetual_emp | 보라(0xBB44FF) + 밝은 보라(0xEE88FF) | 이중 링 + 반투명 배경 | 64x64 |
+| 7 | effect_phantom_strike | force_blade -> phantom_strike | 유령 흰색(0xAABBFF/0xFFFFFF) | 3레이어 반투명 슬래시 | 48x48 |
+| 8 | effect_bioplasma | nano_swarm -> bioplasma | 형광 녹색(0xAAFF00) + 산성(0xDDFF33) | 불규칙 다중 원 구름 | 48x48 |
+| 9 | effect_event_horizon | vortex_cannon -> event_horizon | 어두운 보라(0x6600AA) + 검은 중심 + 보라 가장자리(0xBB66FF) | 블랙홀 (중심이 어두운 동심원) | 48x48 |
+| 10 | effect_death_blossom | reaper_field -> death_blossom | 진홍(0x660022) + 핑크(0xFF0044) 코어 | 4방향 꽃잎(타원) + 중심 원 | 32x32 |
+
+##### Graphics API 빔 색상 분기 (EVOLVED_BEAM_COLOR, 2종)
+
+| 진화 무기 | 원본 색상 | 진화 색상 | 적용 함수 |
+|---|---|---|---|
+| ion_cannon (laser_gun 진화) | 0x00FFFF (시안) | 0x6666FF (블루) | _drawBeams() |
+| plasma_storm (electric_chain 진화) | 0x00FFFF (시안) | 0xAA44FF (보라) | _drawChainBeam(), 스파크 색상 0xDD88FF |
+
+##### WeaponSystem 이펙트 분기 구조
+
+- **상수 매핑**: `EVOLVED_TEXTURE_MAP` (evolvedId -> 텍스처 키, 9종), `EVOLVED_EXPLOSION_MAP` (nuke_missile -> effect_nuke_explosion, 1종), `EVOLVED_BEAM_COLOR` (evolvedId -> 빔 색상, 2종)
+- **텍스처 분기 적용 함수**: `_rebuildOrbs`, `_fireMissile` + `_detonateMissile`, `_spawnDrones`, `_showSlashEffect`, `_spawnCloud`, `_spawnVortex`, `_rebuildBlades`, `Projectile.fire`
+- **빔 색상 분기 적용 함수**: `_drawBeams`, `_drawChainBeam`
+- **VFX 분기**: `VFXSystem.empRing()`, `VFXSystem.empBurst()`에 evolvedId 파라미터 추가. perpetual_emp 시 텍스처/tint를 보라(0xBB44FF)로 분기
+- **즉시 교체**: `_applyEvolvedTextures(weapon)` — evolveWeapon() 직후 호출, 활성 오브/블레이드/드론 스프라이트의 텍스처를 즉시 교체
+- **폴백**: 텍스처 미존재 시 `textures.exists()` 가드로 원본 텍스처 유지. PNG 에셋 없이도 코드 생성 텍스처로 동작
+
+- 관련 파일: `js/scenes/BootScene.js`, `js/systems/WeaponSystem.js`, `js/systems/VFXSystem.js`
+- 구현 일자: 2026-03-21
+- 스펙 문서: `.claude/specs/2026-03-21-evolved-weapon-visuals.md`
 
 #### 치명타 시스템
 - `_rollCrit(baseDamage)`: critChance > 0이고 Math.random() < critChance일 때 치명타 발생
@@ -997,7 +1036,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | playerHit | red, 12입자, 300ms | 플레이어 피격 |
 | enemyDie | white+orange, 20입자, 400ms | 적 사망 폭발 |
 | levelUpBurst | gold, 40입자, 600ms | 레벨업 버스트 |
-| empBurst | electric blue, 60입자, 500ms | EMP 파동 |
+| empBurst | electric blue(기본)/보라(perpetual_emp 진화), 60입자, 500ms | EMP 파동, evolvedId 분기 |
 | xpCollect | green, 6입자, 150ms | XP 수집 반짝 |
 | consumableCollect | 아이템별 tintColor, 파티클 버스트 | 소모성 아이템 수집 |
 | empBlast | electric blue, 파티클 + 카메라 플래시 | EMP 폭탄 화면 클리어 |

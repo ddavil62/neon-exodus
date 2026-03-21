@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-21 -- 진화 무기 전용 이펙트 비주얼
+
+### 추가
+- `js/scenes/BootScene.js`에 `_generateEvolvedEffectTextures()` 메서드 추가: 진화 전용 코드 생성 텍스처 10종 (effect_precision_cannon, effect_guardian_sphere, effect_nuke_missile, effect_nuke_explosion, effect_hivemind, effect_perpetual_emp, effect_phantom_strike, effect_bioplasma, effect_event_horizon, effect_death_blossom)
+- `js/systems/WeaponSystem.js`에 `EVOLVED_TEXTURE_MAP` (9종), `EVOLVED_EXPLOSION_MAP` (1종), `EVOLVED_BEAM_COLOR` (2종) 상수 추가
+- `js/systems/WeaponSystem.js`에 `_applyEvolvedTextures(weapon)` 메서드 추가: 진화 직후 활성 오브/블레이드/드론 스프라이트 즉시 텍스처 교체
+
+### 변경
+- `js/systems/WeaponSystem.js` 이펙트 스폰 함수 8곳에 진화 텍스처 분기 추가: `_rebuildOrbs`, `_fireMissile`, `_detonateMissile`, `_spawnDrones`, `_showSlashEffect`, `_spawnCloud`, `_spawnVortex`, `_rebuildBlades`, Projectile fire
+- `js/systems/WeaponSystem.js` `_drawBeams()`/`_drawChainBeam()`에 EVOLVED_BEAM_COLOR 분기 추가 (ion_cannon: 0x6666FF, plasma_storm: 0xAA44FF)
+- `js/systems/VFXSystem.js` `empRing()`/`empBurst()`에 evolvedId 파라미터 추가, perpetual_emp 시 보라(0xBB44FF) 텍스처/tint 분기
+
+### 참고
+- 스펙: `.claude/specs/2026-03-21-evolved-weapon-visuals.md`
+- 목적 정의서: `.claude/specs/2026-03-21-evolved-weapon-visuals-purpose.md`
+- 변경 파일: `js/scenes/BootScene.js`, `js/systems/WeaponSystem.js`, `js/systems/VFXSystem.js` 총 3개
+- PNG 에셋 추가 없음. 전체 진화 이펙트를 BootScene 코드 생성 텍스처로 처리
+- 스펙 대비 차이: 스펙에서 12행 계획(미사일 폭발 별도) -> 구현 시 10종 텍스처 + 2종 빔 색상 = 11종 진화 무기 전체 커버. EVOLVED_EXPLOSION_MAP 별도 상수로 nuke_missile 폭발 텍스처 관리
+
 ## 2026-03-20 -- 진화 무기 DPS + 후반 적 HP 리밸런스
 
 ### 변경
