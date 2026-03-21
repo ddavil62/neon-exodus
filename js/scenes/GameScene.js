@@ -633,8 +633,8 @@ export default class GameScene extends Phaser.Scene {
    * @param {import('../entities/Enemy.js').default} enemy - 스폰된 미니보스
    */
   onMiniBossSpawn(enemy) {
-    // 레벨업 씬 활성 중이면 카메라 이펙트 생략 (플래시 고정 방지)
-    if (!this._levelUpActive) {
+    // 레벨업/진화 팝업 활성 중이면 카메라 이펙트 생략 (플래시 고정 방지)
+    if (!this._levelUpActive && !this._modalOpen) {
       this.cameras.main.flash(300, 255, 100, 0, false);
     }
     this._showWarning(t('hud.minibossWarning'));
@@ -646,8 +646,8 @@ export default class GameScene extends Phaser.Scene {
    */
   onBossSpawn(enemy) {
     SoundSystem.play('boss_appear');
-    // 레벨업 씬 활성 중이면 카메라 이펙트 생략 (플래시 고정으로 인한 크래시 방지)
-    if (!this._levelUpActive) {
+    // 레벨업/진화 팝업 활성 중이면 카메라 이펙트 생략 (플래시 고정으로 인한 크래시 방지)
+    if (!this._levelUpActive && !this._modalOpen) {
       this.cameras.main.flash(500, 255, 0, 255, false);
       this.cameras.main.shake(500, 0.02);
     }
