@@ -12,14 +12,14 @@
  * @type {Array<{level: number, damage: number, cooldown: number, projectileSpeed: number, pierce: number, range: number}>}
  */
 export const BLASTER_LEVELS = [
-  { level: 1, damage: 10, cooldown: 500,  projectileSpeed: 400, pierce: 1, range: 320 },
-  { level: 2, damage: 15, cooldown: 464,  projectileSpeed: 414, pierce: 1, range: 320 },
-  { level: 3, damage: 20, cooldown: 428,  projectileSpeed: 428, pierce: 1, range: 320 },
-  { level: 4, damage: 25, cooldown: 392,  projectileSpeed: 443, pierce: 1, range: 320 },
-  { level: 5, damage: 30, cooldown: 357,  projectileSpeed: 457, pierce: 1, range: 320 },
-  { level: 6, damage: 35, cooldown: 321,  projectileSpeed: 471, pierce: 1, range: 320 },
-  { level: 7, damage: 40, cooldown: 285,  projectileSpeed: 486, pierce: 1, range: 320 },
-  { level: 8, damage: 45, cooldown: 250,  projectileSpeed: 500, pierce: 2, range: 320 },
+  { level: 1, damage: 12, cooldown: 500,  projectileSpeed: 400, pierce: 1, range: 320 },
+  { level: 2, damage: 18, cooldown: 464,  projectileSpeed: 414, pierce: 1, range: 320 },
+  { level: 3, damage: 24, cooldown: 428,  projectileSpeed: 428, pierce: 1, range: 320 },
+  { level: 4, damage: 30, cooldown: 392,  projectileSpeed: 443, pierce: 1, range: 320 },
+  { level: 5, damage: 36, cooldown: 357,  projectileSpeed: 457, pierce: 1, range: 320 },
+  { level: 6, damage: 42, cooldown: 321,  projectileSpeed: 471, pierce: 1, range: 320 },
+  { level: 7, damage: 48, cooldown: 285,  projectileSpeed: 486, pierce: 1, range: 320 },
+  { level: 8, damage: 54, cooldown: 250,  projectileSpeed: 500, pierce: 2, range: 320 },
 ];
 
 // ── 레이저건: Phase 2 빔 무기 (Lv1~Lv8) ──
