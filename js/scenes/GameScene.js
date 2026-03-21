@@ -47,7 +47,7 @@ import AutoPilotSystem from '../systems/AutoPilotSystem.js';
 import { getPassiveById } from '../data/passives.js';
 import { STAGES, WEAPON_DROP_SCHEDULE } from '../data/stages.js';
 import WeaponDropItem from '../entities/WeaponDropItem.js';
-import { impactHaptic } from '../managers/HapticManager.js';
+import { impactHaptic, setHapticEnabled, isHapticEnabled } from '../managers/HapticManager.js';
 
 // ── 접촉 데미지 쿨다운 (ms) ──
 /** 같은 적이 연속으로 접촉 데미지를 주지 않도록 하는 최소 간격 */
@@ -1863,8 +1863,25 @@ export default class GameScene extends Phaser.Scene {
       this._togglePause();
     });
 
+    // 설정 버튼
+    this._settingsText = this.add.text(centerX, centerY + 50, t('hud.settings'), {
+      fontSize: '16px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false)
+      .setInteractive({ useHandCursor: true });
+
+    this._settingsText.on('pointerdown', () => {
+      this._toggleInlineSettings();
+    });
+
+    // ── 인라인 설정 토글 (BGM / SFX / 햅틱) ──
+    this._settingsOpen = false;
+    this._settingsElements = [];
+    this._createInlineSettings(centerX, centerY + 80);
+
     // 포기 버튼
-    this._quitText = this.add.text(centerX, centerY + 70, t('hud.quit'), {
+    this._quitText = this.add.text(centerX, centerY + 100, t('hud.quit'), {
       fontSize: '16px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.hpRed,
@@ -1927,7 +1944,14 @@ export default class GameScene extends Phaser.Scene {
     this._pauseTimeText.setVisible(visible);
     this._pauseCreditsText.setVisible(visible);
     this._resumeText.setVisible(visible);
+    this._settingsText.setVisible(visible);
     this._quitText.setVisible(visible);
+
+    // 일시정지 해제 시 인라인 설정도 닫기
+    if (!visible && this._settingsOpen) {
+      this._settingsOpen = false;
+      for (const el of this._settingsElements) el.setVisible(false);
+    }
 
     // 일시정지 시 런 리포트 갱신
     if (visible) {
@@ -1945,6 +1969,83 @@ export default class GameScene extends Phaser.Scene {
     } else {
       this.physics.resume();
     }
+  }
+
+  // ── 인라인 설정 (일시정지 중) ──
+
+  /**
+   * 일시정지 화면 내 인라인 설정 토글 행(BGM/SFX/햅틱)을 생성한다.
+   * 기본적으로 숨김 상태이며, 설정 버튼 클릭 시 표시된다.
+   * @param {number} cx - 중심 X 좌표
+   * @param {number} baseY - 시작 Y 좌표
+   * @private
+   */
+  _createInlineSettings(cx, baseY) {
+    const rowH = 28;
+    const labelStyle = { fontSize: '13px', fontFamily: 'Galmuri11, monospace', color: UI_COLORS.textSecondary };
+
+    const rows = [
+      {
+        label: t('settings.bgm'),
+        getState: () => SoundSystem.isBgmEnabled(),
+        onToggle: (v) => { SoundSystem.setBgmEnabled(v); SaveManager.setSetting('bgmEnabled', v); },
+      },
+      {
+        label: t('settings.sfx'),
+        getState: () => SoundSystem.isSfxEnabled(),
+        onToggle: (v) => { SoundSystem.setSfxEnabled(v); SaveManager.setSetting('sfxEnabled', v); },
+      },
+      {
+        label: t('settings.haptic'),
+        getState: () => isHapticEnabled(),
+        onToggle: (v) => { setHapticEnabled(v); SaveManager.setSetting('hapticEnabled', v); },
+      },
+    ];
+
+    rows.forEach((row, i) => {
+      const y = baseY + i * rowH;
+
+      // 레이블
+      const lbl = this.add.text(cx - 60, y, row.label, labelStyle)
+        .setOrigin(0, 0.5).setScrollFactor(0).setDepth(302).setVisible(false);
+
+      // 상태 텍스트
+      const isOn = row.getState();
+      const state = this.add.text(cx + 60, y, isOn ? 'ON' : 'OFF', {
+        fontSize: '13px', fontFamily: 'Galmuri11, monospace',
+        color: isOn ? UI_COLORS.neonGreen : UI_COLORS.textSecondary,
+      }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(302).setVisible(false);
+
+      // 터치 영역
+      const zone = this.add.zone(cx, y, 200, rowH)
+        .setScrollFactor(0).setDepth(303).setVisible(false)
+        .setInteractive({ useHandCursor: true });
+
+      zone.on('pointerdown', () => {
+        const newVal = !row.getState();
+        row.onToggle(newVal);
+        state.setText(newVal ? 'ON' : 'OFF');
+        state.setColor(newVal ? UI_COLORS.neonGreen : UI_COLORS.textSecondary);
+      });
+
+      this._settingsElements.push(lbl, state, zone);
+    });
+  }
+
+  /**
+   * 인라인 설정 패널의 표시/숨김을 토글한다.
+   * 설정이 열리면 포기 버튼을 아래로 밀고, 닫히면 원래 위치로 복원한다.
+   * @private
+   */
+  _toggleInlineSettings() {
+    this._settingsOpen = !this._settingsOpen;
+    const show = this._settingsOpen;
+
+    for (const el of this._settingsElements) el.setVisible(show);
+
+    // 설정 패널이 열리면 포기 버튼을 아래로 이동
+    const centerY = GAME_HEIGHT / 2;
+    this._quitText.setY(show ? centerY + 180 : centerY + 100);
   }
 
   // ── 자동 사냥 토글 ──
