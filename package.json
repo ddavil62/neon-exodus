@@ -19,7 +19,7 @@
   ],
   "license": "UNLICENSED",
   "dependencies": {
-    "@capacitor-community/admob": "^7.0.0",
+    "@capacitor-community/admob": "^8.0.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/core": "^8.1.0",
     "@capacitor/haptics": "^8.0.1",
@@ -33,6 +33,7 @@
     "canvas": "^3.2.1",
     "dotenv": "^17.3.1",
     "googleapis": "^148.0.0",
+    "http-server": "^14.1.1",
     "openai": "^6.27.0",
     "sharp": "^0.34.5"
   }
