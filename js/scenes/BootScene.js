@@ -476,6 +476,9 @@ export default class BootScene extends Phaser.Scene {
         gfx.fillStyle(cfg.color, 1);
         const half = cfg.dim / 2;
         gfx.fillCircle(half, half, half - 2);
+        // 가독성을 위한 밝은 테두리
+        gfx.lineStyle(1.5, 0xFFFFFF, 0.45);
+        gfx.strokeCircle(half, half, half - 2);
         gfx.generateTexture(texKey, cfg.dim, cfg.dim);
       }
     }
