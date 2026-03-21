@@ -1281,18 +1281,38 @@ export default class WeaponSystem {
       drone.targetEnemy = this.findClosestEnemy(this.player.x, this.player.y, stats.shootRange * 2);
 
       if (drone.targetEnemy && drone.targetEnemy.active) {
-        // 2. 타겟으로 이동
+        // 2. 타겟 주변을 선회하며 동시에 공격 (이동+공격 병행)
         const dx = drone.targetEnemy.x - gfx.x;
         const dy = drone.targetEnemy.y - gfx.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist > stats.shootRange) {
-          // shootRange 밖이면 접근
+        // ── 이동: 적 주변 궤도를 미끄러지듯 선회 ──
+        const orbitRadius = stats.shootRange * 0.6;
+
+        if (dist > orbitRadius + 30) {
+          // 궤도 밖이면 적에게 접근
           const moveX = (dx / dist) * stats.moveSpeed * deltaSec;
           const moveY = (dy / dist) * stats.moveSpeed * deltaSec;
           gfx.setPosition(gfx.x + moveX, gfx.y + moveY);
         } else {
-          // 3. shootRange 내이면 발사
+          // 궤도 근처이면 적을 중심으로 원형 선회
+          const currentAngle = Math.atan2(gfx.y - drone.targetEnemy.y, gfx.x - drone.targetEnemy.x);
+          const orbitSpeed = 1.8; // rad/sec — 선회 속도
+          const nextAngle = currentAngle + orbitSpeed * deltaSec;
+          const targetX = drone.targetEnemy.x + Math.cos(nextAngle) * orbitRadius;
+          const targetY = drone.targetEnemy.y + Math.sin(nextAngle) * orbitRadius;
+
+          const toDx = targetX - gfx.x;
+          const toDy = targetY - gfx.y;
+          const toDist = Math.sqrt(toDx * toDx + toDy * toDy);
+          if (toDist > 1) {
+            const speed = Math.min(stats.moveSpeed * deltaSec, toDist);
+            gfx.setPosition(gfx.x + (toDx / toDist) * speed, gfx.y + (toDy / toDist) * speed);
+          }
+        }
+
+        // ── 공격: 사거리 내이면 이동과 무관하게 발사 ──
+        if (dist <= stats.shootRange) {
           drone.lastFired += delta;
           const effectiveCooldown = stats.cooldown * (this.player.cooldownMultiplier || 1);
           if (drone.lastFired >= effectiveCooldown) {
@@ -1301,7 +1321,7 @@ export default class WeaponSystem {
           }
         }
       } else {
-        // 4. 타겟 없으면 플레이어 주변 호버링 (반경 60px, 사인/코사인 자유 이동)
+        // 3. 타겟 없으면 플레이어 주변 호버링 (반경 60px, 사인/코사인 자유 이동)
         const angle = this._droneHoverAngle + drone.hoverOffset;
         const targetX = this.player.x + Math.cos(angle) * 60;
         const targetY = this.player.y + Math.sin(angle) * 60;
