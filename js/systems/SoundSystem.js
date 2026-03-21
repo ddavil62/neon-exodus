@@ -74,23 +74,33 @@ export default class SoundSystem {
     if (SoundSystem._visibilityBound) return; // 중복 등록 방지
     SoundSystem._visibilityBound = true;
 
+    /** @type {boolean} 포그라운드 복귀 처리 진행 중 (이중 진입 방지) */
+    let resuming = false;
+
     document.addEventListener('visibilitychange', () => {
       if (!SoundSystem._ctx) return;
 
       if (document.hidden) {
         // 백그라운드 진입: BGM 완전 정지 후 AudioContext 중단
         // setInterval이 계속 돌면서 새 노드를 만들지 않도록 BGM을 먼저 정리
+        resuming = false;
         SoundSystem._bgmWasPlaying = !!SoundSystem._currentBgmId;
         SoundSystem._bgmResumeId = SoundSystem._lastBgmId;
         SoundSystem.stopBgm();
         SoundSystem._ctx.suspend().catch(() => {});
       } else {
         // 포그라운드 복귀: AudioContext 재개 후 BGM 재시작
+        // 이중 진입 방지 (appStateChange와 visibilitychange 동시 발화 대응)
+        if (resuming) return;
+        resuming = true;
+
         SoundSystem._ctx.resume().then(() => {
           if (SoundSystem._bgmWasPlaying && SoundSystem._bgmResumeId) {
+            // playBgm 내부에서 stopBgm()을 먼저 호출하므로 잔여 노드가 정리됨
             SoundSystem.playBgm(SoundSystem._bgmResumeId);
           }
-        }).catch(() => {});
+          resuming = false;
+        }).catch(() => { resuming = false; });
       }
     });
   }

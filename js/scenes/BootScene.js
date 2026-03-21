@@ -268,8 +268,12 @@ export default class BootScene extends Phaser.Scene {
   // ── 앱 상태 변화 ──
 
   /**
-   * 앱이 백그라운드/포그라운드로 전환될 때 AudioContext를 일시정지/재개한다.
-   * 홈 버튼 등으로 앱을 나가면 BGM이 멈추고, 다시 돌아오면 재개된다.
+   * Capacitor App 플러그인의 appStateChange 리스너를 등록한다.
+   * 오디오 제어는 SoundSystem._initVisibilityHandler()에서 일원화하며,
+   * 여기서는 Phaser 게임 루프의 pause/resume만 처리한다.
+   *
+   * ⚠️ appStateChange와 visibilitychange가 동시에 발생하므로
+   *    AudioContext 직접 제어를 여기서 하면 BGM 이중 재생 버그가 발생한다.
    * @private
    */
   _setupAppStateListener() {
@@ -278,14 +282,14 @@ export default class BootScene extends Phaser.Scene {
 
     try {
       Capacitor.Plugins.App.addListener('appStateChange', ({ isActive }) => {
-        if (!SoundSystem._ctx) return;
-
-        if (isActive) {
-          // 포그라운드 복귀 — AudioContext 재개
-          SoundSystem._ctx.resume().catch(() => {});
-        } else {
-          // 백그라운드 진입 — AudioContext 일시정지 (BGM + SFX 모두 멈춤)
-          SoundSystem._ctx.suspend().catch(() => {});
+        // 오디오 제어는 SoundSystem.visibilitychange 핸들러에 위임
+        // 여기서는 Phaser 게임 루프만 관리
+        if (this.game) {
+          if (isActive) {
+            this.game.resume();
+          } else {
+            this.game.pause();
+          }
         }
       });
     } catch (e) {
