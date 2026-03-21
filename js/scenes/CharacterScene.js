@@ -326,19 +326,24 @@ export default class CharacterScene extends Phaser.Scene {
         });
       });
     } else {
-      // 잠금 상태: 반투명 + 잠금 조건 표시
-      const lockText = this.add.text(x - CARD_W / 2 + 16, y - 15, t(charData.nameKey), {
+      // 잠금 상태: 잠금 아이콘 + 가독성 확보된 텍스트
+      const lockIcon = this.add.text(x - CARD_W / 2 + 16, y - 16, '🔒', {
+        fontSize: '14px',
+      });
+      this._container.add(lockIcon);
+
+      const lockText = this.add.text(x - CARD_W / 2 + 38, y - 15, t(charData.nameKey), {
         fontSize: '14px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
-      }).setAlpha(0.4);
+      }).setAlpha(0.7);
       this._container.add(lockText);
 
-      const condText = this.add.text(x - CARD_W / 2 + 16, y + 8, charData.unlockKey ? t(charData.unlockKey) : t('menu.locked'), {
+      const condText = this.add.text(x - CARD_W / 2 + 38, y + 8, charData.unlockKey ? t(charData.unlockKey) : t('menu.locked'), {
         fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
-        color: UI_COLORS.textSecondary,
-      }).setAlpha(0.4);
+        color: UI_COLORS.neonCyan,
+      }).setAlpha(0.5);
       this._container.add(condText);
     }
   }
