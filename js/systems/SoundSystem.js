@@ -78,12 +78,19 @@ export default class SoundSystem {
       if (!SoundSystem._ctx) return;
 
       if (document.hidden) {
-        // 백그라운드 진입: AudioContext 중단
+        // 백그라운드 진입: BGM 완전 정지 후 AudioContext 중단
+        // setInterval이 계속 돌면서 새 노드를 만들지 않도록 BGM을 먼저 정리
         SoundSystem._bgmWasPlaying = !!SoundSystem._currentBgmId;
+        SoundSystem._bgmResumeId = SoundSystem._lastBgmId;
+        SoundSystem.stopBgm();
         SoundSystem._ctx.suspend().catch(() => {});
       } else {
-        // 포그라운드 복귀: AudioContext 재개
-        SoundSystem._ctx.resume().catch(() => {});
+        // 포그라운드 복귀: AudioContext 재개 후 BGM 재시작
+        SoundSystem._ctx.resume().then(() => {
+          if (SoundSystem._bgmWasPlaying && SoundSystem._bgmResumeId) {
+            SoundSystem.playBgm(SoundSystem._bgmResumeId);
+          }
+        }).catch(() => {});
       }
     });
   }
