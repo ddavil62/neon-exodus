@@ -75,10 +75,10 @@ class AdManagerClass {
     }
 
     try {
-      // 동적 import로 플러그인 로드 (번들러 없는 환경에서도 Capacitor가 모듈 제공)
-      const { AdMob } = await import('@capacitor-community/admob');
+      // Capacitor 글로벌 브리지에서 AdMob 참조 (번들러 없이 동작)
+      const AdMob = window.Capacitor?.Plugins?.AdMob;
       if (!AdMob) {
-        throw new Error('AdMob 플러그인 로드 실패');
+        throw new Error('AdMob 플러그인이 Capacitor에 등록되지 않음');
       }
       this._admob = AdMob;
 

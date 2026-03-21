@@ -1,6 +1,7 @@
 /**
- * @fileoverview 햅틱(진동) 피드백을 관리한다. Capacitor Haptics 플러그인을 동적 로드하며,
- * 웹 환경이나 플러그인 로드 실패 시 자동으로 비활성화된다.
+ * @fileoverview 햅틱(진동) 피드백을 관리한다. Capacitor 글로벌 브리지(window.Capacitor.Plugins)를
+ * 통해 Haptics 플러그인에 접근하며, 번들러 없이도 네이티브 환경에서 동작한다.
+ * 웹 환경이나 플러그인 미등록 시 자동으로 비활성화된다.
  */
 
 // ── 상태 ──
@@ -18,6 +19,7 @@ let _enabled = true;
 
 /**
  * Haptics 플러그인을 초기화한다.
+ * Capacitor 글로벌 브리지(window.Capacitor.Plugins.Haptics)를 통해 접근한다.
  * 네이티브 환경에서만 활성화되며, 웹에서는 자동으로 비활성화된다.
  * @returns {Promise<void>}
  */
@@ -27,8 +29,14 @@ export async function initHaptics() {
 
   try {
     if (!window.Capacitor?.isNativePlatform()) return;
-    const mod = await import('@capacitor/haptics');
-    _haptics = mod.Haptics;
+
+    // Capacitor 글로벌 브리지에서 Haptics 참조 (번들러 없이 동작)
+    const haptics = window.Capacitor?.Plugins?.Haptics;
+    if (!haptics) {
+      console.log('[Haptics] 플러그인이 Capacitor에 등록되지 않음 — 비활성화');
+      return;
+    }
+    _haptics = haptics;
     console.log('[Haptics] 초기화 완료');
   } catch {
     // 플러그인 미설치 또는 로드 실패 — 진동 비활성화
