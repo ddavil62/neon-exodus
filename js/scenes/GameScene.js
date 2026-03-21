@@ -431,7 +431,12 @@ export default class GameScene extends Phaser.Scene {
       this.player.invincible = true;
       this.player.invincibleTimer = 1000;
 
-      // 조이스틱 상태 리셋 + 300ms 입력 잠금 — LevelUpScene pointerdown 전파 방지
+      // 플레이어 속도 즉시 정지 — 이전 방향으로 관성 이동 방지
+      if (this.player.body) {
+        this.player.body.setVelocity(0, 0);
+      }
+
+      // 조이스틱 상태 리셋 + 입력 잠금 — LevelUpScene pointerdown 전파 방지
       if (this.joystick) {
         this.joystick.resetAndLock(300);
       }
