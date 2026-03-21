@@ -1851,44 +1851,57 @@ export default class GameScene extends Phaser.Scene {
       color: UI_COLORS.neonOrange,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false);
 
+    // ── 버튼 공통 크기 ──
+    const btnW = 180;
+    const btnH = 40;
+
     // 계속 버튼
+    this._resumeBg = this._createPauseBtnBg(centerX, centerY + 20, btnW, btnH, UI_COLORS.btnPrimary, COLORS.NEON_GREEN);
     this._resumeText = this.add.text(centerX, centerY + 20, t('hud.resume'), {
-      fontSize: '18px',
+      fontSize: '16px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonGreen,
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false)
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(302).setVisible(false);
+    this._resumeZone = this.add.zone(centerX, centerY + 20, btnW, btnH)
+      .setScrollFactor(0).setDepth(303).setVisible(false)
       .setInteractive({ useHandCursor: true });
 
-    this._resumeText.on('pointerdown', () => {
+    this._resumeZone.on('pointerdown', () => {
       this._togglePause();
     });
 
     // 설정 버튼
-    this._settingsText = this.add.text(centerX, centerY + 50, t('hud.settings'), {
+    this._settingsBg = this._createPauseBtnBg(centerX, centerY + 68, btnW, btnH, UI_COLORS.btnSecondary, COLORS.NEON_CYAN);
+    this._settingsText = this.add.text(centerX, centerY + 68, t('hud.settings'), {
       fontSize: '16px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonCyan,
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false)
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(302).setVisible(false);
+    this._settingsZone = this.add.zone(centerX, centerY + 68, btnW, btnH)
+      .setScrollFactor(0).setDepth(303).setVisible(false)
       .setInteractive({ useHandCursor: true });
 
-    this._settingsText.on('pointerdown', () => {
+    this._settingsZone.on('pointerdown', () => {
       this._toggleInlineSettings();
     });
 
     // ── 인라인 설정 토글 (BGM / SFX / 햅틱) ──
     this._settingsOpen = false;
     this._settingsElements = [];
-    this._createInlineSettings(centerX, centerY + 80);
+    this._createInlineSettings(centerX, centerY + 100);
 
     // 포기 버튼
-    this._quitText = this.add.text(centerX, centerY + 100, t('hud.quit'), {
+    this._quitBg = this._createPauseBtnBg(centerX, centerY + 120, btnW, btnH, 0x331111, 0xFF3333);
+    this._quitText = this.add.text(centerX, centerY + 120, t('hud.quit'), {
       fontSize: '16px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.hpRed,
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setVisible(false)
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(302).setVisible(false);
+    this._quitZone = this.add.zone(centerX, centerY + 120, btnW, btnH)
+      .setScrollFactor(0).setDepth(303).setVisible(false)
       .setInteractive({ useHandCursor: true });
 
-    this._quitText.on('pointerdown', () => {
+    this._quitZone.on('pointerdown', () => {
       // BGM 정지 (결과/메뉴 화면에서 게임 BGM이 계속 재생되는 것을 방지)
       SoundSystem.stopBgm();
 
@@ -1943,9 +1956,16 @@ export default class GameScene extends Phaser.Scene {
     this._pauseKillsText.setVisible(visible);
     this._pauseTimeText.setVisible(visible);
     this._pauseCreditsText.setVisible(visible);
+    // 버튼: bg + 텍스트 + zone
+    this._resumeBg.setVisible(visible);
     this._resumeText.setVisible(visible);
+    this._resumeZone.setVisible(visible);
+    this._settingsBg.setVisible(visible);
     this._settingsText.setVisible(visible);
+    this._settingsZone.setVisible(visible);
+    this._quitBg.setVisible(visible);
     this._quitText.setVisible(visible);
+    this._quitZone.setVisible(visible);
 
     // 일시정지 해제 시 인라인 설정도 닫기
     if (!visible && this._settingsOpen) {
@@ -1972,6 +1992,28 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // ── 인라인 설정 (일시정지 중) ──
+
+  /**
+   * 일시정지 버튼용 둥근 사각형 배경(Graphics)을 생성한다.
+   * @param {number} x - 중심 X 좌표
+   * @param {number} y - 중심 Y 좌표
+   * @param {number} w - 너비
+   * @param {number} h - 높이
+   * @param {number} fillColor - 배경 채움 색상
+   * @param {number} strokeColor - 테두리 색상
+   * @returns {Phaser.GameObjects.Graphics} 생성된 Graphics 객체
+   * @private
+   */
+  _createPauseBtnBg(x, y, w, h, fillColor, strokeColor) {
+    const gfx = this.add.graphics();
+    // (0,0) 기준으로 그린 뒤 setPosition으로 이동 — setY()로 위치 변경 가능
+    gfx.fillStyle(fillColor, 0.85);
+    gfx.fillRoundedRect(-w / 2, -h / 2, w, h, 6);
+    gfx.lineStyle(1, strokeColor, 0.6);
+    gfx.strokeRoundedRect(-w / 2, -h / 2, w, h, 6);
+    gfx.setPosition(x, y).setScrollFactor(0).setDepth(301).setVisible(false);
+    return gfx;
+  }
 
   /**
    * 일시정지 화면 내 인라인 설정 토글 행(BGM/SFX/햅틱)을 생성한다.
@@ -2043,9 +2085,12 @@ export default class GameScene extends Phaser.Scene {
 
     for (const el of this._settingsElements) el.setVisible(show);
 
-    // 설정 패널이 열리면 포기 버튼을 아래로 이동
+    // 설정 패널이 열리면 포기 버튼(bg + 텍스트 + zone)을 아래로 이동
     const centerY = GAME_HEIGHT / 2;
-    this._quitText.setY(show ? centerY + 180 : centerY + 100);
+    const quitY = show ? centerY + 195 : centerY + 120;
+    this._quitBg.setY(quitY);
+    this._quitText.setY(quitY);
+    this._quitZone.setY(quitY);
   }
 
   // ── 자동 사냥 토글 ──
