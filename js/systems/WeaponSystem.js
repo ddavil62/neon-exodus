@@ -13,6 +13,31 @@ import Projectile from '../entities/Projectile.js';
 import SoundSystem from './SoundSystem.js';
 import VFXSystem from './VFXSystem.js';
 
+// ── 진화 무기 전용 이펙트 텍스처 키 매핑 ──
+/** @const {Object<string, string>} evolvedId → 진화 전용 텍스처 키 */
+const EVOLVED_TEXTURE_MAP = {
+  precision_cannon: 'effect_precision_cannon',
+  guardian_sphere:  'effect_guardian_sphere',
+  nuke_missile:     'effect_nuke_missile',
+  hivemind:         'effect_hivemind',
+  perpetual_emp:    'effect_perpetual_emp',
+  phantom_strike:   'effect_phantom_strike',
+  bioplasma:        'effect_bioplasma',
+  event_horizon:    'effect_event_horizon',
+  death_blossom:    'effect_death_blossom',
+};
+
+/** @const {Object<string, string>} evolvedId → 폭발 전용 텍스처 키 */
+const EVOLVED_EXPLOSION_MAP = {
+  nuke_missile: 'effect_nuke_explosion',
+};
+
+/** @const {Object<string, number>} evolvedId → 빔 색상 (Graphics API용) */
+const EVOLVED_BEAM_COLOR = {
+  ion_cannon:    0x6666FF,
+  plasma_storm:  0xAA44FF,
+};
+
 // ── 무기 ID → 데이터 맵 변환 ──
 
 /** @type {Object.<string, Object>} 무기 ID로 빠르게 조회하기 위한 맵 */
@@ -671,26 +696,30 @@ export default class WeaponSystem {
       const progress = state.timer / stats.duration;
       const pulse = Math.sin(progress * Math.PI * 4) * 1;
 
+      // 진화 시 빔 색상 변경
+      const beamColor = weapon._evolvedId && EVOLVED_BEAM_COLOR[weapon._evolvedId]
+        ? EVOLVED_BEAM_COLOR[weapon._evolvedId] : 0x00FFFF;
+
       // 다중 빔 렌더링 (beamCount만큼 반복)
       for (let bi = 0; bi < beamCount; bi++) {
         const dir = state.dirs && state.dirs[bi] ? state.dirs[bi] : state;
         const endX = px + dir.dirX * stats.range;
         const endY = py + dir.dirY * stats.range;
 
-        // 외곽 글로우: 8px cyan 20% opacity
-        this._beamGraphics.lineStyle(8 + pulse, 0x00FFFF, 0.2);
+        // 외곽 글로우
+        this._beamGraphics.lineStyle(8 + pulse, beamColor, 0.2);
         this._beamGraphics.lineBetween(px, py, endX, endY);
 
-        // 메인 빔: 4px cyan 80% opacity
-        this._beamGraphics.lineStyle(4 + pulse * 0.5, 0x00FFFF, 0.8);
+        // 메인 빔
+        this._beamGraphics.lineStyle(4 + pulse * 0.5, beamColor, 0.8);
         this._beamGraphics.lineBetween(px, py, endX, endY);
 
-        // 코어: 2px white 90% opacity
+        // 코어: white
         this._beamGraphics.lineStyle(2, 0xFFFFFF, 0.9);
         this._beamGraphics.lineBetween(px, py, endX, endY);
 
         // 빔 끝점에 밝은 원형 글로우
-        this._beamGraphics.fillStyle(0x00FFFF, 0.5);
+        this._beamGraphics.fillStyle(beamColor, 0.5);
         this._beamGraphics.fillCircle(endX, endY, 6);
         this._beamGraphics.fillStyle(0xFFFFFF, 0.4);
         this._beamGraphics.fillCircle(endX, endY, 3);
@@ -772,9 +801,11 @@ export default class WeaponSystem {
     }
     orbInfo.graphics = [];
 
-    // 새 오브 생성 (effect_plasma_orb 스프라이트 사용)
+    // 새 오브 생성 (진화 시 전용 텍스처 사용)
+    const orbTex = weapon._evolvedId && EVOLVED_TEXTURE_MAP[weapon._evolvedId]
+      ? EVOLVED_TEXTURE_MAP[weapon._evolvedId] : 'effect_plasma_orb';
     for (let i = 0; i < stats.orbCount; i++) {
-      const sprite = this.scene.add.image(0, 0, 'effect_plasma_orb').setDepth(9);
+      const sprite = this.scene.add.image(0, 0, orbTex).setDepth(9);
       sprite.setAlpha(0.85);
       orbInfo.graphics.push(sprite);
     }
@@ -839,7 +870,7 @@ export default class WeaponSystem {
       const target = this.findClosestEnemy(this.player.x, this.player.y, 300);
 
       if (target) {
-        this._fireChain(stats, target, weapon.id);
+        this._fireChain(stats, target, weapon);
         weapon.cooldownTimer = effectiveCooldown;
       } else {
         weapon.cooldownTimer = 0;
@@ -868,7 +899,9 @@ export default class WeaponSystem {
    * @param {string} weaponId - 무기 ID (통계 추적용)
    * @private
    */
-  _fireChain(stats, firstTarget, weaponId) {
+  _fireChain(stats, firstTarget, weapon) {
+    const weaponId = typeof weapon === 'string' ? weapon : weapon.id;
+    const evolvedId = typeof weapon === 'object' ? weapon._evolvedId : null;
     const atkMult = this.player.getEffectiveAttackMultiplier ? this.player.getEffectiveAttackMultiplier() : (this.player.attackMultiplier || 1);
     let currentDamage = Math.floor(stats.damage * atkMult);
 
@@ -912,8 +945,8 @@ export default class WeaponSystem {
       currentTarget = nextTarget;
     }
 
-    // 번개 시각 효과
-    this._drawLightning(chainPoints);
+    // 번개 시각 효과 (진화 시 색상 변경)
+    this._drawLightning(chainPoints, evolvedId);
   }
 
   /**
@@ -921,7 +954,7 @@ export default class WeaponSystem {
    * @param {Array<{x: number, y: number}>} points - 체인 포인트 배열
    * @private
    */
-  _drawLightning(points) {
+  _drawLightning(points, evolvedId) {
     if (points.length < 2) return;
 
     const gfx = this.scene.add.graphics().setDepth(9);
@@ -941,8 +974,13 @@ export default class WeaponSystem {
       segments.push({ p1, p2, mids: [{ x: m1x, y: m1y }, { x: m2x, y: m2y }, { x: m3x, y: m3y }] });
     }
 
-    // 레이어 1: 외곽 글로우 (5px cyan 30% opacity)
-    gfx.lineStyle(5, 0x00FFFF, 0.3);
+    // 진화 시 번개 색상 변경
+    const chainColor = evolvedId && EVOLVED_BEAM_COLOR[evolvedId]
+      ? EVOLVED_BEAM_COLOR[evolvedId] : 0x00FFFF;
+    const sparkColor = evolvedId && EVOLVED_BEAM_COLOR[evolvedId] ? 0xDD88FF : 0xFFFF00;
+
+    // 레이어 1: 외곽 글로우
+    gfx.lineStyle(5, chainColor, 0.3);
     for (const seg of segments) {
       gfx.lineBetween(seg.p1.x, seg.p1.y, seg.mids[0].x, seg.mids[0].y);
       gfx.lineBetween(seg.mids[0].x, seg.mids[0].y, seg.mids[1].x, seg.mids[1].y);
@@ -950,8 +988,8 @@ export default class WeaponSystem {
       gfx.lineBetween(seg.mids[2].x, seg.mids[2].y, seg.p2.x, seg.p2.y);
     }
 
-    // 레이어 2: 메인 번개 (3px cyan 90% opacity)
-    gfx.lineStyle(3, 0x00FFFF, 0.9);
+    // 레이어 2: 메인 번개
+    gfx.lineStyle(3, chainColor, 0.9);
     for (const seg of segments) {
       gfx.lineBetween(seg.p1.x, seg.p1.y, seg.mids[0].x, seg.mids[0].y);
       gfx.lineBetween(seg.mids[0].x, seg.mids[0].y, seg.mids[1].x, seg.mids[1].y);
@@ -967,7 +1005,7 @@ export default class WeaponSystem {
 
     // 체인 노드(적 위치)에 스파크 원 — 첫 번째 점(플레이어)은 제외
     for (let i = 1; i < points.length; i++) {
-      gfx.fillStyle(0xFFFF00, 0.7);
+      gfx.fillStyle(sparkColor, 0.7);
       gfx.fillCircle(points[i].x, points[i].y, 4);
     }
 
@@ -997,7 +1035,7 @@ export default class WeaponSystem {
       const target = this.findClosestEnemy(this.player.x, this.player.y, stats.range);
 
       if (target) {
-        this._fireMissile(stats, target, weapon.id);
+        this._fireMissile(stats, target, weapon);
         weapon.cooldownTimer = effectiveCooldown;
       } else {
         weapon.cooldownTimer = 0;
@@ -1012,7 +1050,10 @@ export default class WeaponSystem {
    * @param {string} weaponId - 무기 ID (통계 추적용)
    * @private
    */
-  _fireMissile(stats, target, weaponId) {
+  _fireMissile(stats, target, weapon) {
+    const weaponId = typeof weapon === 'string' ? weapon : weapon.id;
+    const evolvedId = typeof weapon === 'object' ? weapon._evolvedId : null;
+
     // 미사일 최대 30개 제한
     if (this._missiles.length >= 30) return;
 
@@ -1024,8 +1065,10 @@ export default class WeaponSystem {
     const dy = target.y - py;
     const angle = Math.atan2(dy, dx);
 
-    // 미사일 스프라이트 생성 (effect_missile 텍스처)
-    const sprite = this.scene.add.image(px, py, 'effect_missile').setDepth(9);
+    // 미사일 스프라이트 생성 (진화 시 전용 텍스처 사용)
+    const missileTex = evolvedId && EVOLVED_TEXTURE_MAP[evolvedId]
+      ? EVOLVED_TEXTURE_MAP[evolvedId] : 'effect_missile';
+    const sprite = this.scene.add.image(px, py, missileTex).setDepth(9);
     sprite.setRotation(angle);
 
     this._missiles.push({
@@ -1041,6 +1084,7 @@ export default class WeaponSystem {
       distanceTraveled: 0,
       target,
       weaponId,
+      evolvedId,
     });
   }
 
@@ -1147,8 +1191,10 @@ export default class WeaponSystem {
       });
     }
 
-    // 폭발 시각 효과: effect_explosion 스프라이트 + scale tween
-    const explSprite = this.scene.add.image(missile.x, missile.y, 'effect_explosion')
+    // 폭발 시각 효과 (진화 시 전용 폭발 텍스처)
+    const explTex = missile.evolvedId && EVOLVED_EXPLOSION_MAP[missile.evolvedId]
+      ? EVOLVED_EXPLOSION_MAP[missile.evolvedId] : 'effect_explosion';
+    const explSprite = this.scene.add.image(missile.x, missile.y, explTex)
       .setScale(missile.explosionRadius / 32)
       .setAlpha(0.8)
       .setDepth(8);
@@ -1185,12 +1231,14 @@ export default class WeaponSystem {
 
     const toSpawn = targetCount - currentCount;
     for (let i = 0; i < toSpawn; i++) {
-      // effect_drone 스프라이트로 드론 시각화
+      // 드론 스프라이트 생성 (진화 시 전용 텍스처)
+      const droneTex = weapon._evolvedId && EVOLVED_TEXTURE_MAP[weapon._evolvedId]
+        ? EVOLVED_TEXTURE_MAP[weapon._evolvedId] : 'effect_drone';
       const offsetAngle = Math.random() * Math.PI * 2;
       const startX = this.player.x + Math.cos(offsetAngle) * 40;
       const startY = this.player.y + Math.sin(offsetAngle) * 40;
 
-      const sprite = this.scene.add.image(startX, startY, 'effect_drone').setDepth(6);
+      const sprite = this.scene.add.image(startX, startY, droneTex).setDepth(6);
 
       // Arcade Physics 동적 바디 등록
       this.scene.physics.add.existing(sprite);
@@ -1330,7 +1378,7 @@ export default class WeaponSystem {
     if (weapon.cooldownTimer <= 0) {
       const stats = this.getWeaponStats(weapon);
       const effectiveCooldown = stats.cooldown * (this.player.cooldownMultiplier || 1);
-      this._triggerEmp(weapon.id, stats);
+      this._triggerEmp(weapon, stats);
       weapon.cooldownTimer = effectiveCooldown;
     }
   }
@@ -1341,7 +1389,9 @@ export default class WeaponSystem {
    * @param {Object} stats - 무기 스탯
    * @private
    */
-  _triggerEmp(weaponId, stats) {
+  _triggerEmp(weapon, stats) {
+    const weaponId = typeof weapon === 'string' ? weapon : weapon.id;
+    const evolvedId = typeof weapon === 'object' ? weapon._evolvedId : null;
     const px = this.player.x;
     const py = this.player.y;
 
@@ -1378,9 +1428,9 @@ export default class WeaponSystem {
       }
     });
 
-    // VFX/SFX — EMP 링 스프라이트 + 파티클
-    VFXSystem.empRing(this.scene, px, py, stats.radius);
-    VFXSystem.empBurst(this.scene, px, py, stats.radius);
+    // VFX/SFX — EMP 링 스프라이트 + 파티클 (진화 시 전용 텍스처)
+    VFXSystem.empRing(this.scene, px, py, stats.radius, evolvedId);
+    VFXSystem.empBurst(this.scene, px, py, stats.radius, evolvedId);
     SoundSystem.play('emp_blast');
   }
 
@@ -1454,8 +1504,8 @@ export default class WeaponSystem {
       }
     });
 
-    // 시각 효과: 슬래시 스프라이트
-    this._showSlashEffect(px, py, slashAngle, stats.range);
+    // 시각 효과: 슬래시 스프라이트 (진화 시 전용 텍스처)
+    this._showSlashEffect(px, py, slashAngle, stats.range, weapon._evolvedId);
     SoundSystem.play('shoot');
   }
 
@@ -1467,11 +1517,13 @@ export default class WeaponSystem {
    * @param {number} range - 슬래시 사거리
    * @private
    */
-  _showSlashEffect(px, py, angle, range) {
+  _showSlashEffect(px, py, angle, range, evolvedId) {
+    const slashTex = evolvedId && EVOLVED_TEXTURE_MAP[evolvedId]
+      ? EVOLVED_TEXTURE_MAP[evolvedId] : 'effect_force_slash';
     const offsetX = Math.cos(angle) * range / 2;
     const offsetY = Math.sin(angle) * range / 2;
 
-    const sprite = this.scene.add.image(px + offsetX, py + offsetY, 'effect_force_slash')
+    const sprite = this.scene.add.image(px + offsetX, py + offsetY, slashTex)
       .setRotation(angle)
       .setScale(range / 48)
       .setAlpha(0.9)
@@ -1505,7 +1557,7 @@ export default class WeaponSystem {
       if (activeCloudCount < stats.cloudCount) {
         const target = this.findClosestEnemy(this.player.x, this.player.y, 300);
         if (target) {
-          this._spawnCloud(target.x, target.y, stats, weapon.id);
+          this._spawnCloud(target.x, target.y, stats, weapon);
         }
       }
       weapon.cooldownTimer = stats.cooldown * (this.player.cooldownMultiplier || 1);
@@ -1549,8 +1601,12 @@ export default class WeaponSystem {
    * @param {string} weaponId - 무기 ID
    * @private
    */
-  _spawnCloud(x, y, stats, weaponId) {
-    const sprite = this.scene.add.image(x, y, 'effect_nano_cloud')
+  _spawnCloud(x, y, stats, weapon) {
+    const weaponId = typeof weapon === 'string' ? weapon : weapon.id;
+    const evolvedId = typeof weapon === 'object' ? weapon._evolvedId : null;
+    const cloudTex = evolvedId && EVOLVED_TEXTURE_MAP[evolvedId]
+      ? EVOLVED_TEXTURE_MAP[evolvedId] : 'effect_nano_cloud';
+    const sprite = this.scene.add.image(x, y, cloudTex)
       .setScale(stats.radius / 24)
       .setAlpha(0.6)
       .setDepth(5);
@@ -1609,7 +1665,7 @@ export default class WeaponSystem {
     if (weapon.cooldownTimer <= 0) {
       const target = this.findClosestEnemy(this.player.x, this.player.y, 400);
       if (target) {
-        this._spawnVortex(target.x, target.y, stats, weapon.id);
+        this._spawnVortex(target.x, target.y, stats, weapon);
         weapon.cooldownTimer = stats.cooldown * (this.player.cooldownMultiplier || 1);
       } else {
         weapon.cooldownTimer = 0;
@@ -1680,8 +1736,12 @@ export default class WeaponSystem {
    * @param {string} weaponId - 무기 ID
    * @private
    */
-  _spawnVortex(x, y, stats, weaponId) {
-    const sprite = this.scene.add.image(x, y, 'effect_vortex')
+  _spawnVortex(x, y, stats, weapon) {
+    const weaponId = typeof weapon === 'string' ? weapon : weapon.id;
+    const evolvedId = typeof weapon === 'object' ? weapon._evolvedId : null;
+    const vortexTex = evolvedId && EVOLVED_TEXTURE_MAP[evolvedId]
+      ? EVOLVED_TEXTURE_MAP[evolvedId] : 'effect_vortex';
+    const sprite = this.scene.add.image(x, y, vortexTex)
       .setScale(stats.pullRadius / 24)
       .setAlpha(0.8)
       .setDepth(5);
@@ -1768,9 +1828,11 @@ export default class WeaponSystem {
     }
     bladeInfo.sprites = [];
 
-    // 새 블레이드 생성
+    // 새 블레이드 생성 (진화 시 전용 텍스처)
+    const bladeTex = weapon._evolvedId && EVOLVED_TEXTURE_MAP[weapon._evolvedId]
+      ? EVOLVED_TEXTURE_MAP[weapon._evolvedId] : 'effect_reaper_blade';
     for (let i = 0; i < stats.bladeCount; i++) {
-      const sprite = this.scene.add.image(0, 0, 'effect_reaper_blade').setDepth(9);
+      const sprite = this.scene.add.image(0, 0, bladeTex).setDepth(9);
       sprite.setAlpha(0.9);
       bladeInfo.sprites.push(sprite);
     }
@@ -1890,7 +1952,43 @@ export default class WeaponSystem {
     // 도감에 진화 무기 등록
     SaveManager.addToCollection('weaponsSeen', evolvedId);
 
+    // 기존 활성 이펙트의 텍스처 즉시 교체
+    this._applyEvolvedTextures(weapon);
+
     return true;
+  }
+
+  /**
+   * 진화 직후 기존 활성 이펙트(오브, 드론, 블레이드)의 텍스처를 즉시 교체한다.
+   * @param {Object} weapon - 진화된 무기 객체
+   * @private
+   */
+  _applyEvolvedTextures(weapon) {
+    const texKey = EVOLVED_TEXTURE_MAP[weapon._evolvedId];
+    if (!texKey || !this.scene.textures.exists(texKey)) return;
+
+    // 오브(orbital) — plasma_orb → guardian_sphere
+    const orbInfo = this._orbData.get(weapon.id);
+    if (orbInfo) {
+      for (const sprite of orbInfo.graphics) {
+        sprite.setTexture(texKey);
+      }
+    }
+
+    // 블레이드(reaper) — reaper_field → death_blossom
+    const bladeInfo = this._bladeData.get(weapon.id);
+    if (bladeInfo) {
+      for (const sprite of bladeInfo.sprites) {
+        sprite.setTexture(texKey);
+      }
+    }
+
+    // 드론(summon) — drone → hivemind
+    for (const drone of this._drones) {
+      if (drone.weaponId === weapon.id && drone.active && drone.sprite) {
+        drone.sprite.setTexture(texKey);
+      }
+    }
   }
 
   /**
@@ -1982,6 +2080,16 @@ export default class WeaponSystem {
     // 풀에서 투사체 획득
     const proj = this.projectilePool.get(this.player.x, this.player.y);
     proj.fire(this.player.x, this.player.y, dirX, dirY, finalDamage, finalSpeed, stats.pierce);
+
+    // 진화 시 투사체 텍스처 교체
+    if (weapon._evolvedId && EVOLVED_TEXTURE_MAP[weapon._evolvedId] &&
+        this.scene.textures.exists(EVOLVED_TEXTURE_MAP[weapon._evolvedId])) {
+      proj.setTexture(EVOLVED_TEXTURE_MAP[weapon._evolvedId]);
+    } else {
+      // 원본 텍스처로 복원 (풀 재사용 시 진화 텍스처 잔류 방지)
+      const defaultTex = this.scene.textures.exists('effect_projectile') ? 'effect_projectile' : 'projectile';
+      proj.setTexture(defaultTex);
+    }
 
     // 투사체에 치명타 여부 저장 (적중 시 시각 효과 표시용)
     proj.isCrit = isCrit;

@@ -641,6 +641,10 @@ export default class BootScene extends Phaser.Scene {
       gfx2.generateTexture('effect_projectile', 16, 16);
     }
 
+    // ── 진화 무기 전용 이펙트 텍스처 (12종) ──
+    // 원본과 색상·형태를 명확히 차별화하여 진화 후 시각 아이덴티티를 부여한다.
+    this._generateEvolvedEffectTextures(gfx2);
+
     gfx2.destroy();
 
     gfx.destroy();
@@ -703,6 +707,140 @@ export default class BootScene extends Phaser.Scene {
 
       gfx.generateTexture(def.key, size, size);
       gfx.destroy();
+    }
+  }
+
+  // ── 진화 무기 전용 이펙트 텍스처 생성 ──
+
+  /**
+   * 11종 진화 무기의 전용 이펙트 텍스처를 생성한다.
+   * 원본과 색상·형태를 명확히 차별화하여 진화 후 시각 아이덴티티를 부여한다.
+   * @param {Phaser.GameObjects.Graphics} gfx - 재사용할 Graphics 객체
+   * @private
+   */
+  _generateEvolvedEffectTextures(gfx) {
+    // 1. precision_cannon (blaster 진화) — 금색 코어 + 밝은 외곽
+    if (!this.textures.exists('effect_precision_cannon')) {
+      gfx.clear();
+      gfx.fillStyle(0xFFD700, 0.3);
+      gfx.fillCircle(8, 8, 7);
+      gfx.fillStyle(0xFFFFFF, 0.6);
+      gfx.fillCircle(8, 8, 5);
+      gfx.fillStyle(0xFFD700, 1.0);
+      gfx.fillCircle(8, 8, 3);
+      gfx.generateTexture('effect_precision_cannon', 16, 16);
+    }
+
+    // 2. guardian_sphere (plasma_orb 진화) — 청록 이중 원
+    if (!this.textures.exists('effect_guardian_sphere')) {
+      gfx.clear();
+      gfx.lineStyle(2, 0x00FFD0, 0.5);
+      gfx.strokeCircle(14, 14, 12);
+      gfx.fillStyle(0x00FFD0, 0.8);
+      gfx.fillCircle(14, 14, 7);
+      gfx.fillStyle(0xFFFFFF, 0.6);
+      gfx.fillCircle(14, 14, 3);
+      gfx.generateTexture('effect_guardian_sphere', 28, 28);
+    }
+
+    // 3. nuke_missile (missile 진화) — 붉은 대형 미사일
+    if (!this.textures.exists('effect_nuke_missile')) {
+      gfx.clear();
+      gfx.fillStyle(0xFF2222, 0.9);
+      gfx.fillRect(2, 4, 20, 12);
+      gfx.fillStyle(0xFFFFFF, 0.7);
+      gfx.fillRect(18, 6, 4, 8);
+      gfx.fillStyle(0xFF6600, 0.8);
+      gfx.fillTriangle(0, 4, 0, 16, 4, 10);
+      gfx.generateTexture('effect_nuke_missile', 24, 20);
+    }
+
+    // 4. nuke_explosion (nuke_missile 폭발) — 붉은 대형 폭발
+    if (!this.textures.exists('effect_nuke_explosion')) {
+      gfx.clear();
+      gfx.fillStyle(0xFF2222, 0.4);
+      gfx.fillCircle(40, 40, 38);
+      gfx.fillStyle(0xFF6600, 0.6);
+      gfx.fillCircle(40, 40, 26);
+      gfx.fillStyle(0xFFFFFF, 0.5);
+      gfx.fillCircle(40, 40, 12);
+      gfx.generateTexture('effect_nuke_explosion', 80, 80);
+    }
+
+    // 5. hivemind (drone 진화) — 진보라 삼각형
+    if (!this.textures.exists('effect_hivemind')) {
+      gfx.clear();
+      gfx.fillStyle(0x9933FF, 0.9);
+      gfx.fillTriangle(12, 0, 0, 24, 24, 24);
+      gfx.fillStyle(0x00FF66, 0.6);
+      gfx.fillCircle(12, 14, 4);
+      gfx.generateTexture('effect_hivemind', 24, 24);
+    }
+
+    // 6. perpetual_emp (emp_blast 진화) — 보라 이중 링
+    if (!this.textures.exists('effect_perpetual_emp')) {
+      gfx.clear();
+      gfx.lineStyle(3, 0xBB44FF, 0.8);
+      gfx.strokeCircle(32, 32, 30);
+      gfx.lineStyle(2, 0xEE88FF, 0.5);
+      gfx.strokeCircle(32, 32, 20);
+      gfx.fillStyle(0xBB44FF, 0.15);
+      gfx.fillCircle(32, 32, 30);
+      gfx.generateTexture('effect_perpetual_emp', 64, 64);
+    }
+
+    // 7. phantom_strike (force_blade 진화) — 유령 흰색 슬래시
+    if (!this.textures.exists('effect_phantom_strike')) {
+      gfx.clear();
+      gfx.fillStyle(0xAABBFF, 0.4);
+      gfx.fillRect(0, 8, 48, 32);
+      gfx.fillStyle(0xFFFFFF, 0.7);
+      gfx.fillRect(4, 16, 40, 16);
+      gfx.fillStyle(0xFFFFFF, 0.9);
+      gfx.fillRect(8, 20, 32, 8);
+      gfx.generateTexture('effect_phantom_strike', 48, 48);
+    }
+
+    // 8. bioplasma (nano_swarm 진화) — 형광 산성 녹색 구름
+    if (!this.textures.exists('effect_bioplasma')) {
+      gfx.clear();
+      gfx.fillStyle(0xAAFF00, 0.5);
+      gfx.fillCircle(24, 24, 22);
+      gfx.fillStyle(0xDDFF33, 0.6);
+      gfx.fillCircle(18, 18, 10);
+      gfx.fillStyle(0xDDFF33, 0.6);
+      gfx.fillCircle(30, 28, 8);
+      gfx.fillStyle(0xFFFFFF, 0.4);
+      gfx.fillCircle(24, 20, 5);
+      gfx.generateTexture('effect_bioplasma', 48, 48);
+    }
+
+    // 9. event_horizon (vortex_cannon 진화) — 블랙홀 (중심 어둡고 가장자리 보라)
+    if (!this.textures.exists('effect_event_horizon')) {
+      gfx.clear();
+      gfx.fillStyle(0x6600AA, 0.6);
+      gfx.fillCircle(24, 24, 22);
+      gfx.fillStyle(0x220044, 0.9);
+      gfx.fillCircle(24, 24, 14);
+      gfx.fillStyle(0x000000, 1.0);
+      gfx.fillCircle(24, 24, 7);
+      gfx.lineStyle(1, 0xBB66FF, 0.7);
+      gfx.strokeCircle(24, 24, 22);
+      gfx.generateTexture('effect_event_horizon', 48, 48);
+    }
+
+    // 10. death_blossom (reaper_field 진화) — 진홍/블랙 꽃잎 형태
+    if (!this.textures.exists('effect_death_blossom')) {
+      gfx.clear();
+      gfx.fillStyle(0x660022, 0.9);
+      // 4개 꽃잎 (십자 방향)
+      gfx.fillEllipse(16, 6, 10, 16);
+      gfx.fillEllipse(16, 26, 10, 16);
+      gfx.fillEllipse(6, 16, 16, 10);
+      gfx.fillEllipse(26, 16, 16, 10);
+      gfx.fillStyle(0xFF0044, 0.7);
+      gfx.fillCircle(16, 16, 5);
+      gfx.generateTexture('effect_death_blossom', 32, 32);
     }
   }
 }

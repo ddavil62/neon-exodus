@@ -96,12 +96,13 @@ export default class VFXSystem {
    * @param {number} y - 중심 Y 좌표
    * @param {number} radius - 폭발 반경
    */
-  static empBurst(scene, x, y, radius) {
+  static empBurst(scene, x, y, radius, evolvedId) {
+    const burstTint = evolvedId === 'perpetual_emp' ? 0xBB44FF : 0x4488FF;
     const emitter = scene.add.particles(x, y, 'particle', {
       speed: { min: radius * 0.5, max: radius * 1.2 },
       scale: { start: 2.0, end: 0 },
       lifespan: 500,
-      tint: 0x4488FF,
+      tint: burstTint,
       quantity: 60,
       emitting: false,
     });
@@ -159,10 +160,12 @@ export default class VFXSystem {
    * @param {number} y - 중심 Y 좌표
    * @param {number} radius - 목표 반경 (px)
    */
-  static empRing(scene, x, y, radius) {
-    if (!scene.textures.exists('effect_emp_ring')) return;
+  static empRing(scene, x, y, radius, evolvedId) {
+    const ringTex = evolvedId === 'perpetual_emp' && scene.textures.exists('effect_perpetual_emp')
+      ? 'effect_perpetual_emp' : 'effect_emp_ring';
+    if (!scene.textures.exists(ringTex)) return;
 
-    const ring = scene.add.image(x, y, 'effect_emp_ring')
+    const ring = scene.add.image(x, y, ringTex)
       .setScale(0.1)
       .setAlpha(0.9)
       .setDepth(20);
