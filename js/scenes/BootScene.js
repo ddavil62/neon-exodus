@@ -612,7 +612,7 @@ export default class BootScene extends Phaser.Scene {
       effect_plasma_orb:   { color: 0xFF00FF, dim: 24, shape: 'circle' },
       effect_missile:      { color: 0xFF6600, dim: 20, shape: 'rect' },
       effect_explosion:    { color: 0xFF6600, dim: 64, shape: 'circle' },
-      effect_drone:        { color: 0x00FFFF, dim: 24, shape: 'circle' },
+      effect_drone:        { color: 0xFFCC33, dim: 24, shape: 'circle' },
       effect_emp_ring:     { color: 0x4488FF, dim: 64, shape: 'circle' },
       effect_force_slash:  { color: 0x00FFFF, dim: 48, shape: 'rect' },
       effect_nano_cloud:   { color: 0x39FF14, dim: 48, shape: 'circle' },
