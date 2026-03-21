@@ -1495,38 +1495,65 @@ export default class GameScene extends Phaser.Scene {
    * @param {'danger'|'info'} [type='danger'] - 알림 유형 (danger=빨강, info=시안)
    */
   _showWarning(message, type = 'danger') {
-    const color = type === 'info' ? UI_COLORS.neonCyan : UI_COLORS.hpRed;
+    const isDanger = type === 'danger';
+    const color = isDanger ? UI_COLORS.hpRed : UI_COLORS.neonCyan;
+    const borderColor = isDanger ? 0xFF3333 : 0x00FFFF;
+    const fontSize = isDanger ? '26px' : '22px';
+    const glowColor = isDanger ? '#FF3333' : '#00FFFF';
 
     const warningText = this.add.text(
       GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60,
       message,
       {
-        fontSize: '20px',
+        fontSize: fontSize,
         fontFamily: 'Galmuri11, monospace',
         color: color,
         stroke: '#000000',
-        strokeThickness: 4,
+        strokeThickness: 5,
+        shadow: { offsetX: 0, offsetY: 0, color: glowColor, blur: 12, fill: true },
       }
     ).setOrigin(0.5).setScrollFactor(0).setDepth(201);
 
-    // 텍스트 크기 기반 배경 패널
-    const pad = 14;
-    const bg = this.add.rectangle(
-      GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60,
-      warningText.width + pad * 2, warningText.height + pad,
-      0x000000, 0.7
-    ).setOrigin(0.5).setScrollFactor(0).setDepth(200);
+    // 텍스트 크기 기반 배경 패널 + 타입별 테두리
+    const pad = 16;
+    const bgW = warningText.width + pad * 2;
+    const bgH = warningText.height + pad;
+    const bgGfx = this.add.graphics().setScrollFactor(0).setDepth(200);
+    bgGfx.fillStyle(0x000000, 0.8);
+    bgGfx.fillRoundedRect(GAME_WIDTH / 2 - bgW / 2, GAME_HEIGHT / 2 - 60 - bgH / 2, bgW, bgH, 6);
+    bgGfx.lineStyle(1.5, borderColor, 0.8);
+    bgGfx.strokeRoundedRect(GAME_WIDTH / 2 - bgW / 2, GAME_HEIGHT / 2 - 60 - bgH / 2, bgW, bgH, 6);
+
+    // 스케일 펀치 등장 애니메이션 (0.5 → 1.1 → 1.0)
+    warningText.setScale(0.5);
+    bgGfx.setScale(0.5);
+    this.tweens.add({
+      targets: [warningText, bgGfx],
+      scaleX: { from: 0.5, to: 1.1 },
+      scaleY: { from: 0.5, to: 1.1 },
+      duration: 150,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: [warningText, bgGfx],
+          scaleX: 1,
+          scaleY: 1,
+          duration: 100,
+          ease: 'Sine.easeInOut',
+        });
+      },
+    });
 
     // 페이드 아웃 후 제거
     this.tweens.add({
-      targets: [bg, warningText],
+      targets: [bgGfx, warningText],
       alpha: { from: 1, to: 0 },
       duration: 2000,
-      delay: 800,
+      delay: 1000,
       ease: 'Power2',
       onComplete: () => {
         warningText.destroy();
-        bg.destroy();
+        bgGfx.destroy();
       },
     });
   }
