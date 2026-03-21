@@ -691,6 +691,9 @@ export default class GameScene extends Phaser.Scene {
     const centerX = GAME_WIDTH / 2;
     const centerY = GAME_HEIGHT / 2;
 
+    // 진행 중인 카메라 이펙트 즉시 정리 (플래시 고정 방지)
+    this.cameras.main.resetFX();
+
     // 게임 일시정지
     this.isPaused = true;
     this.physics.pause();
@@ -935,6 +938,9 @@ export default class GameScene extends Phaser.Scene {
 
     const centerX = GAME_WIDTH / 2;
     const centerY = GAME_HEIGHT / 2;
+
+    // 진행 중인 카메라 이펙트 즉시 정리 (마젠타 플래시 고정 방지)
+    this.cameras.main.resetFX();
 
     // 게임 일시정지
     this.isPaused = true;
@@ -2034,6 +2040,8 @@ export default class GameScene extends Phaser.Scene {
 
     // 물리 엔진도 함께 일시정지/재개하여 적 이동을 멈춘다
     if (this.isPaused) {
+      // 진행 중인 카메라 이펙트 즉시 정리 (플래시 고정 방지)
+      this.cameras.main.resetFX();
       this.physics.pause();
     } else {
       this.physics.resume();
