@@ -57,15 +57,15 @@ export default class StageSelectScene extends Phaser.Scene {
     // ── 하단 버튼 ──
     const btnY = GAME_HEIGHT - 60;
 
-    // 출격 버튼
-    this._createBtn(centerX - 60, btnY, t('menu.start'), UI_COLORS.btnPrimary, () => {
-      SaveManager.setSelectedStage(this._selectedId);
-      this.scene.start('CharacterScene', { stageId: this._selectedId });
+    // 뒤로가기 버튼 (좌)
+    this._createBtn(centerX - 60, btnY, t('ui.back'), UI_COLORS.btnSecondary, () => {
+      this._onBack();
     });
 
-    // 뒤로가기 버튼
-    this._createBtn(centerX + 60, btnY, t('ui.back'), UI_COLORS.btnSecondary, () => {
-      this._onBack();
+    // 출격 버튼 (우)
+    this._createBtn(centerX + 60, btnY, t('menu.start'), UI_COLORS.btnPrimary, () => {
+      SaveManager.setSelectedStage(this._selectedId);
+      this.scene.start('CharacterScene', { stageId: this._selectedId });
     });
 
     // ── ESC 키로 뒤로가기 ──
