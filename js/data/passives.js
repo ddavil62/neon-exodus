@@ -25,7 +25,7 @@ export const PASSIVES = [
     detailKey: 'passive.armor_plate.detail',
     maxLevel: 5,
     stat: 'defense',
-    effectPerLevel: 3,
+    effectPerLevel: 0.05,
     icon: '\u{1F6E1}\uFE0F', // shield
   },
   {

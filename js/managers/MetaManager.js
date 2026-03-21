@@ -180,7 +180,7 @@ export class MetaManager {
       attackMultiplier: 1 + (lv('attack') * 0.05),
       maxHpMultiplier: 1 + (lv('maxHp') * 0.10),
       regenPerSec: lv('hpRegen') * 0.1,
-      armor: lv('defense') * 1,
+      armorRate: lv('defense') * 0.01,
       speedMultiplier: 1 + (lv('moveSpeed') * 0.03),
       cooldownReduction: 1 - (lv('cooldown') * 0.02),
       projectileSpeedMul: 1 + (lv('projectileSpeed') * 0.05),

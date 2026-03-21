@@ -121,8 +121,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     /** 자석 반경 배수 */
     this.magnetMultiplier = 1.0;
 
-    /** 방어력 (고정 피해 감소) */
-    this.armor = PLAYER_BASE_DEFENSE;
+    /** 피해 감소율 (0~1, 예: 0.25 = 25% 감소) */
+    this.armorRate = PLAYER_BASE_DEFENSE;
 
     /** 초당 HP 회복 */
     this.regen = 0;
@@ -256,8 +256,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   takeDamage(amount) {
     if (this.invincible || !this.active) return;
 
-    // 방어력 적용 (최소 1 데미지 보장)
-    const actualDamage = Math.max(1, amount - this.armor);
+    // 방어력 적용 — 퍼센트 감소 (최소 1 데미지 보장)
+    const actualDamage = Math.max(1, Math.floor(amount * (1 - this.armorRate)));
     this.currentHp -= actualDamage;
 
     // 무적 활성화
@@ -338,8 +338,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // 체력 회복: +0.1/초 / 레벨
     this.regen = (upgrades.regenLevel || 0) * 0.1;
 
-    // 방어력: +1 / 레벨
-    this.armor = PLAYER_BASE_DEFENSE + (upgrades.defenseLevel || 0);
+    // 방어력: +1% / 레벨 (퍼센트 감소)
+    this.armorRate = PLAYER_BASE_DEFENSE + (upgrades.defenseLevel || 0) * 0.01;
 
     // 이동속도: +3% / 레벨
     this.speedMultiplier = 1 + (upgrades.speedLevel || 0) * 0.03;
@@ -414,7 +414,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   _applyPassiveEffects() {
     // 패시브 영향 스탯을 기본값으로 리셋
     this.speedMultiplier = 1.0;
-    this.armor = PLAYER_BASE_DEFENSE;
+    this.armorRate = PLAYER_BASE_DEFENSE;
     this.cooldownMultiplier = 1.0;
     this.magnetMultiplier = 1.0;
     this.regen = 0;
@@ -433,7 +433,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
           this.speedMultiplier = 1 + totalEffect;
           break;
         case 'defense':
-          this.armor = PLAYER_BASE_DEFENSE + totalEffect;
+          this.armorRate = PLAYER_BASE_DEFENSE + totalEffect;
           break;
         case 'maxHp': {
           const newMaxHp = PLAYER_BASE_HP + totalEffect;

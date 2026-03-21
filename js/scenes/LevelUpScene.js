@@ -432,7 +432,7 @@ export default class LevelUpScene extends Phaser.Scene {
         p.speedMultiplier = 1 + totalEffect;
         break;
       case 'defense':
-        p.armor = totalEffect;
+        p.armorRate = totalEffect;
         break;
       case 'maxHp': {
         const oldMaxHp = p.maxHp;
