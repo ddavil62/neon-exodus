@@ -321,6 +321,9 @@ export default class GameScene extends Phaser.Scene {
     /** 모달 열림 상태 (일시정지 토글 차단용) */
     this._modalOpen = false;
 
+    /** 레벨업 씬 활성 상태 (카메라 이펙트 충돌 방지용) */
+    this._levelUpActive = false;
+
     // ── HUD 생성 ──
     this._createHUD();
 
@@ -389,6 +392,12 @@ export default class GameScene extends Phaser.Scene {
    * 플레이어 레벨업 시 호출된다. LevelUpScene을 오버레이로 띄운다.
    */
   onLevelUp() {
+    // 레벨업 플래그 ON — 같은 프레임의 보스/미니보스 카메라 이펙트 차단
+    this._levelUpActive = true;
+
+    // 진행 중인 카메라 이펙트 즉시 정리 (마젠타 플래시 고정 방지)
+    this.cameras.main.resetFX();
+
     // 레벨업 SFX/VFX
     SoundSystem.play('levelup');
     VFXSystem.levelUpBurst(this, this.player.x, this.player.y);
@@ -406,6 +415,10 @@ export default class GameScene extends Phaser.Scene {
     // LevelUpScene으로부터 남은 리롤 수 수신 및 진화 체크
     const levelUpScene = this.scene.get('LevelUpScene');
     levelUpScene.events.once('levelupDone', (data) => {
+      // 레벨업 플래그 OFF + 잔여 카메라 이펙트 정리 (안전망)
+      this._levelUpActive = false;
+      this.cameras.main.resetFX();
+
       if (data && data.rerollsLeft !== undefined) {
         this.rerollsLeft = data.rerollsLeft;
       }
@@ -615,8 +628,10 @@ export default class GameScene extends Phaser.Scene {
    * @param {import('../entities/Enemy.js').default} enemy - 스폰된 미니보스
    */
   onMiniBossSpawn(enemy) {
-    // 미니보스 등장: 오렌지 플래시 300ms
-    this.cameras.main.flash(300, 255, 100, 0, false);
+    // 레벨업 씬 활성 중이면 카메라 이펙트 생략 (플래시 고정 방지)
+    if (!this._levelUpActive) {
+      this.cameras.main.flash(300, 255, 100, 0, false);
+    }
     this._showWarning(t('hud.minibossWarning'));
   }
 
@@ -626,9 +641,11 @@ export default class GameScene extends Phaser.Scene {
    */
   onBossSpawn(enemy) {
     SoundSystem.play('boss_appear');
-    // 보스 등장: 마젠타 플래시 500ms + 카메라 흔들림 500ms
-    this.cameras.main.flash(500, 255, 0, 255, false);
-    this.cameras.main.shake(500, 0.02);
+    // 레벨업 씬 활성 중이면 카메라 이펙트 생략 (플래시 고정으로 인한 크래시 방지)
+    if (!this._levelUpActive) {
+      this.cameras.main.flash(500, 255, 0, 255, false);
+      this.cameras.main.shake(500, 0.02);
+    }
     this._showWarning(t('hud.bossWarning'));
   }
 
