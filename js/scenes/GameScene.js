@@ -446,7 +446,7 @@ export default class GameScene extends Phaser.Scene {
 
       // 부활 SFX + 메시지 표시
       SoundSystem.play('revive');
-      this._showWarning(t('game.revived'));
+      this._showWarning(t('game.revived'), 'info');
       return;
     }
 
@@ -826,7 +826,7 @@ export default class GameScene extends Phaser.Scene {
 
           // 부활 SFX + 메시지 표시
           SoundSystem.play('revive');
-          this._showWarning(t('game.revived'));
+          this._showWarning(t('game.revived'), 'info');
 
           // 게임 재개
           this.isPaused = false;
@@ -1249,7 +1249,7 @@ export default class GameScene extends Phaser.Scene {
       drop.spawn(this.player.x, this.player.y, weaponId, permanent);
 
       // 무기 드롭 알림
-      this._showWarning(t('weaponDrop.appeared'));
+      this._showWarning(t('weaponDrop.appeared'), 'info');
     }
   }
 
@@ -1269,10 +1269,10 @@ export default class GameScene extends Phaser.Scene {
     const existing = this.weaponSystem.getWeapon(weaponId);
     if (existing) {
       this.weaponSystem.upgradeWeapon(weaponId);
-      this._showWarning(t('weaponDrop.upgraded', t(`weapon.${weaponId}.name`)));
+      this._showWarning(t('weaponDrop.upgraded', t(`weapon.${weaponId}.name`)), 'info');
     } else {
       this.weaponSystem.addWeapon(weaponId, 1);
-      this._showWarning(t('weaponDrop.collected', t(`weapon.${weaponId}.name`)));
+      this._showWarning(t('weaponDrop.collected', t(`weapon.${weaponId}.name`)), 'info');
     }
 
     // 인벤토리 HUD 갱신
@@ -1444,27 +1444,45 @@ export default class GameScene extends Phaser.Scene {
    * @param {string} message - 경고 메시지
    * @private
    */
-  _showWarning(message) {
+  /**
+   * 화면 중앙 알림을 표시한다. 반투명 배경 패널 + 용도별 색상으로 가독성 확보.
+   * @param {string} message - 표시할 메시지
+   * @param {'danger'|'info'} [type='danger'] - 알림 유형 (danger=빨강, info=시안)
+   */
+  _showWarning(message, type = 'danger') {
+    const color = type === 'info' ? UI_COLORS.neonCyan : UI_COLORS.hpRed;
+
     const warningText = this.add.text(
       GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60,
       message,
       {
-        fontSize: '18px',
+        fontSize: '20px',
         fontFamily: 'Galmuri11, monospace',
-        color: UI_COLORS.hpRed,
+        color: color,
         stroke: '#000000',
-        strokeThickness: 3,
+        strokeThickness: 4,
       }
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+
+    // 텍스트 크기 기반 배경 패널
+    const pad = 14;
+    const bg = this.add.rectangle(
+      GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60,
+      warningText.width + pad * 2, warningText.height + pad,
+      0x000000, 0.7
     ).setOrigin(0.5).setScrollFactor(0).setDepth(200);
 
-    // 깜빡임 후 제거
+    // 페이드 아웃 후 제거
     this.tweens.add({
-      targets: warningText,
+      targets: [bg, warningText],
       alpha: { from: 1, to: 0 },
-      duration: 300,
-      yoyo: true,
-      repeat: 3,
-      onComplete: () => warningText.destroy(),
+      duration: 2000,
+      delay: 800,
+      ease: 'Power2',
+      onComplete: () => {
+        warningText.destroy();
+        bg.destroy();
+      },
     });
   }
 
