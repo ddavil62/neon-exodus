@@ -36,6 +36,9 @@ export default class SoundSystem {
   /** @type {string|null} 마지막으로 요청된 BGM ID (OFF→ON 재시작용) */
   static _lastBgmId = null;
 
+  /** @type {boolean} 페이지 숨김 전 BGM 재생 중이었는지 추적 */
+  static _bgmWasPlaying = false;
+
   /**
    * 사운드 시스템을 초기화한다.
    * @param {Object} [settings] - 설정 객체 (sfxVolume, bgmVolume)
@@ -57,6 +60,32 @@ export default class SoundSystem {
 
     // suspended 상태이면 즉시 resume 시도
     SoundSystem.resume();
+
+    // 모바일 백그라운드 전환 시 오디오 정지/재개
+    SoundSystem._initVisibilityHandler();
+  }
+
+  /**
+   * 페이지 가시성 변경 핸들러를 등록한다.
+   * 홈 버튼/탭 전환 시 AudioContext를 suspend하여 BGM/SFX를 완전 정지한다.
+   * @private
+   */
+  static _initVisibilityHandler() {
+    if (SoundSystem._visibilityBound) return; // 중복 등록 방지
+    SoundSystem._visibilityBound = true;
+
+    document.addEventListener('visibilitychange', () => {
+      if (!SoundSystem._ctx) return;
+
+      if (document.hidden) {
+        // 백그라운드 진입: AudioContext 중단
+        SoundSystem._bgmWasPlaying = !!SoundSystem._currentBgmId;
+        SoundSystem._ctx.suspend().catch(() => {});
+      } else {
+        // 포그라운드 복귀: AudioContext 재개
+        SoundSystem._ctx.resume().catch(() => {});
+      }
+    });
   }
 
   /**
