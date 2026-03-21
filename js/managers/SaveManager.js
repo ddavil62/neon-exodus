@@ -43,7 +43,7 @@ const DEFAULT_SAVE = {
     enemiesSeen: [],
   },
   settings: {
-    locale: 'ko',
+    locale: 'en',
     sfxVolume: 1,
     bgmVolume: 0.7,
     hapticEnabled: true,
