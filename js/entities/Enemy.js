@@ -11,6 +11,7 @@ import { COLORS, CREDIT_DROP_CHANCE, CREDIT_DROP_AMOUNT, SPRITE_SCALE } from '..
 import { ENEMIES, MINI_BOSSES, BOSSES } from '../data/enemies.js';
 import { ENEMY_BEHAVIORS } from './EnemyTypes.js';
 import { CONSUMABLES } from '../data/consumables.js';
+import VFXSystem from '../systems/VFXSystem.js';
 
 // ── 데이터 조회용 인덱스 (배열 → ID 맵 변환) ──
 
@@ -128,6 +129,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.currentHp = this.maxHp;
     this.speed = data.speed || 80;
     this.contactDamage = Math.floor((data.contactDamage || 5) * dmgMultiplier);
+
+    /** 피격 VFX 쿨다운 (ms 기준, 200ms 간격) */
+    this._lastHitVfxTime = 0;
     this.xpDrop = data.xp || 1;
 
     // traits: 배열 형태를 객체 플래그로 변환
@@ -265,6 +269,13 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     // 마지막으로 데미지를 준 무기 ID 저장 (킬 귀속용)
     if (weaponId) {
       this._lastHitWeaponId = weaponId;
+    }
+
+    // 피격 VFX (200ms 쿨다운 — 빔/장판 연타 시 과부하 방지)
+    const now = this.scene.time.now;
+    if (now - this._lastHitVfxTime >= 200) {
+      this._lastHitVfxTime = now;
+      VFXSystem.hitSpark(this.scene, this.x, this.y);
     }
 
     // 피격 플래시 (흰색 틴트 100ms)

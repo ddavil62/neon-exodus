@@ -1104,8 +1104,7 @@ export default class GameScene extends Phaser.Scene {
       this.weaponSystem.recordDamage(weaponId, dmg);
     }
 
-    // 적 피격 VFX/SFX
-    VFXSystem.hitSpark(this, enemy.x, enemy.y);
+    // 적 피격 SFX (VFX는 Enemy.takeDamage 내부에서 쿨다운 기반 처리)
     SoundSystem.play('hit');
 
     // 치명타 투사체 적중 시 시각 효과 표시
