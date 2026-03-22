@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-22 (무기 드롭 맵 탐색 배치 전환)
+> 최종 업데이트: 2026-03-22 (무한 월드 전환)
 
 ## 프로젝트 개요
 
@@ -224,11 +224,11 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 
 | 모듈 | 파일 | 역할 |
 |---|---|---|
-| 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
+| 게임 설정 | `js/config.js` | 해상도, 월드, 래핑(WRAP_RADIUS), 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 382키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
 | 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수 |
-| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴 |
+| 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기, 드론 AI |
@@ -838,10 +838,10 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 9~12분 | 0.7초 | 10~15 |
 | 12~15분 | 0.6초 | 12~20 |
 
-- 화면 밖 50~100px 위치에서 스폰
+- 카메라 기준 화면 밖 50~100px 위치에서 스폰 (무한 월드 호환 -- 월드 바운드 클램프 없음)
 - ObjectPool 60개 기준. 12~15분 구간 최대 동시 약 33마리 (pool 여유 유지). ObjectPool은 자동 확장 방식이므로 초과 시에도 크래시 없음.
 - 관련 파일: `js/data/waves.js`, `js/systems/WaveSystem.js`
-- 구현 일자: 2026-03-08 (밀도 재조정: 2026-03-20)
+- 구현 일자: 2026-03-08 (밀도 재조정: 2026-03-20, 무한 월드 클램프 제거: 2026-03-22)
 
 ### 런 내 성장
 
@@ -1077,22 +1077,22 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 
 ### 무기 드롭 시스템 (맵 탐색 배치)
 
-게임 시작 시(create 완료 시점) 스테이지 고유 무기를 맵 랜덤 위치에 단일 배치한다. 플레이어가 맵을 탐색하여 발견하는 방식.
+게임 시작 시(create 완료 시점) 스테이지 고유 무기를 플레이어 시작 위치 기준 랜덤 각도 + 오프셋 거리에 단일 배치한다. 플레이어가 탐색하여 발견하는 방식.
 
 #### 배치 규칙
 - 배치 시점: GameScene.create() 완료 직후 `_placeWeaponOnMap()` 호출
 - 배치 수량: 스테이지당 1개 (stageData.unlockWeaponId 기반)
-- permanent: true (런 종료까지 소멸하지 않음)
-- 위치 조건: 월드 경계에서 100px 마진 (WEAPON_DROP_MARGIN), 플레이어 시작 위치(1000, 1000)에서 300px 이상 이격 (WEAPON_DROP_MIN_DIST_FROM_PLAYER)
-- 재시도: 조건 미충족 시 최대 20회, 초과 시 안전 폴백 위치 (100, 100) 사용 (~1273px 이격)
+- permanent: true (런 종료까지 소멸하지 않음, 래핑 제외)
+- 위치 계산: 랜덤 각도(0~2PI) + WEAPON_DROP_OFFSET_MIN~MAX 거리, 기준점 PLAYER_START_X/Y (0, 0)
+- 재시도 없음 (무한 월드에서 항상 유효한 좌표 생성)
 - WeaponDropItem.spawn()에서 추가 오프셋 없이 정확한 좌표로 배치
 
 #### 관련 상수 (config.js)
 | 상수 | 값 | 설명 |
 |---|---|---|
-| WEAPON_DROP_MARGIN | 100px | 월드 경계 마진 |
-| WEAPON_DROP_MIN_DIST_FROM_PLAYER | 300px | 플레이어 시작 위치 최소 이격 거리 |
-| AUTO_HUNT.weaponDropSearchRadius | 3000px | AI 탐색 반경 (맵 대각선 ~2828px 커버) |
+| WEAPON_DROP_OFFSET_MIN | 400px | 플레이어 기준 최소 오프셋 거리 |
+| WEAPON_DROP_OFFSET_MAX | 800px | 플레이어 기준 최대 오프셋 거리 |
+| AUTO_HUNT.weaponDropSearchRadius | 3000px | AI 탐색 반경 |
 
 #### 수집 처리
 - overlap 기반 수집: 기존 `_onCollectWeaponDrop()` 로직 그대로 유지
@@ -1119,7 +1119,7 @@ AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Pl
 4. **소모품 수집** (collect): 300px 이내 소모품 중 점수가 가장 높은 아이템 방향으로 이동.
 5. **XP 보석 수집** (collect): 200px 이내 XP 보석 중 점수가 가장 높은 보석 방향으로 이동. 자석 반경 내 보석은 무시.
 6. **적 접근** (approach): 가장 가까운 적이 150px 이상 떨어져 있으면 접근하여 무기 사거리를 유지.
-7. **방랑** (idle): 위 행동이 불필요하면 월드 중앙 경향 + 랜덤 방향 혼합 이동.
+7. **방랑** (idle): 위 행동이 불필요하면 순수 랜덤 방향 이동. *(무한 월드 전환으로 월드 중앙 경향 제거됨)*
 
 #### 아이템 수집 점수 공식 (소스 코드 검증 기준)
 | 대상 | 점수 공식 | 탐색 반경 |
@@ -1142,7 +1142,7 @@ AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Pl
 | 소모품 점수 가중치 | 5 | `config.js` AUTO_HUNT.consumableScoreMultiplier |
 | XP 보석 점수 가중치 | 1 | `config.js` AUTO_HUNT.xpGemScoreMultiplier |
 | 적 접근 유지 거리 | 150px | `AutoPilotSystem.js` PREFERRED_ENEMY_DISTANCE |
-| 벽 회피 마진 | 80px | `AutoPilotSystem.js` WALL_MARGIN |
+| ~~벽 회피 마진~~ | ~~80px~~ | ~~`AutoPilotSystem.js` WALL_MARGIN~~ *(무한 월드 전환으로 제거됨, _getWallAvoidance() 항상 {0,0} 반환)* |
 | 방향 전환 간격 | 150ms | `config.js` AUTO_HUNT.directionInterval |
 | 랜덤 각도 변동 (jitter) | 0.3 rad | `AutoPilotSystem.js` IMPERFECTION_ANGLE |
 | 반응 누락 확률 | 5% (0.05) | `AutoPilotSystem.js` REACTION_MISS_CHANCE |
@@ -1151,7 +1151,7 @@ AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Pl
 - 매 프레임 5% 확률로 AI가 반응하지 않고 이전 방향 유지 (REACTION_MISS_CHANCE)
 - 방향 결정 시 최대 0.3rad 랜덤 각도 변동 (IMPERFECTION_ANGLE)
 - 방향 전환 최소 간격 150ms로 과도한 지터 방지
-- _wander() 모드에서 벽 회피(wall avoidance)가 _applyDirection() 경유가 아닌 중앙 경향으로 처리됨 (물리 레벨 setCollideWorldBounds로 보완)
+- _wander() 모드에서 순수 랜덤 방향 사용 *(무한 월드 전환으로 벽 회피/중앙 경향 불필요)*
 
 #### 유저 입력 우선
 - Player._handleMovement()에서 joystick.isActive가 true이면 AI 방향 무시
@@ -1376,7 +1376,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 7. **consecutiveClears 직접 조작**: SaveManager.updateStats() 로직에 맞지 않아 data.stats를 직접 조작. SaveManager에 setStats() 메서드 추가 권장.
 8. **오브 시각적 크기 고정**: 플라즈마 오브의 시각적 크기가 8px로 고정되어 orbRadius(55~90px)와 불일치. orbRadius는 데미지 판정 범위.
 9. ~~**AutoPilotSystem AUTO_HUNT import 미사용**~~: **해결됨 (2026-03-11)**. 하드코딩 상수(DANGER_RADIUS, XP_SEARCH_RADIUS, DIRECTION_CHANGE_INTERVAL, CRITICAL_DANGER_RADIUS) 완전 제거, AUTO_HUNT 객체에서 런타임 참조로 전환.
-10. **AutoPilotSystem _wander() 벽 회피 미경유**: idle 모드에서 _applyDirection()을 거치지 않아 벽 회피와 jitter가 미적용. Phaser setCollideWorldBounds가 물리 레벨에서 보완하나, 벽 근처 AI 움직임이 부자연스러울 수 있음.
+10. ~~**AutoPilotSystem _wander() 벽 회피 미경유**~~: **해결됨 (2026-03-22)**. 무한 월드 전환으로 벽 자체가 없어져 벽 회피가 불필요해짐. _getWallAvoidance()는 항상 {0,0} 반환, _wander()는 순수 랜덤 방향.
 11. ~~**IAP 플러그인 미등록**~~: **해결됨 (2026-03-12)**. `@capgo/native-purchases` v8.2.2 설치 완료. 실제 Google Play Billing 연동. CI에서 Play Billing Library 별도 주입 제거 (플러그인 내장).
 12. **Player.damageMultiplier 미초기화**: constructor에 `this.damageMultiplier` 미선언. `getEffectiveAttackMultiplier()`에서 `this.damageMultiplier && this.damageMultiplier > 1` 조건으로 undefined 안전 처리됨. 생성자에 `this.damageMultiplier = 1.0` 추가 권장.
 13. **Player._applyPassiveEffects() attackDamage case 누락**: `_applyPassiveEffects()` 메서드에 `attackDamage` case 미구현 및 리셋 블록에 `damageMultiplier` 미포함. 현재 이 메서드는 외부 호출이 없는 dead code이므로 런타임 영향 없음.
