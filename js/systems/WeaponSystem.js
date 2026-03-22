@@ -1470,18 +1470,19 @@ export default class WeaponSystem {
     if (weapon.cooldownTimer <= 0) {
       const stats = this.getWeaponStats(weapon);
       const effectiveCooldown = stats.cooldown * (this.player.cooldownMultiplier || 1);
-      this._triggerMeleeSlash(weapon.id, stats);
+      this._triggerMeleeSlash(weapon, stats);
       weapon.cooldownTimer = effectiveCooldown;
     }
   }
 
   /**
    * 근접 슬래시를 발동한다. 가장 가까운 적 방향으로 호 범위 데미지 + 넉백.
-   * @param {string} weaponId - 무기 ID
+   * @param {Object} weapon - 무기 객체
    * @param {Object} stats - 무기 스탯
    * @private
    */
-  _triggerMeleeSlash(weaponId, stats) {
+  _triggerMeleeSlash(weapon, stats) {
+    const weaponId = weapon.id;
     const px = this.player.x;
     const py = this.player.y;
 

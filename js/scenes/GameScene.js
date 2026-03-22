@@ -1419,6 +1419,16 @@ export default class GameScene extends Phaser.Scene {
         item.setPosition(px - dx, py - dy);
       }
     });
+
+    // 무기 드롭 래핑 (자석 흡수 중 제외)
+    this.weaponDropPool.forEach((drop) => {
+      if (!drop.active || drop.beingMagnetized) return;
+      const dx = drop.x - px;
+      const dy = drop.y - py;
+      if (dx * dx + dy * dy > r2) {
+        drop.setPosition(px - dx, py - dy);
+      }
+    });
   }
 
   /**
