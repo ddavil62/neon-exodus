@@ -664,8 +664,8 @@ export default class GameScene extends Phaser.Scene {
 
   /**
    * 카메라 플래시를 안전하게 실행한다.
-   * Phaser scene.pause() 중에 카메라 이펙트 타이머가 멈추는 문제를 우회하기 위해,
-   * 브라우저 setTimeout으로 duration 후 강제 정리하는 안전망을 건다.
+   * Phaser의 camera.flash()를 사용하지 않고, 직접 Rectangle 오버레이를 생성하여
+   * requestAnimationFrame으로 페이드아웃한다. scene.pause()와 완전히 독립적으로 동작한다.
    * @param {number} duration - 플래시 지속 시간 (ms)
    * @param {number} r - 빨강 (0~255)
    * @param {number} g - 초록 (0~255)
@@ -673,15 +673,35 @@ export default class GameScene extends Phaser.Scene {
    * @private
    */
   _safeFlash(duration, r, g, b) {
-    this.cameras.main.flash(duration, r, g, b, false);
+    const color = Phaser.Display.Color.GetColor(r, g, b);
+    const overlay = this.add.rectangle(
+      GAME_WIDTH / 2, GAME_HEIGHT / 2,
+      GAME_WIDTH + 20, GAME_HEIGHT + 20,
+      color, 1.0
+    ).setScrollFactor(0).setDepth(9999);
 
-    // 안전망: Phaser 타이머와 무관하게 브라우저 타이머로 강제 정리
-    const cam = this.cameras.main;
-    setTimeout(() => {
-      if (cam && cam.flashEffect && cam.flashEffect.isRunning) {
-        cam.flashEffect.reset();
+    // 씬 종료 시 정리
+    const cleanup = () => {
+      if (overlay && overlay.active) overlay.destroy();
+    };
+    this.events.once('shutdown', cleanup);
+
+    // requestAnimationFrame 기반 페이드아웃 (scene.pause 무관)
+    const startTime = performance.now();
+    const animate = () => {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      if (overlay.active) {
+        overlay.setAlpha(1 - progress);
       }
-    }, duration + 200);
+      if (progress < 1 && overlay.active) {
+        requestAnimationFrame(animate);
+      } else {
+        cleanup();
+        this.events.off('shutdown', cleanup);
+      }
+    };
+    requestAnimationFrame(animate);
   }
 
   /**

@@ -200,13 +200,26 @@ export default class VFXSystem {
     emitter.explode(80);
     scene.time.delayedCall(700, () => emitter.destroy());
 
-    // 카메라 플래시 (일렉트릭 블루) — static 메서드이므로 setTimeout 안전망 직접 적용
-    scene.cameras.main.flash(300, 68, 136, 255, false);
+    // 커스텀 플래시 오버레이 (일렉트릭 블루) — camera.flash() 대신 rAF 기반
     const cam = scene.cameras.main;
-    setTimeout(() => {
-      if (cam && cam.flashEffect && cam.flashEffect.isRunning) {
-        cam.flashEffect.reset();
+    const overlay = scene.add.rectangle(
+      cam.width / 2, cam.height / 2,
+      cam.width + 20, cam.height + 20,
+      Phaser.Display.Color.GetColor(68, 136, 255), 1.0
+    ).setScrollFactor(0).setDepth(9999);
+
+    const flashStart = performance.now();
+    const flashDuration = 300;
+    const animateFlash = () => {
+      const elapsed = performance.now() - flashStart;
+      const progress = Math.min(elapsed / flashDuration, 1);
+      if (overlay.active) overlay.setAlpha(1 - progress);
+      if (progress < 1 && overlay.active) {
+        requestAnimationFrame(animateFlash);
+      } else if (overlay.active) {
+        overlay.destroy();
       }
-    }, 500);
+    };
+    requestAnimationFrame(animateFlash);
   }
 }
