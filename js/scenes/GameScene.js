@@ -1508,8 +1508,16 @@ export default class GameScene extends Phaser.Scene {
     const fontSize = isDanger ? '26px' : '22px';
     const glowColor = isDanger ? '#FF3333' : '#00FFFF';
 
+    // 활성 토스트 스택 관리 — 겹침 방지
+    if (!this._activeToasts) this._activeToasts = [];
+
+    // 기본 Y 위치 + 활성 토스트 수만큼 아래로 밀기
+    const baseY = GAME_HEIGHT / 2 - 80;
+    const stackOffset = 44;
+    const toastY = baseY + this._activeToasts.length * stackOffset;
+
     const warningText = this.add.text(
-      GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60,
+      GAME_WIDTH / 2, toastY,
       message,
       {
         fontSize: fontSize,
@@ -1526,10 +1534,14 @@ export default class GameScene extends Phaser.Scene {
     const bgW = warningText.width + pad * 2;
     const bgH = warningText.height + pad;
     const bgGfx = this.add.graphics().setScrollFactor(0).setDepth(200);
-    bgGfx.fillStyle(0x000000, 0.8);
-    bgGfx.fillRoundedRect(GAME_WIDTH / 2 - bgW / 2, GAME_HEIGHT / 2 - 60 - bgH / 2, bgW, bgH, 6);
-    bgGfx.lineStyle(1.5, borderColor, 0.8);
-    bgGfx.strokeRoundedRect(GAME_WIDTH / 2 - bgW / 2, GAME_HEIGHT / 2 - 60 - bgH / 2, bgW, bgH, 6);
+    bgGfx.fillStyle(0x000000, 0.85);
+    bgGfx.fillRoundedRect(GAME_WIDTH / 2 - bgW / 2, toastY - bgH / 2, bgW, bgH, 6);
+    bgGfx.lineStyle(1.5, borderColor, 0.9);
+    bgGfx.strokeRoundedRect(GAME_WIDTH / 2 - bgW / 2, toastY - bgH / 2, bgW, bgH, 6);
+
+    // 스택에 등록
+    const toastEntry = { text: warningText, bg: bgGfx };
+    this._activeToasts.push(toastEntry);
 
     // 스케일 펀치 등장 애니메이션 (0.5 → 1.1 → 1.0)
     warningText.setScale(0.5);
@@ -1551,7 +1563,7 @@ export default class GameScene extends Phaser.Scene {
       },
     });
 
-    // 페이드 아웃 후 제거
+    // 페이드 아웃 후 제거 + 스택에서 해제
     this.tweens.add({
       targets: [bgGfx, warningText],
       alpha: { from: 1, to: 0 },
@@ -1561,6 +1573,9 @@ export default class GameScene extends Phaser.Scene {
       onComplete: () => {
         warningText.destroy();
         bgGfx.destroy();
+        // 스택에서 제거
+        const idx = this._activeToasts.indexOf(toastEntry);
+        if (idx !== -1) this._activeToasts.splice(idx, 1);
       },
     });
   }
