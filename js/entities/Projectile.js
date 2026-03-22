@@ -6,7 +6,7 @@
  * 관통 횟수에 따라 비활성화된다.
  */
 
-import { WORLD_WIDTH, WORLD_HEIGHT, SPRITE_SCALE } from '../config.js';
+import { SPRITE_SCALE, GAME_WIDTH, GAME_HEIGHT } from '../config.js';
 
 // ── Projectile 클래스 ──
 
@@ -136,11 +136,12 @@ export default class Projectile extends Phaser.Physics.Arcade.Sprite {
       this._glowGfx.setPosition(this.x, this.y);
     }
 
-    // 월드 바운드 밖 체크
-    const margin = 50;
+    // 카메라 기준 화면 밖 체크 (무한 월드 호환)
+    const cam = this.scene.cameras.main;
+    const margin = 100;
     if (
-      this.x < -margin || this.x > WORLD_WIDTH + margin ||
-      this.y < -margin || this.y > WORLD_HEIGHT + margin
+      this.x < cam.scrollX - margin || this.x > cam.scrollX + GAME_WIDTH + margin ||
+      this.y < cam.scrollY - margin || this.y > cam.scrollY + GAME_HEIGHT + margin
     ) {
       this._deactivate();
     }

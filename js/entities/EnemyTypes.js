@@ -231,11 +231,8 @@ export const ENEMY_BEHAVIORS = {
         const newX = player.x + Math.cos(angle) * distance;
         const newY = player.y + Math.sin(angle) * distance;
 
-        // 월드 바운드 내로 클램프
-        enemy.setPosition(
-          Phaser.Math.Clamp(newX, 0, scene.physics.world.bounds.width),
-          Phaser.Math.Clamp(newY, 0, scene.physics.world.bounds.height)
-        );
+        // 무한 월드: 클램프 없이 플레이어 근처 좌표 직접 사용
+        enemy.setPosition(newX, newY);
 
         // 텔레포트 시각 이펙트 (간단한 플래시)
         enemy.setAlpha(0.3);
