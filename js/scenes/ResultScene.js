@@ -314,10 +314,21 @@ export default class ResultScene extends Phaser.Scene {
       this.scene.start('GameScene');
     }, 1200);
 
-    // 메인 메뉴 버튼
+    // 메인 메뉴 버튼 — 클리어 컷신 미시청 시 컷신 재생 후 메뉴로
     this._createButton(centerX, menuBtnY, t('result.toMenu'), UI_COLORS.btnSecondary, () => {
-      this.scene.start('MenuScene');
+      this._goToMenu();
     }, 1400);
+
+    // ── 클리어 컷신 판정 ──
+    /** @type {string|null} 대기 중인 클리어 컷신 ID */
+    this._pendingCutscene = null;
+    if (this.victory && this.stageId) {
+      const stageNum = this.stageId.replace('stage_', '');
+      const clearId = `stage_${stageNum}_clear`;
+      if (!SaveManager.isCutsceneViewed(clearId)) {
+        this._pendingCutscene = clearId;
+      }
+    }
 
     // ── 입력 잠금 플래그 (광고 로딩 중 다른 버튼 차단) ──
     /** @type {boolean} 광고 로딩 중 입력 잠금 여부 */
@@ -330,9 +341,25 @@ export default class ResultScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * 메뉴로 이동한다. 대기 중인 클리어 컷신이 있으면 먼저 재생한다.
+   * @private
+   */
+  _goToMenu() {
+    if (this._pendingCutscene) {
+      this.scene.start('CutsceneScene', {
+        cutsceneId: this._pendingCutscene,
+        nextScene: 'MenuScene',
+        nextSceneData: {},
+      });
+      return;
+    }
+    this.scene.start('MenuScene');
+  }
+
   /** 메뉴 화면으로 돌아간다. */
   _onBack() {
-    this.scene.start('MenuScene');
+    this._goToMenu();
   }
 
   // ── 광고 2배 버튼 ──

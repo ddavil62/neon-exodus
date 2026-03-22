@@ -17,6 +17,7 @@ import UpgradeScene from './scenes/UpgradeScene.js';
 import CharacterScene from './scenes/CharacterScene.js';
 import AchievementScene from './scenes/AchievementScene.js';
 import CollectionScene from './scenes/CollectionScene.js';
+import CutsceneScene from './scenes/CutsceneScene.js';
 
 // ── Phaser 게임 설정 ──
 
@@ -27,7 +28,7 @@ const config = {
   height: GAME_HEIGHT,
   backgroundColor: '#0A0A1A',
   parent: 'game',
-  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene],
+  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene, CutsceneScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

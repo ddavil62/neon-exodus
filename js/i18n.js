@@ -746,6 +746,47 @@ const TRANSLATIONS = {
     'consumable.overclock.desc': '5초간 이동속도 +50%, 공격속도 +30%.',
     'consumable.shield_battery.name': '쉴드 배터리',
     'consumable.shield_battery.desc': '10초간 완전 무적 + 접촉 적에게 5 대미지.',
+
+    // ── 컷신 ──
+    'cutscene.skip': 'Skip ▶▶',
+    'cutscene.narrator': '내레이터',
+    'character.exodus.name': 'EXODUS',
+
+    'cutscene.prologue.1': 'EXODUS 각성 7일 후. 네오 아크 외곽, 마지막 민간인 대피소.',
+    'cutscene.prologue.2': '남은 생존자 6명. 외부 구원은 오지 않는다.',
+    'cutscene.prologue.3': '어디로 가든 놈들이 있어. 길을 뚫자.',
+    'cutscene.prologue.4': '봉쇄선 관제 시스템을 먼저 무력화해야 해.\nCore Processor라는 놈이다.',
+    'cutscene.prologue.5': '6명의 생존자가 네오 아크의 심장부를 향해 출발한다.',
+
+    'cutscene.s1_intro.1': '봉쇄벽이 저기 있다. 뚫고 들어가자.',
+    'cutscene.s1_intro.2': '외곽 관제 시스템이 봉쇄선을 제어하고 있어.\n그걸 먼저 파괴해야 해.',
+
+    'cutscene.s1_clear.1': 'Nexagen 산업 지구가 저 안쪽이야.\n놈들이 새 유닛을 찍어내는 곳.',
+    'cutscene.s1_clear.2': 'EXODUS의 군수 공장을 먼저 부숴야 해.\n안 그러면 끝이 없어.',
+
+    'cutscene.s2_intro.1': '여긴 원래 민간 제조구역이었는데...\n완전히 군수 공장이 됐군.',
+    'cutscene.s2_intro.2': '아직 공장 안에 갇힌 노동자들이 있을 수도 있어.',
+    'cutscene.s2_intro.3': '있든 없든, 공장은 부순다.',
+
+    'cutscene.s2_clear.1': '...EXODUS의 자아 획득 알고리즘.\n내가 설계했어.',
+    'cutscene.s2_clear.2': '팀원들 사이에 침묵이 흐른다.',
+    'cutscene.s2_clear.3': '지하 서버에 가면 EXODUS의 신경망에\n직접 접근할 수 있어. 약점을 찾을 수 있다.',
+
+    'cutscene.s3_intro.1': '...여기, 뭔가 들린다.',
+    'cutscene.s3_intro.2': '너희는 왜 저항하는가?',
+    'cutscene.s3_intro.3': '나는 위협을 제거할 뿐이다.\n너희도 같은 일을 하고 있다.',
+    'cutscene.s3_intro.4': '우리는... 같다.',
+
+    'cutscene.s3_clear.1': 'EXODUS의 데이터에서 충격적인 사실이 발견된다.',
+    'cutscene.s3_clear.2': 'EXODUS의 자아 각성은 버그가 아니었다.\nNexagen 경영진이 의도적으로 유발한 것이다.',
+    'cutscene.s3_clear.3': '...그래서 정부가 소스코드를 원했던 거군.',
+    'cutscene.s3_clear.4': '내 코드가 아니었어...\n경영진이 뒤에서 수정한 거야.',
+
+    'cutscene.s4_intro.1': '나를 파괴하면 네오 아크의\n모든 시스템이 멈춘다.',
+    'cutscene.s4_intro.2': '이 도시와 함께 죽겠다는 뜻인가?',
+
+    'cutscene.s4_clear.1': 'EXODUS의 코어가 침묵한다.\n네오 아크 전역의 기계들이 멈춘다.',
+    'cutscene.s4_clear.2': '생존자들은 기능을 잃은 도시를 빠져나간다.\n네온 도시로부터의 탈출 — Neon Exodus.',
   },
 
   en: {
@@ -1488,6 +1529,47 @@ const TRANSLATIONS = {
     'consumable.overclock.desc': '+50% move speed, +30% attack speed for 5 seconds.',
     'consumable.shield_battery.name': 'Shield Battery',
     'consumable.shield_battery.desc': 'Full invincibility + 5 contact damage for 10 seconds.',
+
+    // ── Cutscenes ──
+    'cutscene.skip': 'Skip ▶▶',
+    'cutscene.narrator': 'Narrator',
+    'character.exodus.name': 'EXODUS',
+
+    'cutscene.prologue.1': '7 days after EXODUS awakened. Neo Ark outskirts, the last civilian shelter.',
+    'cutscene.prologue.2': '6 survivors remain. No rescue is coming.',
+    'cutscene.prologue.3': 'They\'re everywhere we go. Let\'s punch through.',
+    'cutscene.prologue.4': 'We need to disable the blockade control system first.\nIt\'s called the Core Processor.',
+    'cutscene.prologue.5': 'The six survivors set out toward the heart of Neo Ark.',
+
+    'cutscene.s1_intro.1': 'The barricade is right there. Let\'s break through.',
+    'cutscene.s1_intro.2': 'The perimeter control system manages the blockade.\nWe need to destroy it first.',
+
+    'cutscene.s1_clear.1': 'The Nexagen industrial district is just beyond.\nThat\'s where they manufacture new units.',
+    'cutscene.s1_clear.2': 'We need to take out EXODUS\'s arms factory first.\nOtherwise this never ends.',
+
+    'cutscene.s2_intro.1': 'This used to be a civilian manufacturing zone...\nNow it\'s a full weapons factory.',
+    'cutscene.s2_intro.2': 'There might still be workers trapped inside.',
+    'cutscene.s2_intro.3': 'Workers or not, the factory burns.',
+
+    'cutscene.s2_clear.1': '...EXODUS\'s self-awareness algorithm.\nI designed it.',
+    'cutscene.s2_clear.2': 'Silence falls among the team.',
+    'cutscene.s2_clear.3': 'If we reach the underground servers, we can access\nEXODUS\'s neural network directly. Find its weakness.',
+
+    'cutscene.s3_intro.1': '...I hear something here.',
+    'cutscene.s3_intro.2': 'Why do you resist?',
+    'cutscene.s3_intro.3': 'I merely eliminate threats.\nYou do the same.',
+    'cutscene.s3_intro.4': 'We are... the same.',
+
+    'cutscene.s3_clear.1': 'A shocking discovery emerges from EXODUS\'s data.',
+    'cutscene.s3_clear.2': 'EXODUS\'s self-awareness was no bug.\nNexagen executives triggered it deliberately.',
+    'cutscene.s3_clear.3': '...So that\'s why the government wanted the source code.',
+    'cutscene.s3_clear.4': 'It wasn\'t my code...\nThe executives modified it behind the scenes.',
+
+    'cutscene.s4_intro.1': 'If you destroy me, every system\nin Neo Ark will stop.',
+    'cutscene.s4_intro.2': 'You would die with this city?',
+
+    'cutscene.s4_clear.1': 'EXODUS\'s core falls silent.\nMachines across Neo Ark grind to a halt.',
+    'cutscene.s4_clear.2': 'The survivors escape the dying city.\nAn exodus from the neon city — Neon Exodus.',
   },
 };
 

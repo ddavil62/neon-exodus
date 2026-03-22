@@ -22,6 +22,7 @@ const DEFAULT_SAVE = {
   achievements: {},         // { achievementId: true }
   autoHuntUnlocked: false,  // 자동 사냥 IAP 구매 여부
   autoHuntEnabled: false,   // 마지막 런의 자동 사냥 토글 상태 (다음 런에 자동 적용)
+  cutscenesSeen: {},        // { cutsceneId: true }
   stageClears: {},          // { stageId: 클리어 횟수 }
   unlockedWeapons: [],      // 스테이지 해금 무기 ID 배열
   selectedStage: 'stage_1', // 선택된 스테이지 ID
@@ -441,6 +442,29 @@ export class SaveManager {
     return SaveManager.getData().characterClears || {};
   }
 
+  // ── 컷신 ──
+
+  /**
+   * 컷신을 시청 완료로 기록한다.
+   * @param {string} cutsceneId - 컷신 ID
+   */
+  static viewCutscene(cutsceneId) {
+    const data = SaveManager.getData();
+    if (!data.cutscenesSeen) data.cutscenesSeen = {};
+    data.cutscenesSeen[cutsceneId] = true;
+    SaveManager.save();
+  }
+
+  /**
+   * 특정 컷신을 이미 시청했는지 확인한다.
+   * @param {string} cutsceneId - 컷신 ID
+   * @returns {boolean}
+   */
+  static isCutsceneViewed(cutsceneId) {
+    const data = SaveManager.getData();
+    return !!(data.cutscenesSeen && data.cutscenesSeen[cutsceneId]);
+  }
+
   // ── 초기화 ──
 
   /**
@@ -562,8 +586,11 @@ export class SaveManager {
       data.version = 7;
     }
 
-    // 이후 버전 추가 시 체인 패턴:
-    // if (data.version < 8) { ... data.version = 8; }
+    // v7 → v8: 컷신 시청 기록 필드 추가
+    if (data.version < 8) {
+      if (!data.cutscenesSeen) data.cutscenesSeen = {};
+      data.version = 8;
+    }
 
     data.version = SAVE_DATA_VERSION;
     return data;

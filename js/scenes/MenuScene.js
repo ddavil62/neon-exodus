@@ -54,10 +54,18 @@ export default class MenuScene extends Phaser.Scene {
       color: UI_COLORS.textSecondary,
     }).setOrigin(0.5);
 
-    // ── 출격 버튼 (StageSelectScene으로 이동) ──
+    // ── 출격 버튼 (프롤로그 미시청 시 컷신 → StageSelectScene) ──
     this._createButton(centerX, 280, t('menu.start'), UI_COLORS.btnPrimary, () => {
       SoundSystem.resume();
-      this.scene.start('StageSelectScene');
+      if (!SaveManager.isCutsceneViewed('prologue')) {
+        this.scene.start('CutsceneScene', {
+          cutsceneId: 'prologue',
+          nextScene: 'StageSelectScene',
+          nextSceneData: {},
+        });
+      } else {
+        this.scene.start('StageSelectScene');
+      }
     });
 
     // ── 업그레이드 버튼 (활성화) ──

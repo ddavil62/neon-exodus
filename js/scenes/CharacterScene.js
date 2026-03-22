@@ -119,13 +119,28 @@ export default class CharacterScene extends Phaser.Scene {
       this._onBack();
     });
 
-    // 출격 버튼 (우)
+    // 출격 버튼 (우) — 스테이지 인트로 미시청 시 컷신 → GameScene
     this._createBtn(centerX + 60, btnY, t('menu.start'), UI_COLORS.btnPrimary, () => {
       SaveManager.setSelectedCharacter(this._selectedId);
-      this.scene.start('GameScene', {
-        characterId: this._selectedId,
-        stageId: this._stageId,
-      });
+      const stageNum = this._stageId.replace('stage_', '');
+      const introId = `stage_${stageNum}_intro`;
+
+      if (!SaveManager.isCutsceneViewed(introId)) {
+        this.scene.start('CutsceneScene', {
+          cutsceneId: introId,
+          nextScene: 'GameScene',
+          nextSceneData: {
+            characterId: this._selectedId,
+            stageId: this._stageId,
+          },
+          characterId: this._selectedId,
+        });
+      } else {
+        this.scene.start('GameScene', {
+          characterId: this._selectedId,
+          stageId: this._stageId,
+        });
+      }
     });
 
     // ── ESC 키로 뒤로가기 ──

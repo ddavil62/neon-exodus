@@ -170,6 +170,12 @@ export default class BootScene extends Phaser.Scene {
       this.load.image('icon_upgrade_' + id, 'assets/ui/icons/upgrade_' + id + '.png');
     }
 
+    // ── 컷신 초상화 7종 (200x200, Phase 5 스토리) ──
+    const PORTRAIT_IDS = ['agent', 'berserker', 'sniper', 'medic', 'engineer', 'hidden', 'exodus'];
+    for (const id of PORTRAIT_IDS) {
+      this.load.image(`portrait_${id}`, `assets/portraits/${id}.png`);
+    }
+
     // ── Phase 4 이펙트 스프라이트 10종 ──
     const EFFECT_IDS = ['projectile', 'plasma_orb', 'missile', 'explosion',
       'drone', 'emp_ring', 'force_slash', 'nano_cloud', 'vortex', 'reaper_blade'];
