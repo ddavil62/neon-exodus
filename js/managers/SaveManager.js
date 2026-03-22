@@ -25,6 +25,7 @@ const DEFAULT_SAVE = {
   stageClears: {},          // { stageId: 클리어 횟수 }
   unlockedWeapons: [],      // 스테이지 해금 무기 ID 배열
   selectedStage: 'stage_1', // 선택된 스테이지 ID
+  characterClears: {},      // { characterId: 클리어 횟수 }
   stats: {
     totalKills: 0,
     totalRuns: 0,
@@ -36,6 +37,7 @@ const DEFAULT_SAVE = {
     consecutiveClears: 0,
     totalBossKills: 0,
     totalSurviveMinutes: 0,
+    totalMinibossKills: 0,
   },
   collection: {
     weaponsSeen: ['blaster'],
@@ -408,6 +410,37 @@ export class SaveManager {
     return SaveManager.getData().selectedStage || 'stage_1';
   }
 
+  // ── 캐릭터 클리어 ──
+
+  /**
+   * 캐릭터별 클리어를 기록한다.
+   * @param {string} characterId - 캐릭터 ID
+   */
+  static addCharacterClear(characterId) {
+    const data = SaveManager.getData();
+    if (!data.characterClears) data.characterClears = {};
+    data.characterClears[characterId] = (data.characterClears[characterId] || 0) + 1;
+    SaveManager.save();
+  }
+
+  /**
+   * 캐릭터별 클리어 횟수를 반환한다.
+   * @param {string} characterId - 캐릭터 ID
+   * @returns {number} 클리어 횟수
+   */
+  static getCharacterClearCount(characterId) {
+    const data = SaveManager.getData();
+    return (data.characterClears && data.characterClears[characterId]) || 0;
+  }
+
+  /**
+   * 전체 캐릭터 클리어 데이터를 반환한다.
+   * @returns {Object} { characterId: clearCount }
+   */
+  static getCharacterClears() {
+    return SaveManager.getData().characterClears || {};
+  }
+
   // ── 초기화 ──
 
   /**
@@ -519,8 +552,18 @@ export class SaveManager {
       data.version = 6;
     }
 
+    // v6 → v7: 도전과제 100개 확장 — characterClears, totalMinibossKills 추가
+    if (data.version < 7) {
+      if (!data.characterClears) data.characterClears = {};
+      if (!data.stats) data.stats = {};
+      if (data.stats.totalMinibossKills === undefined) {
+        data.stats.totalMinibossKills = 0;
+      }
+      data.version = 7;
+    }
+
     // 이후 버전 추가 시 체인 패턴:
-    // if (data.version < 7) { ... data.version = 7; }
+    // if (data.version < 8) { ... data.version = 8; }
 
     data.version = SAVE_DATA_VERSION;
     return data;

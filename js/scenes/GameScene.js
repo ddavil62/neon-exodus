@@ -212,6 +212,15 @@ export default class GameScene extends Phaser.Scene {
     /** 달성한 무기 진화 수 */
     this.weaponEvolutions = 0;
 
+    /** 런 내 총 피격 횟수 (무피격 업적 판정용) */
+    this._totalHitsTaken = 0;
+
+    /** 현재 무피격 연속 구간 시작 시각 (초) */
+    this._noDamageStreakStart = 0;
+
+    /** 최대 무피격 연속 시간 (초) */
+    this._maxNoDamageStreak = 0;
+
     /** 이미 표시한 진화 힌트 ID 세트 (중복 방지) */
     this._shownHints = new Set();
 
@@ -530,6 +539,12 @@ export default class GameScene extends Phaser.Scene {
       ? this.stageData.unlockWeaponId
       : null;
 
+    // 최종 무피격 연속 기록 갱신 (런 종료 시점까지)
+    const finalStreak = this.runTime - this._noDamageStreakStart;
+    if (finalStreak > this._maxNoDamageStreak) {
+      this._maxNoDamageStreak = finalStreak;
+    }
+
     const resultData = {
       victory: victory,
       isEndless: this.isEndlessMode,
@@ -542,7 +557,11 @@ export default class GameScene extends Phaser.Scene {
       weaponEvolutions: this.weaponEvolutions,
       weaponReport: this._buildWeaponReport(),
       stageId: this.stageId,
+      characterId: this.characterId,
+      finalHpPercent: this.player ? (this.player.currentHp / this.player.maxHp) : 0,
       newWeaponUnlocked: unlockWeaponId,
+      maxNoDamageStreak: this._maxNoDamageStreak,
+      totalHitsTaken: this._totalHitsTaken,
     };
 
     // 물리 엔진 즉시 정지 (딜레이 중 추가 충돌 방지)
@@ -581,6 +600,11 @@ export default class GameScene extends Phaser.Scene {
     // 보스 처치 시 totalBossKills 통계 증가
     if (enemy.isBoss) {
       SaveManager.updateStats('totalBossKills', 1);
+    }
+
+    // 미니보스 처치 시 totalMinibossKills 통계 증가
+    if (enemy.isMiniBoss) {
+      SaveManager.updateStats('totalMinibossKills', 1);
     }
 
     // 최종 보스 처치 판정 → 스테이지 클리어 + 엔들리스 모드 전환
@@ -1146,7 +1170,20 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
+    // 무적이 아닐 때만 실제 피격 처리 (takeDamage 내부에서도 체크하지만 통계용 선행 판정)
+    const willTakeDamage = !player.invincible && player.active;
+
     player.takeDamage(enemy.contactDamage);
+
+    // 실제 피격 시 무피격 연속 기록 갱신
+    if (willTakeDamage) {
+      const streak = this.runTime - this._noDamageStreakStart;
+      if (streak > this._maxNoDamageStreak) {
+        this._maxNoDamageStreak = streak;
+      }
+      this._noDamageStreakStart = this.runTime;
+      this._totalHitsTaken++;
+    }
 
     // 플레이어 피격 VFX/SFX/Haptic
     VFXSystem.playerHit(this, player.x, player.y);
@@ -1980,6 +2017,12 @@ export default class GameScene extends Phaser.Scene {
         ? this.stageData.unlockWeaponId
         : null;
 
+      // 최종 무피격 연속 기록 갱신 (런 종료 시점까지)
+      const quitFinalStreak = this.runTime - this._noDamageStreakStart;
+      if (quitFinalStreak > this._maxNoDamageStreak) {
+        this._maxNoDamageStreak = quitFinalStreak;
+      }
+
       // _cleanup() 전에 결과 데이터를 스냅샷 (destroy 후 접근 불가 방지)
       const resultData = {
         victory: this.isEndlessMode ? true : false,
@@ -1993,7 +2036,11 @@ export default class GameScene extends Phaser.Scene {
         weaponEvolutions: this.weaponEvolutions,
         weaponReport: this._buildWeaponReport(),
         stageId: this.stageId,
+        characterId: this.characterId,
+        finalHpPercent: this.player ? (this.player.currentHp / this.player.maxHp) : 0,
         newWeaponUnlocked: quitUnlockWeaponId,
+        maxNoDamageStreak: this._maxNoDamageStreak,
+        totalHitsTaken: this._totalHitsTaken,
       };
 
       this._cleanup();

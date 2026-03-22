@@ -151,7 +151,7 @@ export const EMP_SCREEN_MARGIN = 50;
 export const SAVE_KEY = 'neon-exodus-save';
 
 /** 세이브 데이터 버전 */
-export const SAVE_DATA_VERSION = 6;
+export const SAVE_DATA_VERSION = 7;
 
 /** 엔들리스 모드 스케일링 간격 (ms). 60초마다 적 HP/데미지 +10% */
 export const ENDLESS_SCALE_INTERVAL = 60000;

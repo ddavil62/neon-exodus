@@ -65,6 +65,18 @@ export default class ResultScene extends Phaser.Scene {
 
     /** 이번 런에서 영구 해금된 무기 ID (클리어 시에만 값 존재) */
     this.newWeaponUnlocked = data.newWeaponUnlocked || null;
+
+    /** 사용 캐릭터 ID */
+    this.characterId = data.characterId || 'agent';
+
+    /** 최대 무피격 연속 시간 (초) */
+    this.maxNoDamageStreak = data.maxNoDamageStreak || 0;
+
+    /** 총 피격 횟수 */
+    this.totalHitsTaken = data.totalHitsTaken || 0;
+
+    /** 런 종료 시 HP 비율 (0~1) */
+    this.finalHpPercent = data.finalHpPercent !== undefined ? data.finalHpPercent : 1;
   }
 
   /**
@@ -89,6 +101,9 @@ export default class ResultScene extends Phaser.Scene {
       SaveManager.updateStats('totalSurviveMinutes', surviveMin);
     }
 
+    // 총 플레이 시간 누적 (초 단위)
+    SaveManager.updateStats('totalPlayTime', this.runTime);
+
     if (this.victory) {
       SaveManager.updateStats('totalClears', 1);
       // 연속 클리어 갱신 (현재 값 + 1)
@@ -96,6 +111,9 @@ export default class ResultScene extends Phaser.Scene {
       const data = SaveManager.getData();
       data.stats.consecutiveClears = currentConsecutive;
       SaveManager.save();
+
+      // 캐릭터별 클리어 기록
+      SaveManager.addCharacterClear(this.characterId);
     } else {
       // 패배 시 연속 클리어 초기화
       const data = SaveManager.getData();
@@ -103,12 +121,24 @@ export default class ResultScene extends Phaser.Scene {
       SaveManager.save();
     }
 
+    // lowHpClear 판정: 클리어 시 HP 10% 이하
+    const isLowHpClear = this.victory && this.finalHpPercent <= 0.10;
+
+    // noDamageRun 판정: 클리어 + 피격 0회
+    const isNoDamageRun = this.victory && this.totalHitsTaken === 0;
+
     // ── AchievementManager 도전과제 체크 ──
     const savedStats = SaveManager.getStats();
     AchievementManager.checkAll(savedStats, {
       weaponSlotsFilled: this.weaponSlotsFilled,
       weaponEvolutions: this.weaponEvolutions,
       allUpgradesMaxed: MetaManager.areAllMaxed(),
+      lowHpClear: isLowHpClear,
+      maxNoDamageStreak: this.maxNoDamageStreak,
+      noDamageRun: isNoDamageRun,
+      characterId: this.characterId,
+      stageId: this.stageId,
+      victory: this.victory,
     });
 
     // ── 배경 ──
