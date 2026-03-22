@@ -143,9 +143,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy to Play Console (Internal + Alpha)
-        if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
-        continue-on-error: true
-        run: node scripts/play-deploy.cjs android/app/build/outputs/bundle/release/app-release.aab
-        env:
-          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
