@@ -238,11 +238,6 @@ export default class WaveSystem {
         break;
     }
 
-    // 월드 바운드 내로 클램프
-    const worldBounds = this.scene.physics.world.bounds;
-    x = Phaser.Math.Clamp(x, worldBounds.x + 10, worldBounds.x + worldBounds.width - 10);
-    y = Phaser.Math.Clamp(y, worldBounds.y + 10, worldBounds.y + worldBounds.height - 10);
-
     return { x, y };
   }
 

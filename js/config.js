@@ -19,6 +19,21 @@ export const WORLD_WIDTH = 2000;
 /** 월드 전체 높이 (px) */
 export const WORLD_HEIGHT = 2000;
 
+/** 래핑 반경 — 플레이어에서 이 거리 밖의 엔티티를 반대편으로 텔레포트 (px) */
+export const WRAP_RADIUS = 1100;
+
+/** 무한 월드 플레이어 시작 좌표 X */
+export const PLAYER_START_X = 0;
+
+/** 무한 월드 플레이어 시작 좌표 Y */
+export const PLAYER_START_Y = 0;
+
+/** 무기 드롭 플레이어 기준 오프셋 최소 범위 (px) */
+export const WEAPON_DROP_OFFSET_MIN = 400;
+
+/** 무기 드롭 플레이어 기준 오프셋 최대 범위 (px) */
+export const WEAPON_DROP_OFFSET_MAX = 800;
+
 // ── 스프라이트 설정 ──
 
 /** 스프라이트 렌더링 배율 (벡터 에셋은 표시 크기로 직접 생성하므로 1 사용) */

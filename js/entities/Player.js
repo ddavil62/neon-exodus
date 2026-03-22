@@ -14,8 +14,6 @@ import {
   PLAYER_INVINCIBLE_DURATION,
   XP_MAGNET_RADIUS,
   XP_FORMULA,
-  WORLD_WIDTH,
-  WORLD_HEIGHT,
   SPRITE_SCALE,
   OVERCLOCK_DURATION,
   OVERCLOCK_SPEED_MULT,
@@ -202,7 +200,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // SPRITE_SCALE=1이면 offset = frameW/2 - radius (scale 나눗셈 없음)
     const bodyOff = Math.max(0, 48 / 2 - 12); // =12
     this.body.setCircle(12, bodyOff, bodyOff);
-    this.body.setCollideWorldBounds(true);
+    this.body.setCollideWorldBounds(false);
 
     // depth 설정 (적 위에 표시)
     this.setDepth(10);

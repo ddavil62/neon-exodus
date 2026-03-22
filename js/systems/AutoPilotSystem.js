@@ -7,8 +7,6 @@
  */
 
 import {
-  WORLD_WIDTH,
-  WORLD_HEIGHT,
   XP_MAGNET_RADIUS,
   AUTO_HUNT,
 } from '../config.js';
@@ -17,9 +15,6 @@ import {
 
 /** 적 접근 유지 거리 (px) — 무기 사거리 내에서 적당한 거리를 유지 */
 const PREFERRED_ENEMY_DISTANCE = 150;
-
-/** 벽 회피 마진 (px) — 월드 경계에서 이 거리 이내면 중앙으로 밀어냄 */
-const WALL_MARGIN = 80;
 
 /** 의도적 불완전성: 랜덤 방향 변동 최대 각도 (라디안) */
 const IMPERFECTION_ANGLE = 0.3;
@@ -485,32 +480,14 @@ export default class AutoPilotSystem {
   // ── 내부: 방랑 ──
 
   /**
-   * 특별한 행동이 없을 때 약간의 랜덤 이동을 한다.
-   * 월드 중앙을 향한 경향성을 포함한다.
+   * 특별한 행동이 없을 때 완전 랜덤 방향으로 이동한다.
+   * 무한 월드에서는 월드 중앙 경향성이 불필요하므로 순수 랜덤 방랑만 수행한다.
    * @private
    */
   _wander() {
-    const px = this.player.x;
-    const py = this.player.y;
-
-    // 월드 중앙 방향으로 약한 경향
-    const centerX = WORLD_WIDTH / 2;
-    const centerY = WORLD_HEIGHT / 2;
-    const toCenterX = centerX - px;
-    const toCenterY = centerY - py;
-    const toCenterDist = Math.sqrt(toCenterX * toCenterX + toCenterY * toCenterY) || 1;
-
-    // 랜덤 방향 + 중앙 경향 혼합
     const randomAngle = Math.random() * Math.PI * 2;
-    const randomX = Math.cos(randomAngle);
-    const randomY = Math.sin(randomAngle);
-
-    const blendX = randomX * 0.5 + (toCenterX / toCenterDist) * 0.5;
-    const blendY = randomY * 0.5 + (toCenterY / toCenterDist) * 0.5;
-
-    const len = Math.sqrt(blendX * blendX + blendY * blendY) || 1;
-    this.direction.x = blendX / len;
-    this.direction.y = blendY / len;
+    this.direction.x = Math.cos(randomAngle);
+    this.direction.y = Math.sin(randomAngle);
   }
 
   // ── 내부: 방향 적용 ──
@@ -539,34 +516,12 @@ export default class AutoPilotSystem {
   // ── 내부: 벽 회피 ──
 
   /**
-   * 플레이어가 월드 경계에 가까우면 중앙 방향으로 보정 벡터를 반환한다.
-   * @returns {{ x: number, y: number }} 벽 회피 보정 벡터
+   * 무한 월드에서는 벽이 없으므로 항상 영벡터를 반환한다.
+   * @returns {{ x: number, y: number }} 항상 { x: 0, y: 0 }
    * @private
    */
   _getWallAvoidance() {
-    const px = this.player.x;
-    const py = this.player.y;
-    let wx = 0;
-    let wy = 0;
-
-    // 왼쪽 벽
-    if (px < WALL_MARGIN) {
-      wx += (WALL_MARGIN - px) / WALL_MARGIN;
-    }
-    // 오른쪽 벽
-    if (px > WORLD_WIDTH - WALL_MARGIN) {
-      wx -= (px - (WORLD_WIDTH - WALL_MARGIN)) / WALL_MARGIN;
-    }
-    // 상단 벽
-    if (py < WALL_MARGIN) {
-      wy += (WALL_MARGIN - py) / WALL_MARGIN;
-    }
-    // 하단 벽
-    if (py > WORLD_HEIGHT - WALL_MARGIN) {
-      wy -= (py - (WORLD_HEIGHT - WALL_MARGIN)) / WALL_MARGIN;
-    }
-
-    return { x: wx, y: wy };
+    return { x: 0, y: 0 };
   }
 
   // ── 내부: 유틸리티 ──

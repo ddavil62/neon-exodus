@@ -84,7 +84,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // 충돌체: 원형 (반경 10px 기본, init에서 조정)
     this.body.setCircle(10, 2, 2);
-    this.body.setCollideWorldBounds(true);
+    this.body.setCollideWorldBounds(false);
 
     // 초기 비활성
     this.setActive(false);

@@ -10,8 +10,6 @@
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
-  WORLD_WIDTH,
-  WORLD_HEIGHT,
   COLORS,
   UI_COLORS,
   RUN_DURATION,
@@ -25,8 +23,11 @@ import {
   CONSUMABLE_CREDIT_MAX,
   EMP_BOSS_DAMAGE_RATIO,
   EMP_SCREEN_MARGIN,
-  WEAPON_DROP_MARGIN,
-  WEAPON_DROP_MIN_DIST_FROM_PLAYER,
+  WRAP_RADIUS,
+  PLAYER_START_X,
+  PLAYER_START_Y,
+  WEAPON_DROP_OFFSET_MIN,
+  WEAPON_DROP_OFFSET_MAX,
 } from '../config.js';
 import { t } from '../i18n.js';
 import Player from '../entities/Player.js';
@@ -115,14 +116,13 @@ export default class GameScene extends Phaser.Scene {
    * 게임 씬을 초기화하고 모든 시스템을 셋업한다.
    */
   create() {
-    // ── 월드 설정 ──
-    this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    // ── 월드 설정 (무한 월드 — 물리 경계 없음) ──
 
-    // 배경: 스테이지별 타일 스프라이트로 월드 전체를 채움
+    // 배경: 화면 크기 고정 + scrollFactor(0)으로 카메라에 붙이고, update에서 타일 오프셋 갱신
     const bgTileKey = this.stageData.bgTileKey || 'bg_tile';
     this.bgTile = this.add.tileSprite(
-      0, 0, WORLD_WIDTH, WORLD_HEIGHT, bgTileKey
-    ).setOrigin(0, 0).setDepth(-10);
+      0, 0, GAME_WIDTH, GAME_HEIGHT, bgTileKey
+    ).setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
 
     // 스테이지별 배경색 적용
     this.cameras.main.setBackgroundColor(this.stageData.bgColor);
@@ -137,7 +137,7 @@ export default class GameScene extends Phaser.Scene {
     this.weaponDropPool = new ObjectPool(this, WeaponDropItem, 5);
 
     // ── 플레이어 (선택된 캐릭터 ID에 따른 스프라이트 적용) ──
-    this.player = new Player(this, WORLD_WIDTH / 2, WORLD_HEIGHT / 2, this.characterId);
+    this.player = new Player(this, PLAYER_START_X, PLAYER_START_Y, this.characterId);
 
     // ── 플레이어 발밑 글로우 서클 ──
     // depth 9: 플레이어(depth 10) 아래, 배경(depth 0~1) 위
@@ -150,9 +150,8 @@ export default class GameScene extends Phaser.Scene {
     // 플레이어에 참조 주입 (피격 플래시 및 펄스 처리용)
     this.player.glowCircle = this._playerGlowCircle;
 
-    // ── 카메라 설정 ──
+    // ── 카메라 설정 (무한 월드 — 경계 없음) ──
     this.cameras.main.startFollow(this.player, true, CAMERA_LERP, CAMERA_LERP);
-    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
     // ── MetaManager 보너스 적용 ──
     const bonuses = MetaManager.getPlayerBonuses();
@@ -360,6 +359,9 @@ export default class GameScene extends Phaser.Scene {
    * @param {number} delta - 프레임 간격 (ms)
    */
   update(time, delta) {
+    // 배경 타일 오프셋 갱신 (일시정지 중에도 배경은 보여야 하므로 isPaused 체크 전 실행)
+    this.bgTile.setTilePosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
+
     if (this.isPaused || this.isGameOver) return;
 
     // 시간 갱신
@@ -394,6 +396,9 @@ export default class GameScene extends Phaser.Scene {
     this.weaponDropPool.forEach((drop) => {
       drop.update(time, delta);
     });
+
+    // 무한 월드 래핑 — 플레이어 기준 WRAP_RADIUS 밖 엔티티를 반대편으로 텔레포트
+    this._wrapEntities();
 
     // HUD 갱신
     this._updateHUD();
@@ -1333,44 +1338,67 @@ export default class GameScene extends Phaser.Scene {
   // ── 무기 드롭 시스템 ──
 
   /**
-   * 게임 시작 시 스테이지 무기를 맵 랜덤 위치에 단일 배치한다.
-   * 플레이어 시작 위치에서 최소 300px 이상, 월드 경계에서 100px 마진을 유지한다.
-   * 조건 충족 위치를 최대 20회 재시도하며, 초과 시 안전 폴백 위치를 사용한다.
+   * 게임 시작 시 스테이지 무기를 플레이어 시작 위치 기준 랜덤 각도 + 오프셋 거리에 배치한다.
+   * 무한 월드에서는 월드 경계가 없으므로 플레이어 시작 좌표 기준으로 배치한다.
    * @private
    */
   _placeWeaponOnMap() {
     if (!this.stageData || !this.stageData.unlockWeaponId) return;
 
     const weaponId = this.stageData.unlockWeaponId;
-    const margin = WEAPON_DROP_MARGIN;
-    const minDist = WEAPON_DROP_MIN_DIST_FROM_PLAYER;
-    const cx = WORLD_WIDTH / 2;
-    const cy = WORLD_HEIGHT / 2;
 
-    let x, y;
-    let attempts = 0;
-    const maxAttempts = 20;
-
-    do {
-      x = Phaser.Math.Between(margin, WORLD_WIDTH - margin);
-      y = Phaser.Math.Between(margin, WORLD_HEIGHT - margin);
-      attempts++;
-    } while (
-      Phaser.Math.Distance.Between(x, y, cx, cy) < minDist &&
-      attempts < maxAttempts
-    );
-
-    // 재시도 초과 시 안전 폴백: 월드 좌상단 마진 지점 (플레이어 시작 위치에서 약 1273px 이격)
-    if (attempts >= maxAttempts) {
-      x = margin;
-      y = margin;
-    }
+    // 플레이어 시작 위치 기준 랜덤 각도 + 오프셋 배치
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Phaser.Math.Between(WEAPON_DROP_OFFSET_MIN, WEAPON_DROP_OFFSET_MAX);
+    const x = PLAYER_START_X + Math.cos(angle) * dist;
+    const y = PLAYER_START_Y + Math.sin(angle) * dist;
 
     const drop = this.weaponDropPool.get(x, y);
     if (drop) {
       drop.spawn(x, y, weaponId, true);
       this._showWarning(t('weaponDrop.appeared'), 'info');
     }
+  }
+
+  /**
+   * 플레이어 기준 래핑 반경 밖의 엔티티를 반대편으로 텔레포트한다.
+   * 뱀파이어 서바이버 스타일 무한 월드 핵심 로직.
+   * @private
+   */
+  _wrapEntities() {
+    const px = this.player.x;
+    const py = this.player.y;
+    const r2 = WRAP_RADIUS * WRAP_RADIUS;
+
+    // 적 래핑
+    this.waveSystem.enemyPool.forEach((enemy) => {
+      if (!enemy.active) return;
+      const dx = enemy.x - px;
+      const dy = enemy.y - py;
+      if (dx * dx + dy * dy > r2) {
+        enemy.setPosition(px - dx, py - dy);
+      }
+    });
+
+    // XP 보석 래핑 (자석 흡수 중 제외)
+    this.xpGemPool.forEach((gem) => {
+      if (!gem.active || gem.beingMagnetized) return;
+      const dx = gem.x - px;
+      const dy = gem.y - py;
+      if (dx * dx + dy * dy > r2) {
+        gem.setPosition(px - dx, py - dy);
+      }
+    });
+
+    // 소모품 래핑 (자석 흡수 중 제외)
+    this.consumablePool.forEach((item) => {
+      if (!item.active || item.beingMagnetized) return;
+      const dx = item.x - px;
+      const dy = item.y - py;
+      if (dx * dx + dy * dy > r2) {
+        item.setPosition(px - dx, py - dy);
+      }
+    });
   }
 
   /**
