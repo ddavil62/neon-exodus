@@ -345,6 +345,11 @@ export default class GameScene extends Phaser.Scene {
 
     // ── ESC 키로 일시정지 토글 ──
     this.input.keyboard.on('keydown-ESC', () => this._onBack());
+
+    // ── scene.resume 시 잔여 카메라 이펙트 강제 정리 (안전망) ──
+    this.events.on('resume', () => {
+      this.cameras.main.resetFX();
+    });
   }
 
   /**
@@ -469,7 +474,7 @@ export default class GameScene extends Phaser.Scene {
       this.player.invincibleTimer = 2000;
 
       // 화면 플래시 효과
-      this.cameras.main.flash(500, 255, 255, 255, false);
+      this._safeFlash(500, 255, 255, 255);
 
       // 부활 SFX + 메시지 표시
       SoundSystem.play('revive');
@@ -654,13 +659,35 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
+   * 카메라 플래시를 안전하게 실행한다.
+   * Phaser scene.pause() 중에 카메라 이펙트 타이머가 멈추는 문제를 우회하기 위해,
+   * 브라우저 setTimeout으로 duration 후 강제 정리하는 안전망을 건다.
+   * @param {number} duration - 플래시 지속 시간 (ms)
+   * @param {number} r - 빨강 (0~255)
+   * @param {number} g - 초록 (0~255)
+   * @param {number} b - 파랑 (0~255)
+   * @private
+   */
+  _safeFlash(duration, r, g, b) {
+    this.cameras.main.flash(duration, r, g, b, false);
+
+    // 안전망: Phaser 타이머와 무관하게 브라우저 타이머로 강제 정리
+    const cam = this.cameras.main;
+    setTimeout(() => {
+      if (cam && cam.flashEffect && cam.flashEffect.isRunning) {
+        cam.flashEffect.reset();
+      }
+    }, duration + 200);
+  }
+
+  /**
    * 미니보스 스폰 시 호출된다. 오렌지 카메라 플래시 + 경고 표시.
    * @param {import('../entities/Enemy.js').default} enemy - 스폰된 미니보스
    */
   onMiniBossSpawn(enemy) {
-    // 레벨업/진화 팝업 활성 중이면 카메라 이펙트 생략 (플래시 고정 방지)
-    if (!this._levelUpActive && !this._modalOpen) {
-      this.cameras.main.flash(300, 255, 100, 0, false);
+    // 일시정지/레벨업/모달 활성 중이면 카메라 이펙트 생략 (플래시 고정 방지)
+    if (!this.isPaused && !this._levelUpActive && !this._modalOpen) {
+      this._safeFlash(300, 255, 100, 0);
     }
     this._showWarning(t('hud.minibossWarning'));
   }
@@ -671,9 +698,9 @@ export default class GameScene extends Phaser.Scene {
    */
   onBossSpawn(enemy) {
     SoundSystem.play('boss_appear');
-    // 레벨업/진화 팝업 활성 중이면 카메라 이펙트 생략 (플래시 고정으로 인한 크래시 방지)
-    if (!this._levelUpActive && !this._modalOpen) {
-      this.cameras.main.flash(500, 255, 0, 255, false);
+    // 일시정지/레벨업/모달 활성 중이면 카메라 이펙트 생략 (플래시 고정으로 인한 크래시 방지)
+    if (!this.isPaused && !this._levelUpActive && !this._modalOpen) {
+      this._safeFlash(500, 255, 0, 255);
       this.cameras.main.shake(500, 0.02);
     }
     this._showWarning(t('hud.bossWarning'));
@@ -872,7 +899,7 @@ export default class GameScene extends Phaser.Scene {
           this.player.invincibleTimer = 3000;
 
           // 화면 플래시 효과
-          this.cameras.main.flash(500, 255, 255, 255, false);
+          this._safeFlash(500, 255, 255, 255);
 
           // 부활 SFX + 메시지 표시
           SoundSystem.play('revive');
@@ -1434,6 +1461,9 @@ export default class GameScene extends Phaser.Scene {
   _showEndlessModal() {
     const centerX = GAME_WIDTH / 2;
     const centerY = GAME_HEIGHT / 2;
+
+    // 진행 중인 카메라 이펙트 즉시 정리 (마젠타 플래시 고정 방지)
+    this.cameras.main.resetFX();
 
     // 게임 일시정지
     this.isPaused = true;
