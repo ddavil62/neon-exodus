@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-03-22 -- 무기 드롭 시스템: 시간 기반 스케줄에서 맵 탐색 배치 방식으로 전환
+
+### 추가
+- `js/config.js`에 `WEAPON_DROP_MARGIN`(100px), `WEAPON_DROP_MIN_DIST_FROM_PLAYER`(300px) 상수 추가
+- `js/scenes/GameScene.js`에 `_placeWeaponOnMap()` 메서드 추가: create() 완료 시 맵 랜덤 위치에 스테이지 무기 단일 배치 (permanent=true)
+
+### 변경
+- `js/data/stages.js`에서 `WEAPON_DROP_SCHEDULE` 상수 및 JSDoc 완전 제거
+- `js/scenes/GameScene.js`에서 `_checkWeaponDropSchedule()`, `_spawnWeaponDrop()` 메서드 제거, update() 내 호출 제거, `_weaponDropIndex` 상태 변수 제거
+- `js/entities/WeaponDropItem.js` spawn() 내 +-80px 랜덤 오프셋 제거, `setPosition(x, y)` 직접 사용
+- `js/config.js` AUTO_HUNT.weaponDropSearchRadius 400 -> 3000 (맵 전체 탐색 커버)
+
+### 참고
+- 스펙: `.claude/specs/2026-03-22-neon-exodus-map-weapon-drop.md`
+- 구현 리포트: `.claude/specs/2026-03-22-neon-exodus-map-weapon-drop-report.md`
+- QA: `.claude/specs/2026-03-22-neon-exodus-map-weapon-drop-qa.md`
+- QA 결과: 수용기준 11/11 충족, 예외 시나리오 10/10 PASS, Playwright 24/24 전체 통과
+- 변경 파일: `js/data/stages.js`, `js/config.js`, `js/entities/WeaponDropItem.js`, `js/scenes/GameScene.js` 총 4개
+- 스펙 대비 차이: 없음. 스펙과 동일하게 구현됨
+- 배치 위치: (100,100)~(1900,1900) 범위, 플레이어 시작 위치(1000,1000)에서 300px 이상 이격
+- 폴백 위치: (100,100) -- 20회 재시도 초과 시 사용 (~1273px 이격으로 유효)
+- AutoPilot 긴급 수집: permanent=true 드롭은 `_evaluateWeaponDropUrgent`에서 자동 스킵됨 (코드 미제거, 자연 비활성화)
+
 ## 2026-03-21 -- 진화 무기 전용 이펙트 비주얼
 
 ### 추가

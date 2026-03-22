@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-21 (진화 무기 전용 이펙트 비주얼)
+> 최종 업데이트: 2026-03-22 (무기 드롭 맵 탐색 배치 전환)
 
 ## 프로젝트 개요
 
@@ -62,7 +62,7 @@ neon-exodus/
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드, 카테고리 아이콘)
-│   │   ├── AchievementScene.js    # 도전과제 목록 화면 (13개, 진행률)
+│   │   ├── AchievementScene.js    # 도전과제 목록 화면 (100개, 7카테고리, 진행률)
 │   │   └── CollectionScene.js     # 도감 화면 (5탭: 무기/패시브/적/도전과제/진화)
 │   ├── entities/
 │   │   ├── Player.js              # 플레이어 (이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드, 발밑 글로우 서클 펄스/피격 플래시)
@@ -82,7 +82,7 @@ neon-exodus/
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
-│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v6, 설정 포함)
+│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v7, 설정/캐릭터클리어/미니보스킬 포함)
 │   │   ├── HapticManager.js       # 햅틱 진동 관리 (Capacitor, enabled 플래그)
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
@@ -91,13 +91,13 @@ neon-exodus/
 │   └── data/
 │       ├── weapons.js             # 무기 11종 (기본 7종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 11종
 │       ├── enemies.js             # 잡몹 10종 + 미니보스 2종 + 보스 6종
-│       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER, WEAPON_DROP_SCHEDULE)
+│       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER)
 │       ├── passives.js            # 패시브 아이템 11종
 │       ├── waves.js               # 스폰 테이블 6구간 + 미니보스/보스 스케줄
 │       ├── upgrades.js            # 영구 업그레이드 22종
 │       ├── consumables.js          # 소모성 아이템 6종 (드롭률, 텍스처, 색상)
 │       ├── characters.js          # 캐릭터 6종 (spriteKey 필드로 텍스처 매핑)
-│       └── achievements.js        # 도전과제 13종
+│       └── achievements.js        # 도전과제 100종 (7카테고리: kill/survive/clear/weapon/character/growth/explore)
 ├── assets/
 │   ├── backgrounds/               # 배경 에셋 (Phase 2/3 아트)
 │   │   ├── bg_tile.png            # 128x128 사이버 메탈 바닥 seamless 타일 (S1 기본, GPT Image API)
@@ -227,8 +227,8 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 게임 설정 | `js/config.js` | 해상도, 월드, 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 382키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
-| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 무기 드롭 스케줄, 난이도 배수 |
-| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 스케줄, 플레이어 글로우 서클 생성/동기화/파괴 |
+| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수 |
+| 게임 씬 | `js/scenes/GameScene.js` | 월드/카메라/물리, 시스템 연동, HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기, 드론 AI |
@@ -237,10 +237,10 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 설정 | `js/scenes/SettingsScene.js` | BGM/SFX/햅틱 ON/OFF 토글 UI, SaveManager 연동 |
 | 햅틱 | `js/managers/HapticManager.js` | Capacitor Haptics 래퍼, enabled 플래그 제어 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 8종 (기존 6종 + consumableCollect + empBlast), empRing/empBurst 진화 분기 |
-| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v6), 크레딧/통계/도감/스테이지 클리어/무기 해금/설정 관리 |
+| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v7), 크레딧/통계/도감/스테이지 클리어/무기 해금/설정/캐릭터 클리어/미니보스 킬 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
-| 도전과제 | `js/scenes/AchievementScene.js` | 13개 도전과제 목록, 진행률 표시 |
+| 도전과제 | `js/scenes/AchievementScene.js` | 100개 도전과제 목록 (7카테고리), 진행률 표시 |
 | 도감 | `js/scenes/CollectionScene.js` | 5탭 도감 (무기/패시브/적/도전과제/진화) |
 | 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑) |
 | 광고 관리 | `js/managers/AdManager.js` | AdMob 보상형 광고 표시/보상 판단, Mock 모드, 일일 제한 |
@@ -932,14 +932,29 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/data/characters.js`, `js/scenes/CharacterScene.js`
 - 구현 일자: 2026-03-09
 
-#### 도전과제 (13종)
-- 킬 업적 4종, 생존 업적 3종, 클리어 업적 3종, 특수 업적 3종
-- AchievementScene: 13개 도전과제를 세로 스크롤 리스트로 표시
+#### 도전과제 (100종, 7카테고리)
+
+| 카테고리 | 수 | 주요 condition 타입 |
+|---------|---|-------------------|
+| kill (킬) | 20 | totalKills, maxKillsInRun, totalBossKills, totalMinibossKills |
+| survive (생존) | 15 | surviveMinutes, totalSurviveMinutes, lowHpClear, noDamageSurvive, noDamageRun |
+| clear (클리어) | 15 | totalClears, consecutiveClears, totalRuns |
+| weapon (무기) | 20 | fillWeaponSlots, weaponEvolution, specificEvolution, allEvolutionsSeen, weaponCollectionComplete, passiveCollectionComplete |
+| character (캐릭터) | 12 | characterClear, characterClearCount, allCharacterClears |
+| growth (성장) | 8 | maxLevel, allUpgradesMaxed |
+| explore (탐험) | 10 | stageClear, allStagesClear, totalPlayTime, enemyCollectionComplete |
+
+- AchievementManager: 27개 condition type 처리 (`_checkCondition` switch문)
+- 보상 타입 5종: credits, dataCore, dataCoreAndTitle, characterHint, hiddenCharacterUnlock
+- AchievementScene: 100개 도전과제를 세로 스크롤 리스트로 표시
 - 각 항목에 달성 여부 아이콘, 제목, 설명, 진행률 (현재값/목표값) 표시
 - 달성 항목: neonGreen alpha 0.15 배경 + 체크 마크
 - MenuScene 도전과제 버튼으로 진입
-- 관련 파일: `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/scenes/AchievementScene.js`
-- 구현 일자: 2026-03-09
+- GameScene 추적 스탯: `_totalHitsTaken`, `_noDamageStreakStart`, `_maxNoDamageStreak`, `totalMinibossKills`
+- ResultScene: `lowHpClear`(HP 10% 이하 클리어), `noDamageRun`(피격 0회 클리어), `characterId` 전달, `characterClears` 기록
+- 관련 파일: `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/scenes/AchievementScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`
+- 구현 일자: 2026-03-09 (100개 확장: 2026-03-22)
+- 스펙 문서: `.claude/specs/2026-03-22-neon-exodus-100-achievements-purpose.md`
 
 #### 도감 (5탭)
 - CollectionScene: 무기 / 패시브 / 적 / 도전과제 / 진화 5개 탭 (tabW=62)
@@ -1060,14 +1075,47 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 구현 일자: 2026-03-09 (엔들리스 즉시 배율 재조정: 2026-03-20)
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase4.md`
 
+### 무기 드롭 시스템 (맵 탐색 배치)
+
+게임 시작 시(create 완료 시점) 스테이지 고유 무기를 맵 랜덤 위치에 단일 배치한다. 플레이어가 맵을 탐색하여 발견하는 방식.
+
+#### 배치 규칙
+- 배치 시점: GameScene.create() 완료 직후 `_placeWeaponOnMap()` 호출
+- 배치 수량: 스테이지당 1개 (stageData.unlockWeaponId 기반)
+- permanent: true (런 종료까지 소멸하지 않음)
+- 위치 조건: 월드 경계에서 100px 마진 (WEAPON_DROP_MARGIN), 플레이어 시작 위치(1000, 1000)에서 300px 이상 이격 (WEAPON_DROP_MIN_DIST_FROM_PLAYER)
+- 재시도: 조건 미충족 시 최대 20회, 초과 시 안전 폴백 위치 (100, 100) 사용 (~1273px 이격)
+- WeaponDropItem.spawn()에서 추가 오프셋 없이 정확한 좌표로 배치
+
+#### 관련 상수 (config.js)
+| 상수 | 값 | 설명 |
+|---|---|---|
+| WEAPON_DROP_MARGIN | 100px | 월드 경계 마진 |
+| WEAPON_DROP_MIN_DIST_FROM_PLAYER | 300px | 플레이어 시작 위치 최소 이격 거리 |
+| AUTO_HUNT.weaponDropSearchRadius | 3000px | AI 탐색 반경 (맵 대각선 ~2828px 커버) |
+
+#### 수집 처리
+- overlap 기반 수집: 기존 `_onCollectWeaponDrop()` 로직 그대로 유지
+- 수집 시 `_stageWeaponCollected = true`, 이후 추가 스폰 없음
+- 수집 알림 (`weaponDrop.appeared`), VFX/SFX 기존과 동일
+
+#### 폐기된 시스템
+- ~~시간 기반 WEAPON_DROP_SCHEDULE (300초, 480초, 600초, 720초, 780초)~~ -- 2026-03-22 제거
+- ~~_checkWeaponDropSchedule(), _spawnWeaponDrop() 메서드~~ -- 2026-03-22 제거
+- ~~WeaponDropItem.spawn() +-80px 랜덤 오프셋~~ -- 2026-03-22 제거
+
+- 관련 파일: `js/scenes/GameScene.js`, `js/config.js`, `js/entities/WeaponDropItem.js`, `js/data/stages.js`
+- 구현 일자: 2026-03-22
+- 스펙 문서: `.claude/specs/2026-03-22-neon-exodus-map-weapon-drop.md`
+
 ### 자동 사냥 (AutoPilot) 시스템
 
 AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Play IAP로 영구 해금한다.
 
 #### AI 행동 우선순위
-1. **무기 드롭 긴급 수집** (collect): 비영구 무기 드롭의 수명이 4000ms 이하이고 CRITICAL 위험(60px) 내 적이 없으면 위험 회피보다도 우선하여 수집. 탐색 반경 400px, 긴급 보정 x3 적용.
+1. **무기 드롭 긴급 수집** (collect): 비영구 무기 드롭의 수명이 4000ms 이하이고 CRITICAL 위험(60px) 내 적이 없으면 위험 회피보다도 우선하여 수집. 탐색 반경 3000px, 긴급 보정 x3 적용. *(현재 맵 배치 방식에서는 permanent=true이므로 자연 비활성화됨)*
 2. **위험 회피** (evade): 반경 120px 내 적이 3마리 이상이거나, 60px 내 적이 있으면 반대 방향으로 회피. 거리 기반 가중 반발 벡터 사용.
-3. **무기 드롭 일반 수집** (collect): 400px 이내 무기 드롭 중 점수가 가장 높은 아이템 방향으로 이동.
+3. **무기 드롭 일반 수집** (collect): 3000px 이내 무기 드롭 중 점수가 가장 높은 아이템 방향으로 이동. 맵 전체 탐색 가능.
 4. **소모품 수집** (collect): 300px 이내 소모품 중 점수가 가장 높은 아이템 방향으로 이동.
 5. **XP 보석 수집** (collect): 200px 이내 XP 보석 중 점수가 가장 높은 보석 방향으로 이동. 자석 반경 내 보석은 무시.
 6. **적 접근** (approach): 가장 가까운 적이 150px 이상 떨어져 있으면 접근하여 무기 사거리를 유지.
@@ -1076,8 +1124,8 @@ AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Pl
 #### 아이템 수집 점수 공식 (소스 코드 검증 기준)
 | 대상 | 점수 공식 | 탐색 반경 |
 |---|---|---|
-| 무기 드롭 긴급 | `weaponDropScoreMultiplier(10) * 3 * 1000 / (dist + 1)` | 400px |
-| 무기 드롭 일반 | `weaponDropScoreMultiplier(10) * 1000 / (dist + 1)` | 400px |
+| 무기 드롭 긴급 | `weaponDropScoreMultiplier(10) * 3 * 1000 / (dist + 1)` | 3000px |
+| 무기 드롭 일반 | `weaponDropScoreMultiplier(10) * 1000 / (dist + 1)` | 3000px |
 | 소모품 | `consumableScoreMultiplier(5) * 100 / (dist + 1)` | 300px |
 | XP 보석 | `xpGemScoreMultiplier(1) * (xpValue \|\| 1) / (dist + 1)` | 200px |
 
@@ -1088,7 +1136,7 @@ AI가 플레이어 이동을 자동 제어하는 유료 편의 기능. Google Pl
 | 심각한 위험 반경 | 60px | `AUTO_HUNT.dangerRadius / 2` 동적 계산 |
 | XP 보석 탐색 반경 | 200px | `config.js` AUTO_HUNT.xpSearchRadius |
 | 소모품 탐색 반경 | 300px | `config.js` AUTO_HUNT.consumableSearchRadius |
-| 무기 드롭 탐색 반경 | 400px | `config.js` AUTO_HUNT.weaponDropSearchRadius |
+| 무기 드롭 탐색 반경 | 3000px | `config.js` AUTO_HUNT.weaponDropSearchRadius |
 | 무기 드롭 긴급 임계 수명 | 4000ms | `config.js` AUTO_HUNT.weaponDropUrgentLifetime |
 | 무기 드롭 점수 가중치 | 10 | `config.js` AUTO_HUNT.weaponDropScoreMultiplier |
 | 소모품 점수 가중치 | 5 | `config.js` AUTO_HUNT.consumableScoreMultiplier |
@@ -1308,7 +1356,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 
 ### 세이브/매니저 시스템
 
-- SaveManager: 로컬스토리지 기반, 세이브 버전 v6. 크레딧/통계/도감/자동사냥/설정 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled).
+- SaveManager: 로컬스토리지 기반, 세이브 버전 v7. 크레딧/통계/도감/자동사냥/설정/캐릭터 클리어/미니보스 킬 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled), v6->v7(characterClears, totalMinibossKills).
 - MetaManager: 영구 업그레이드 구매/다운그레이드/적용 계산. canDowngrade(), getDowngradeRefund(), downgradeUpgrade() 메서드 제공. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
 - AchievementManager: 도전과제 조건 검사/보상 지급. ResultScene에서 checkAll() 호출.
 - IAPManager: `@capgo/native-purchases` v8 기반 Google Play 인앱결제 구매/복원/가격조회. 네이티브 환경에서 실제 결제 다이얼로그 표시, 취소 시 실패 메시지 미표시. 웹 환경 Mock 모드 지원. BootScene에서 초기화 및 구매 복원.
@@ -1349,7 +1397,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 메인 메뉴 (출격, 업그레이드/도감 비활성, 언어 토글)
 - [x] SaveManager / MetaManager / AchievementManager
 - [x] 영구 업그레이드 22종 데이터
-- [x] 도전과제 13종 데이터
+- [x] 도전과제 100종 데이터 (7카테고리, 27개 condition type)
 - [x] i18n (한국어/영어 279키)
 
 ### Phase 2: 메타 루프 + 신규 무기 -- 완료 (2026-03-09)
@@ -1370,7 +1418,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 캐릭터 선택 화면 (CharacterScene) + 캐릭터 3명 (스나이퍼/엔지니어/버서커)
 - [x] 캐릭터 고유 패시브 (스나이퍼 critDamage+30%, 버서커 저HP 공격+40%)
 - [x] 치명타 시스템 전체 구현 (_rollCrit, 5개 데미지 지점 적용, CRIT! 시각 효과)
-- [x] 도전과제 화면 (AchievementScene, 13개, 진행률 표시)
+- [x] 도전과제 화면 (AchievementScene, 100개, 7카테고리, 진행률 표시)
 - [x] 도감 화면 (CollectionScene, 5탭: 무기/패시브/적/도전과제/진화, 자동 등록)
 - [x] 통계 확장 (totalBossKills, 세이브 v1->v2 마이그레이션)
 - [x] 무기 풀 확장 (getAvailableWeapons(3), Phase 3 무기 레벨업 선택지)
@@ -1403,7 +1451,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 
 ### AutoPilot 아이템 수집 가중치 강화 -- 완료 (2026-03-11)
 - [x] 소모품(Consumable) AI 탐색 대상 추가 (scene.consumablePool, 탐색 반경 300px)
-- [x] 무기 드롭(WeaponDropItem) AI 탐색 대상 추가 (scene.weaponDropPool, 탐색 반경 400px)
+- [x] 무기 드롭(WeaponDropItem) AI 탐색 대상 추가 (scene.weaponDropPool, 탐색 반경 3000px -- 맵 전체 커버)
 - [x] 아이템 우선순위 재편: 긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑
 - [x] 무기 드롭 긴급 수집: 비영구 드롭 수명 4000ms 이하 시 CRITICAL 위험(60px) 밖이면 위험 회피보다 우선
 - [x] 종류별 점수 가중치: 무기 드롭 x10, 소모품 x5, XP 보석 x1
