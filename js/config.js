@@ -99,6 +99,12 @@ export const ENEMY_SCALE_PER_MINUTE = 0.1111;
 /** 적 HP/데미지 기저 배수. t=0분 시점의 기본 난이도. t=15분에서 1.2×2.67 = 3.2배 달성. */
 export const BASE_DIFFICULTY = 1.2;
 
+/** 무기 드롭 맵 배치 시 월드 경계 마진 (px) */
+export const WEAPON_DROP_MARGIN = 100;
+
+/** 무기 드롭 맵 배치 시 플레이어 시작 위치와의 최소 이격 거리 (px) */
+export const WEAPON_DROP_MIN_DIST_FROM_PLAYER = 300;
+
 // ── 크레딧 (메타 재화) 설정 ──
 
 /** 적 처치 시 크레딧 드랍 기본 확률 (0~1) */
@@ -258,8 +264,8 @@ export const AUTO_HUNT = {
 
   /** 소모품 탐색 반경 (px) */
   consumableSearchRadius: 300,
-  /** 무기 드롭 탐색 반경 (px) */
-  weaponDropSearchRadius: 400,
+  /** 무기 드롭 탐색 반경 (px) — 맵 전체 탐색 가능 (대각선 ~2828px) */
+  weaponDropSearchRadius: 3000,
   /** 무기 드롭 긴급 수집 임계 수명 (ms) — 이 이하면 위험 무시하고 수집 */
   weaponDropUrgentLifetime: 4000,
   /** 무기 드롭 점수 가중치 배수 */

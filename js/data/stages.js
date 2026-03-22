@@ -93,19 +93,6 @@ export const STAGES = {
 export const STAGE_ORDER = ['stage_1', 'stage_2', 'stage_3', 'stage_4'];
 
 /**
- * 무기 드롭 스케줄.
- * time: 런 경과 초, permanent: 소멸 여부 (true = 소멸 없음)
- * @type {Array<{time: number, permanent: boolean}>}
- */
-export const WEAPON_DROP_SCHEDULE = [
-  { time: 300, permanent: false },
-  { time: 480, permanent: false },
-  { time: 600, permanent: false },
-  { time: 720, permanent: false },
-  { time: 780, permanent: true },
-];
-
-/**
  * 스테이지 ID로 스테이지 데이터를 조회한다.
  * @param {string} stageId - 스테이지 ID
  * @returns {Object|undefined} 스테이지 데이터

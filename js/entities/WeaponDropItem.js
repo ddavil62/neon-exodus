@@ -76,11 +76,7 @@ export default class WeaponDropItem extends Phaser.Physics.Arcade.Sprite {
     this.permanent = permanent;
     this.lifetime = DROP_LIFETIME;
 
-    // 랜덤 분산 (+-80px)
-    const offsetX = Phaser.Math.Between(-80, 80);
-    const offsetY = Phaser.Math.Between(-80, 80);
-
-    this.setPosition(x + offsetX, y + offsetY);
+    this.setPosition(x, y);
 
     // 무기 아이콘 텍스처 전환
     const iconKey = `icon_weapon_${weaponId}`;

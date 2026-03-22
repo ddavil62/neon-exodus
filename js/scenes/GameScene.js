@@ -25,6 +25,8 @@ import {
   CONSUMABLE_CREDIT_MAX,
   EMP_BOSS_DAMAGE_RATIO,
   EMP_SCREEN_MARGIN,
+  WEAPON_DROP_MARGIN,
+  WEAPON_DROP_MIN_DIST_FROM_PLAYER,
 } from '../config.js';
 import { t } from '../i18n.js';
 import Player from '../entities/Player.js';
@@ -45,7 +47,7 @@ import { AdManager } from '../managers/AdManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
 import AutoPilotSystem from '../systems/AutoPilotSystem.js';
 import { getPassiveById } from '../data/passives.js';
-import { STAGES, WEAPON_DROP_SCHEDULE } from '../data/stages.js';
+import { STAGES } from '../data/stages.js';
 import WeaponDropItem from '../entities/WeaponDropItem.js';
 import { impactHaptic, setHapticEnabled, isHapticEnabled } from '../managers/HapticManager.js';
 
@@ -321,9 +323,6 @@ export default class GameScene extends Phaser.Scene {
     /** 접촉 데미지 쿨다운 맵 (적 ID → 마지막 접촉 시각) */
     this._contactCooldowns = new Map();
 
-    /** 무기 드롭 스케줄 인덱스 (이미 스폰한 항목 추적) */
-    this._weaponDropIndex = new Set();
-
     /** 이번 런에서 스테이지 무기를 이미 획득했는지 여부 */
     this._stageWeaponCollected = false;
 
@@ -332,6 +331,9 @@ export default class GameScene extends Phaser.Scene {
 
     /** 레벨업 씬 활성 상태 (카메라 이펙트 충돌 방지용) */
     this._levelUpActive = false;
+
+    // ── 스테이지 무기 맵 배치 ──
+    this._placeWeaponOnMap();
 
     // ── HUD 생성 ──
     this._createHUD();
@@ -392,9 +394,6 @@ export default class GameScene extends Phaser.Scene {
     this.weaponDropPool.forEach((drop) => {
       drop.update(time, delta);
     });
-
-    // 무기 드롭 스케줄 체크
-    this._checkWeaponDropSchedule();
 
     // HUD 갱신
     this._updateHUD();
@@ -1334,37 +1333,42 @@ export default class GameScene extends Phaser.Scene {
   // ── 무기 드롭 시스템 ──
 
   /**
-   * 무기 드롭 스케줄을 체크하여 시간 도달 시 무기 아이템을 스폰한다.
+   * 게임 시작 시 스테이지 무기를 맵 랜덤 위치에 단일 배치한다.
+   * 플레이어 시작 위치에서 최소 300px 이상, 월드 경계에서 100px 마진을 유지한다.
+   * 조건 충족 위치를 최대 20회 재시도하며, 초과 시 안전 폴백 위치를 사용한다.
    * @private
    */
-  _checkWeaponDropSchedule() {
+  _placeWeaponOnMap() {
     if (!this.stageData || !this.stageData.unlockWeaponId) return;
-    if (this._stageWeaponCollected) return;
 
     const weaponId = this.stageData.unlockWeaponId;
-    const elapsedSec = Math.floor(this.runTime);
+    const margin = WEAPON_DROP_MARGIN;
+    const minDist = WEAPON_DROP_MIN_DIST_FROM_PLAYER;
+    const cx = WORLD_WIDTH / 2;
+    const cy = WORLD_HEIGHT / 2;
 
-    for (let i = 0; i < WEAPON_DROP_SCHEDULE.length; i++) {
-      const schedule = WEAPON_DROP_SCHEDULE[i];
-      if (elapsedSec >= schedule.time && !this._weaponDropIndex.has(i)) {
-        this._weaponDropIndex.add(i);
-        this._spawnWeaponDrop(weaponId, schedule.permanent);
-      }
+    let x, y;
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    do {
+      x = Phaser.Math.Between(margin, WORLD_WIDTH - margin);
+      y = Phaser.Math.Between(margin, WORLD_HEIGHT - margin);
+      attempts++;
+    } while (
+      Phaser.Math.Distance.Between(x, y, cx, cy) < minDist &&
+      attempts < maxAttempts
+    );
+
+    // 재시도 초과 시 안전 폴백: 월드 좌상단 마진 지점 (플레이어 시작 위치에서 약 1273px 이격)
+    if (attempts >= maxAttempts) {
+      x = margin;
+      y = margin;
     }
-  }
 
-  /**
-   * 무기 드롭 아이템을 플레이어 근처에 스폰한다.
-   * @param {string} weaponId - 무기 ID
-   * @param {boolean} permanent - 영구 드롭 여부
-   * @private
-   */
-  _spawnWeaponDrop(weaponId, permanent) {
-    const drop = this.weaponDropPool.get(this.player.x, this.player.y);
+    const drop = this.weaponDropPool.get(x, y);
     if (drop) {
-      drop.spawn(this.player.x, this.player.y, weaponId, permanent);
-
-      // 무기 드롭 알림
+      drop.spawn(x, y, weaponId, true);
       this._showWarning(t('weaponDrop.appeared'), 'info');
     }
   }
