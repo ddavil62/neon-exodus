@@ -1376,7 +1376,7 @@ export default class GameScene extends Phaser.Scene {
     const drop = this.weaponDropPool.get(x, y);
     if (drop) {
       drop.spawn(x, y, weaponId, true);
-      this._showWarning(t('weaponDrop.appeared'), 'info');
+      // 알림은 배치 시점에 띄우지 않음 — 플레이어가 근접 시 별도 처리
     }
   }
 
