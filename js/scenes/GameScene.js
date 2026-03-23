@@ -1011,8 +1011,8 @@ export default class GameScene extends Phaser.Scene {
           SoundSystem.play('evolution');
           this._showEvolutionPopup(evo);
         }
-      } else if (passiveLv > 0) {
-        // 무기는 Max인데 패시브가 부족 → 힌트 표시
+      } else {
+        // 무기는 Max인데 패시브가 부족(미보유 포함) → 힌트 표시
         this._showEvolutionHint(evo);
       }
     }
