@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-03-24 -- 스킬 롱탭 설명 툴팁
+
+### 추가
+- `js/scenes/CharacterScene.js`: 스킬 행(Q/W/E/R) 롱탭 감지 zone (190x30, 500ms delayedCall) 추가
+- `js/scenes/CharacterScene.js`: `_showSkillTooltip(skill, lv, worldY)` 메서드 추가 -- 씬 레이어에 오버레이 패널 표시 (depth 1000, 280px, blocker zone depth 999)
+- `js/scenes/CharacterScene.js`: `_hideSkillTooltip()` 메서드 추가 -- 오버레이 요소 일괄 destroy 및 상태 초기화
+- `js/i18n.js`: `skill.tooltip.preview` 키 추가 (ko: "(Lv.1 미리보기)", en: "(Lv.1 Preview)")
+
+### 변경
+- `js/scenes/CharacterScene.js`: 카드 zone을 `_renderSkillRows` 호출 전에 추가하여 롱탭 zone 이벤트 우선순위 확보
+- `js/scenes/CharacterScene.js`: `_rebuildCards()` 시작 시 `_hideSkillTooltip()` 호출로 기존 툴팁 정리
+- `js/scenes/CharacterScene.js`: 스크롤 리스너에 `_tooltipVisible && |dy| > 2` 시 툴팁 닫기 로직 추가
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-24-skill-longpress-tooltip-purpose.md`
+- 스펙: `.claude/specs/2026-03-24-skill-longpress-tooltip.md`
+- 구현 리포트: `.claude/specs/2026-03-24-skill-longpress-tooltip-report.md`
+- QA: `.claude/specs/2026-03-24-skill-longpress-tooltip-qa.md`
+- QA 초기 FAIL (BUG-1: blocker zone이 pointerup 이벤트를 가로채 롱탭 후 손가락 뗌으로 닫기 불가) -> blocker에 pointerup 핸들러 추가로 수정 완료
+- 변경 파일: `js/scenes/CharacterScene.js`, `js/i18n.js` 총 2개
+- 스펙 대비 차이 없음 (전체 구현 완료)
+
 ## 2026-03-24 -- 일일 미션 시스템
 
 ### 추가

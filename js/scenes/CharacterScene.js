@@ -641,6 +641,9 @@ export default class CharacterScene extends Phaser.Scene {
     blocker.on('pointerdown', () => {
       this._hideSkillTooltip();
     });
+    blocker.on('pointerup', () => {
+      this._hideSkillTooltip();
+    });
     this._tooltipElements.push(blocker);
 
     // ── 반투명 배경 패널 ──
@@ -753,6 +756,11 @@ export default class CharacterScene extends Phaser.Scene {
               this._scrollMax
             );
             this._container.setY(this._scrollOffset);
+
+            // 스크롤 중 툴팁 닫기
+            if (this._tooltipVisible && Math.abs(dy) > 2) {
+              this._hideSkillTooltip();
+            }
           }
         });
       }

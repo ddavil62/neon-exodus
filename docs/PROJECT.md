@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-24 (일일 미션 시스템 추가)
+> 최종 업데이트: 2026-03-24 (스킬 롱탭 설명 툴팁 추가)
 
 ## 프로젝트 개요
 
@@ -57,7 +57,7 @@ neon-exodus/
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 일일 미션, 도감, 설정, 자동 사냥 구매)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
-│   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
+│   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브, 스킬 롱탭 설명 툴팁)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, 무기/패시브 인포 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑/파괴 가능 데코)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
@@ -233,7 +233,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 래핑(WRAP_RADIUS), 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
-| 다국어 | `js/i18n.js` | ko/en 385키, `t()` 함수로 참조 |
+| 다국어 | `js/i18n.js` | ko/en 386키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, 난이도 3단계 선택 버튼(일반/하드/나이트메어), stageId/difficulty 전달 |
 | 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수, 장식 오브젝트 타입(decoTypes)/틴트(decoTint), 파괴 데코 드롭 테이블(decoDropTable), DIFFICULTY_MODES(3단계 난이도 배율/보상), DC_REWARD_DEATH |
 | 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 무기/패시브 인포 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴, 배경 장식 오브젝트 배치(_initDecos)/래핑(_wrapDecos)/파괴 가능 데코(_onProjectileHitDeco, _spawnDecoDrop) |
@@ -251,7 +251,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 일일 미션 매니저 | `js/managers/DailyMissionManager.js` | UTC 자정 리셋, 날짜 시드 PRNG로 3개 미션 선택, 런 결과 기반 진행도 추적, 보상 수령, streak 연속 출석 |
 | 일일 미션 데이터 | `js/data/dailyMissions.js` | 32종 미션 풀 (5카테고리), 전체 완료 보너스/streak 보너스/주기 상수 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
-| 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사, 레벨/XP 표시, 스킬 배분 UI |
+| 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사, 레벨/XP 표시, 스킬 배분 UI, 스킬 롱탭 설명 툴팁 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 114개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
 | 일일 미션 씬 | `js/scenes/DailyMissionScene.js` | 미션 카드 3개(진행바/수령 버튼), 전체 완료 보너스, streak, 리셋 타이머 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/진화) |
@@ -1068,6 +1068,15 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - [+1] 버튼 활성 조건: SP >= 1, 해당 스킬 < maxLevel, R 슬롯은 레벨 게이트 충족
 - 미사용 SP 배지 (노란색 강조)
 - R 미해금 시 "Lv.N에서 해금" 표시
+- **스킬 롱탭 설명 툴팁**: 스킬 행(Q/W/E/R)을 500ms 이상 롱탭하면 스킬 설명 오버레이 표시
+  - 감지 영역: 슬롯 라벨~레벨 표시 구간 (190x30), [+1] 버튼 영역 제외
+  - 오버레이: 씬 레이어 직접 추가 (GeometryMask 회피), depth 1000, 280px 패널
+  - 구성: 스킬명(12px, neonCyan) + 레벨(10px, 우측 정렬) + 설명(11px, wordWrap 256px)
+  - lv0: Lv.1 설명 미리보기 + "(Lv.1 미리보기)" 안내 텍스트
+  - lv1+: 현재 레벨 설명 표시
+  - blocker zone(depth 999)으로 다른 인터랙션 차단
+  - 닫기: pointerup / 다른 곳 탭 / 스크롤 / 카드 전환(_rebuildCards)
+  - 스크롤 충돌 방지: pointermove dy>5px 시 타이머 취소
 
 ##### 궁극기 HUD (GameScene)
 - 위치: 우하단 (X: GAME_WIDTH-40, Y: GAME_HEIGHT-140), 56x56px
