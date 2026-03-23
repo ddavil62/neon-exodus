@@ -1385,6 +1385,9 @@ export default class GameScene extends Phaser.Scene {
 
     const weaponId = this.stageData.unlockWeaponId;
 
+    // 이미 획득(해금)한 무기는 맵에 배치하지 않음 — 레벨업 선택지로만 등장
+    if (SaveManager.isWeaponUnlocked(weaponId)) return;
+
     // 플레이어 시작 위치 기준 랜덤 각도 + 오프셋 배치
     const angle = Math.random() * Math.PI * 2;
     const dist = Phaser.Math.Between(WEAPON_DROP_OFFSET_MIN, WEAPON_DROP_OFFSET_MAX);
@@ -1514,6 +1517,9 @@ export default class GameScene extends Phaser.Scene {
 
     const weaponId = drop.collect();
     this._stageWeaponCollected = true;
+
+    // 맵 드롭 수집 시 즉시 영구 해금 (다음 런부터 레벨업 선택지로 등장)
+    SaveManager.unlockWeapon(weaponId);
 
     // 이미 보유 중이면 레벨업, 미보유면 새로 장착
     const existing = this.weaponSystem.getWeapon(weaponId);
