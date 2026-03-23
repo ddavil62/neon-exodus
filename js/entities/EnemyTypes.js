@@ -175,7 +175,7 @@ export const ENEMY_BEHAVIORS = {
     },
   },
 
-  /** 수리봇: 주변 200px 내 아군 적을 초당 5HP 회복 */
+  /** 수리봇: 주변 200px 내 아군 적을 500ms마다 회복 (초당 5HP) */
   repair_bot: {
     /**
      * @param {Phaser.Physics.Arcade.Sprite} enemy
@@ -183,15 +183,22 @@ export const ENEMY_BEHAVIORS = {
      * @param {number} delta - ms
      */
     update(enemy, scene, delta) {
+      const HEAL_INTERVAL = 500;
       const HEAL_RADIUS = 200;
       const HEAL_PER_SECOND = 5;
-      const healAmount = HEAL_PER_SECOND * (delta / 1000);
 
-      // scene의 enemyPool에서 활성 적을 순회
+      // 500ms 주기로만 순회 실행 (매 프레임 순회 방지)
+      if (!enemy._healTimer) enemy._healTimer = 0;
+      enemy._healTimer += delta;
+      if (enemy._healTimer < HEAL_INTERVAL) return;
+
+      const healAmount = HEAL_PER_SECOND * (enemy._healTimer / 1000);
+      enemy._healTimer = 0;
+
       if (!scene.waveSystem || !scene.waveSystem.enemyPool) return;
 
       scene.waveSystem.enemyPool.forEach((ally) => {
-        if (ally === enemy) return; // 자기 자신 제외
+        if (ally === enemy) return;
         if (!ally.active) return;
 
         const dist = Phaser.Math.Distance.Between(

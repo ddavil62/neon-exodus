@@ -43,7 +43,10 @@ export default class WaveSystem {
     this.elapsedTime = 0;
 
     /** 적 오브젝트 풀 */
-    this.enemyPool = new ObjectPool(scene, Enemy, 60);
+    this.enemyPool = new ObjectPool(scene, Enemy, 100);
+
+    /** 적 최대 동시 존재 상한 */
+    this.maxActiveEnemies = 80;
 
     /** 스폰 타이머 (ms, 남은 시간) */
     this.spawnTimer = 0;
@@ -127,6 +130,10 @@ export default class WaveSystem {
    * @param {number} elapsedMinutes - 경과 시간 (분)
    */
   spawnBatch(elapsedMinutes) {
+    // 활성 적 수가 상한 이상이면 스폰 보류
+    const activeCount = this.enemyPool.getActiveCount();
+    if (activeCount >= this.maxActiveEnemies) return;
+
     const count = Phaser.Math.Between(
       this.currentBatchSize.min,
       this.currentBatchSize.max
