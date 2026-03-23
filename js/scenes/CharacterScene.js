@@ -106,10 +106,12 @@ export default class CharacterScene extends Phaser.Scene {
     }
 
     // ── 스크롤 처리 ──
+    this._scrollListenerAdded = false;
     if (contentHeight > listHeight) {
       this._scrollMin = LIST_START_Y - (contentHeight - listHeight);
       this._scrollMax = 0;
       this._scrollOffset = 0;
+      this._scrollListenerAdded = true;
 
       this.input.on('pointermove', (pointer) => {
         if (pointer.isDown) {
@@ -536,6 +538,39 @@ export default class CharacterScene extends Phaser.Scene {
       this._createCharCard(GAME_WIDTH / 2, cardY, cd, unlocked);
       accY += cardHeight + CARD_GAP;
     });
+
+    // 스크롤 범위 재계산 (확장/축소 시 contentHeight 변동)
+    const contentHeight = accY - LIST_START_Y;
+    const listHeight = GAME_HEIGHT - 200;
+    if (contentHeight > listHeight) {
+      this._scrollMin = LIST_START_Y - (contentHeight - listHeight);
+      this._scrollMax = 0;
+      // 현재 오프셋이 범위를 벗어나면 보정
+      this._scrollOffset = Phaser.Math.Clamp(
+        this._scrollOffset || 0, this._scrollMin, this._scrollMax
+      );
+      this._container.setY(this._scrollOffset);
+
+      // 스크롤 리스너가 아직 없으면 등록
+      if (!this._scrollListenerAdded) {
+        this._scrollListenerAdded = true;
+        this.input.on('pointermove', (pointer) => {
+          if (pointer.isDown) {
+            const dy = pointer.y - pointer.prevPosition.y;
+            this._scrollOffset = Phaser.Math.Clamp(
+              this._scrollOffset + dy,
+              this._scrollMin,
+              this._scrollMax
+            );
+            this._container.setY(this._scrollOffset);
+          }
+        });
+      }
+    } else {
+      // 스크롤 불필요 → 오프셋 초기화
+      this._scrollOffset = 0;
+      this._container.setY(0);
+    }
   }
 
   // ── 버튼 ──
