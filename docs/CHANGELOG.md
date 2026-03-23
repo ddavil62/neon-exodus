@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-03-23 -- 도감 업적 탭 제거 및 도전과제 보상 정보 추가
+
+### 변경
+- `js/scenes/CollectionScene.js`: TABS 배열에서 `achievements` 항목 제거 (5탭 -> 4탭: 무기/패시브/적/진화)
+- `js/scenes/CollectionScene.js`: `_getAchievementItems()` 메서드 제거, `_renderList()` switch문에서 `achievements` case 제거, AchievementManager import 제거
+- `js/scenes/CollectionScene.js`: fileoverview 주석 "5개 탭" -> "4개 탭", `_createTabs()` JSDoc 수정
+- `js/scenes/AchievementScene.js`: CARD_H 64 -> 86 (보상 행 공간 확보)
+- `js/scenes/AchievementScene.js`: 카드 내부 요소 y 오프셋 재배치 (아이콘 y-22, 제목 y-28, 설명 y-10, 진행률 y-10)
+
+### 추가
+- `js/scenes/AchievementScene.js`: 보상 행 추가 (y+14, fontSize 9px, 색상 `UI_COLORS.xpYellow` `#FFDD00`, 완료 alpha 1.0 / 미완료 alpha 0.7)
+- `js/scenes/AchievementScene.js`: `_getRewardText(reward)` 헬퍼 메서드 추가 (credits, dataCore, dataCoreAndTitle, characterHint, hiddenCharacterUnlock 5종 처리)
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-23-achievement-dedup-purpose.md`
+- 스펙: `.claude/specs/2026-03-23-achievement-dedup.md`
+- 구현 리포트: `.claude/specs/2026-03-23-achievement-dedup-report.md`
+- QA: `.claude/specs/2026-03-23-achievement-dedup-qa.md`
+- QA 결과: 수용기준 10/10 충족, 예외 시나리오 8/8 PASS, Playwright 38/38 전체 통과
+- 변경 파일: `js/scenes/CollectionScene.js`, `js/scenes/AchievementScene.js` 총 2개
+- 스펙 대비 차이: 아이콘 y 오프셋 y-19 -> y-22 (AD 모드3 승인), 보상 색상 `#f0c040` -> `UI_COLORS.xpYellow`(`#FFDD00`) (기존 코드베이스 일관성)
+- 신규 i18n 키 추가 없음. 기존 `achievement.reward.*` 키만 사용
+- `dataCoreAndTitle`의 `reward.title`이 한국어 하드코드(`'전설의 전사'`). EN 모드에서도 한국어 칭호 표시 (achievements.js 수정은 Out of Scope)
+
 ## 2026-03-22 -- 무기 드롭 시스템: 시간 기반 스케줄에서 맵 탐색 배치 방식으로 전환
 
 ### 추가

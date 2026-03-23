@@ -13,7 +13,7 @@ import { SaveManager } from '../managers/SaveManager.js';
 // ── 레이아웃 상수 ──
 
 const CARD_W = 320;
-const CARD_H = 64;
+const CARD_H = 86;
 const CARD_GAP = 6;
 const LIST_START_Y = 70;
 
@@ -126,13 +126,13 @@ export default class AchievementScene extends Phaser.Scene {
 
     // 달성 여부 아이콘
     const iconStr = completed ? '\u2705' : '\u2B1C';
-    const icon = this.add.text(x - CARD_W / 2 + 12, y - 8, iconStr, {
+    const icon = this.add.text(x - CARD_W / 2 + 12, y - 22, iconStr, {
       fontSize: '16px',
-    });
+    }).setOrigin(0, 0.5);
     this._container.add(icon);
 
     // 제목
-    const nameText = this.add.text(x - CARD_W / 2 + 38, y - 18, t(achievement.nameKey), {
+    const nameText = this.add.text(x - CARD_W / 2 + 38, y - 28, t(achievement.nameKey), {
       fontSize: '12px',
       fontFamily: 'Galmuri11, monospace',
       color: completed ? UI_COLORS.neonGreen : UI_COLORS.textPrimary,
@@ -140,7 +140,7 @@ export default class AchievementScene extends Phaser.Scene {
     this._container.add(nameText);
 
     // 설명
-    const descText = this.add.text(x - CARD_W / 2 + 38, y, t(achievement.descKey), {
+    const descText = this.add.text(x - CARD_W / 2 + 38, y - 10, t(achievement.descKey), {
       fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textSecondary,
@@ -150,7 +150,7 @@ export default class AchievementScene extends Phaser.Scene {
 
     // 진행률 또는 완료 표시
     if (completed) {
-      const completeText = this.add.text(x + CARD_W / 2 - 12, y, t('achievement.completed'), {
+      const completeText = this.add.text(x + CARD_W / 2 - 12, y - 10, t('achievement.completed'), {
         fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonGreen,
@@ -160,13 +160,24 @@ export default class AchievementScene extends Phaser.Scene {
       // 진행률 계산 (가능한 경우)
       const progress = this._getProgress(achievement, stats);
       if (progress) {
-        const progressText = this.add.text(x + CARD_W / 2 - 12, y, progress, {
+        const progressText = this.add.text(x + CARD_W / 2 - 12, y - 10, progress, {
           fontSize: '10px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.textSecondary,
         }).setOrigin(1, 0.5);
         this._container.add(progressText);
       }
+    }
+
+    // 보상 정보 행
+    const rewardText = this._getRewardText(achievement.reward);
+    if (rewardText) {
+      const rewardLabel = this.add.text(x - CARD_W / 2 + 38, y + 14, rewardText, {
+        fontSize: '9px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.xpYellow,
+      }).setAlpha(completed ? 1.0 : 0.7);
+      this._container.add(rewardLabel);
     }
   }
 
@@ -200,6 +211,31 @@ export default class AchievementScene extends Phaser.Scene {
     }
 
     return t('achievement.inProgress', current, cond.value);
+  }
+
+  /**
+   * 보상 타입에 따른 표시 텍스트를 반환한다.
+   * @param {Object} reward - 보상 데이터 { type, amount?, title? }
+   * @returns {string} 보상 텍스트 (빈 문자열이면 표시 생략)
+   * @private
+   */
+  _getRewardText(reward) {
+    if (!reward || !reward.type) return '';
+
+    switch (reward.type) {
+      case 'credits':
+        return t('achievement.reward.credits', reward.amount);
+      case 'dataCore':
+        return t('achievement.reward.dataCore', reward.amount);
+      case 'dataCoreAndTitle':
+        return t('achievement.reward.dataCore', reward.amount) + ' + ' + t('achievement.reward.title', reward.title);
+      case 'characterHint':
+        return t('achievement.reward.characterHint');
+      case 'hiddenCharacterUnlock':
+        return t('achievement.reward.hiddenCharacter');
+      default:
+        return '';
+    }
   }
 
   // ── 버튼 ──

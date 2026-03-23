@@ -1,7 +1,7 @@
 /**
  * @fileoverview 도감 화면 씬.
  *
- * 5개 탭(무기/패시브/적/도전과제/진화)으로 구성된 도감을 표시한다.
+ * 4개 탭(무기/패시브/적/진화)으로 구성된 도감을 표시한다.
  * 발견된 항목은 이름, 설명, 스탯을 보여주고,
  * 미발견 항목은 ???로 마스킹한다.
  */
@@ -11,7 +11,6 @@ import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { WEAPONS, WEAPON_EVOLUTIONS, EVOLVED_WEAPONS } from '../data/weapons.js';
 import { PASSIVES } from '../data/passives.js';
-import { AchievementManager } from '../managers/AchievementManager.js';
 
 // ── 적 ID 목록 (표시용) ──
 
@@ -29,7 +28,6 @@ const TABS = [
   { key: 'weapons', labelKey: 'collection.weapons' },
   { key: 'passives', labelKey: 'collection.passives' },
   { key: 'enemies', labelKey: 'collection.enemies' },
-  { key: 'achievements', labelKey: 'collection.achievements' },
   { key: 'evolutions', labelKey: 'collection.evolutions' },
 ];
 
@@ -95,7 +93,7 @@ export default class CollectionScene extends Phaser.Scene {
   // ── 탭 ──
 
   /**
-   * 탭 버튼 5개를 생성한다.
+   * 탭 버튼 4개를 생성한다.
    * @private
    */
   _createTabs() {
@@ -188,9 +186,6 @@ export default class CollectionScene extends Phaser.Scene {
         break;
       case 'enemies':
         items = this._getEnemyItems(collection);
-        break;
-      case 'achievements':
-        items = this._getAchievementItems();
         break;
       case 'evolutions':
         items = this._getEvolutionItems(collection);
@@ -295,20 +290,6 @@ export default class CollectionScene extends Phaser.Scene {
       name: seen.has(id) ? t(`enemy.${id}.name`) : t('collection.undiscovered'),
       desc: seen.has(id) ? t(`enemy.${id}.desc`) : t('collection.undiscovered'),
       discovered: seen.has(id),
-    }));
-  }
-
-  /**
-   * 도전과제 탭 항목을 반환한다.
-   * @returns {Array<Object>} 항목 배열
-   * @private
-   */
-  _getAchievementItems() {
-    const achievements = AchievementManager.getAllAchievements();
-    return achievements.map(a => ({
-      name: t(a.nameKey),
-      desc: t(a.descKey),
-      discovered: a.completed,
     }));
   }
 

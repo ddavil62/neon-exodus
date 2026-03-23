@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-23 (파괴 가능 배경 장식 오브젝트)
+> 최종 업데이트: 2026-03-23 (도감 업적 탭 제거 및 도전과제 보상 정보 추가)
 
 ## 프로젝트 개요
 
@@ -62,8 +62,8 @@ neon-exodus/
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (5탭 카드 그리드: 기본/성장/특수/드론/한계돌파)
-│   │   ├── AchievementScene.js    # 도전과제 목록 화면 (100개, 7카테고리, 진행률)
-│   │   └── CollectionScene.js     # 도감 화면 (5탭: 무기/패시브/적/도전과제/진화)
+│   │   ├── AchievementScene.js    # 도전과제 목록 화면 (100개, 7카테고리, 진행률, 보상 정보)
+│   │   └── CollectionScene.js     # 도감 화면 (4탭: 무기/패시브/적/진화)
 │   ├── entities/
 │   │   ├── Player.js              # 플레이어 (이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드, 발밑 글로우 서클 펄스/피격 플래시)
 │   │   ├── Enemy.js               # 적 기본 클래스 (초기화, 이동, 데미지, 사망)
@@ -244,8 +244,8 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v7), 크레딧/통계/도감/스테이지 클리어/무기 해금/설정/캐릭터 클리어/미니보스 킬 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
-| 도전과제 | `js/scenes/AchievementScene.js` | 100개 도전과제 목록 (7카테고리), 진행률 표시 |
-| 도감 | `js/scenes/CollectionScene.js` | 5탭 도감 (무기/패시브/적/도전과제/진화) |
+| 도전과제 | `js/scenes/AchievementScene.js` | 100개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
+| 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/진화) |
 | 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑) |
 | 광고 관리 | `js/managers/AdManager.js` | AdMob 보상형 광고 표시/보상 판단, Mock 모드, 일일 제한 |
 | IAP 관리 | `js/managers/IAPManager.js` | Google Play IAP 구매/복원/가격조회 (@capgo/native-purchases), Mock 모드 |
@@ -1030,26 +1030,28 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 
 - AchievementManager: 27개 condition type 처리 (`_checkCondition` switch문)
 - 보상 타입 5종: credits, dataCore, dataCoreAndTitle, characterHint, hiddenCharacterUnlock
-- AchievementScene: 100개 도전과제를 세로 스크롤 리스트로 표시
-- 각 항목에 달성 여부 아이콘, 제목, 설명, 진행률 (현재값/목표값) 표시
+- AchievementScene: 100개 도전과제를 세로 스크롤 리스트로 표시 (CARD_H=86, CARD_GAP=6)
+- 각 항목에 달성 여부 아이콘, 제목, 설명, 진행률 (현재값/목표값), 보상 정보 표시
+- 보상 행: 카드 하단(y+14)에 보상 타입별 텍스트 표시 (색상: `UI_COLORS.xpYellow` `#FFDD00`, fontSize 9px, 완료 시 alpha 1.0 / 미완료 시 alpha 0.7)
+- `_getRewardText(reward)` 헬퍼: credits, dataCore, dataCoreAndTitle(병기), characterHint, hiddenCharacterUnlock 5종 처리. null/unknown 타입은 빈 문자열 반환
 - 달성 항목: neonGreen alpha 0.15 배경 + 체크 마크
 - MenuScene 도전과제 버튼으로 진입
 - GameScene 추적 스탯: `_totalHitsTaken`, `_noDamageStreakStart`, `_maxNoDamageStreak`, `totalMinibossKills`
 - ResultScene: `lowHpClear`(HP 10% 이하 클리어), `noDamageRun`(피격 0회 클리어), `characterId` 전달, `characterClears` 기록
 - 관련 파일: `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/scenes/AchievementScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`
-- 구현 일자: 2026-03-09 (100개 확장: 2026-03-22)
-- 스펙 문서: `.claude/specs/2026-03-22-neon-exodus-100-achievements-purpose.md`
+- 구현 일자: 2026-03-09 (100개 확장: 2026-03-22, 보상 정보 추가: 2026-03-23)
+- 스펙 문서: `.claude/specs/2026-03-22-neon-exodus-100-achievements-purpose.md`, `.claude/specs/2026-03-23-achievement-dedup.md`
 
-#### 도감 (5탭)
-- CollectionScene: 무기 / 패시브 / 적 / 도전과제 / 진화 5개 탭 (tabW=62)
+#### 도감 (4탭)
+- CollectionScene: 무기 / 패시브 / 적 / 진화 4개 탭 (tabW=62)
 - 미발견 항목은 이름과 설명을 모두 ???로 마스킹
 - 발견된 항목은 이름, 설명, 스탯 표시. 진화 무기도 별도 항목으로 포함 (진화 조건 표시)
 - **진화 탭**: 11개 진화 레시피를 카드 형태로 나열. 조합식(`[무기명] Lv8 + [패시브명] Lv5`)은 발견 여부 무관하게 항상 공개. 미발견 진화 무기 이름은 `★ ???`로 마스킹, 발견 시 `★ [실제이름]` 표시. 미발견 카드는 배경 alpha 0.5로 시각적 구분. CARD_H=56, CARD_W=320
 - 자동 등록: WeaponSystem.addWeapon()에서 weaponsSeen, LevelUpScene._addPassive()에서 passivesSeen, GameScene.onEnemyKilled()에서 enemiesSeen, evolveWeapon()에서 진화 무기 weaponsSeen 등록
 - MenuScene 도감 버튼으로 진입
 - 관련 파일: `js/scenes/CollectionScene.js`
-- 구현 일자: 2026-03-09 (진화 탭 추가: 2026-03-11)
-- 스펙 문서: `.claude/specs/2026-03-11-evolution-recipe-ui.md`
+- 구현 일자: 2026-03-09 (진화 탭 추가: 2026-03-11, 업적 탭 제거: 2026-03-23)
+- 스펙 문서: `.claude/specs/2026-03-11-evolution-recipe-ui.md`, `.claude/specs/2026-03-23-achievement-dedup.md`
 
 ### 사운드 시스템
 
@@ -1410,7 +1412,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 | CollectionScene | 60 | 아이템 설명 11px 2줄 수용 |
 | CharacterScene | 88 | 캐릭터 설명 11px 3줄 수용 |
 | StageSelectScene | 92 | 스테이지 설명 11px 2줄 + 하단 요소 여백 |
-| AchievementScene | 64 | 도전과제 설명 10px 2줄 수용 |
+| AchievementScene | 86 | 도전과제 설명 10px + 보상 행 9px 수용 |
 
 - 관련 파일: `js/scenes/GameScene.js`, `js/scenes/UpgradeScene.js`, `js/scenes/CollectionScene.js`, `js/scenes/CharacterScene.js`, `js/scenes/ResultScene.js`, `js/scenes/StageSelectScene.js`, `js/scenes/AchievementScene.js`, `js/scenes/LevelUpScene.js`
 - 구현 일자: 2026-03-11
@@ -1503,8 +1505,8 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 캐릭터 선택 화면 (CharacterScene) + 캐릭터 3명 (스나이퍼/엔지니어/버서커)
 - [x] 캐릭터 고유 패시브 (스나이퍼 critDamage+30%, 버서커 저HP 공격+40%)
 - [x] 치명타 시스템 전체 구현 (_rollCrit, 5개 데미지 지점 적용, CRIT! 시각 효과)
-- [x] 도전과제 화면 (AchievementScene, 100개, 7카테고리, 진행률 표시)
-- [x] 도감 화면 (CollectionScene, 5탭: 무기/패시브/적/도전과제/진화, 자동 등록)
+- [x] 도전과제 화면 (AchievementScene, 100개, 7카테고리, 진행률/보상 정보 표시)
+- [x] 도감 화면 (CollectionScene, 4탭: 무기/패시브/적/진화, 자동 등록)
 - [x] 통계 확장 (totalBossKills, 세이브 v1->v2 마이그레이션)
 - [x] 무기 풀 확장 (getAvailableWeapons(3), Phase 3 무기 레벨업 선택지)
 - [x] 부활(Revive) 기능 (Phase 2 미완성분)
@@ -1564,7 +1566,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] Playwright 35/35 테스트 전체 통과
 
 ### 진화 조합표 UI + 인게임 힌트 -- 완료 (2026-03-11)
-- [x] CollectionScene에 5번째 "진화" 탭 추가 (TABS 배열에 evolutions, tabW를 78에서 62로 축소)
+- [x] CollectionScene에 "진화" 탭 추가 (TABS 배열에 evolutions, tabW=62. 이후 2026-03-23 업적 탭 제거로 5탭->4탭 축소)
 - [x] _getEvolutionItems(): WEAPON_EVOLUTIONS 11개 레시피를 카드로 나열, 조합식 항상 공개
 - [x] 미발견 진화 무기 이름 `★ ???` 마스킹, 발견 시 `★ [실제이름]` 표시
 - [x] 미발견 카드 배경 alpha 0.5, 텍스트 alpha 낮음으로 시각적 구분
@@ -1596,7 +1598,7 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] CharacterScene: 캐릭터 설명 9px->11px, 고유 패시브 설명 10px->11px, CARD_H 80->88
 - [x] ResultScene: 무기별 킬/DPS 9px->10px, 데미지 수치 9px->10px
 - [x] StageSelectScene: 스테이지 설명 9px->11px, CARD_H 85->92
-- [x] AchievementScene: 도전과제 설명 9px->10px, 진행도 텍스트 9px->10px, CARD_H 60->64
+- [x] AchievementScene: 도전과제 설명 9px->10px, 진행도 텍스트 9px->10px, CARD_H 60->64 (이후 2026-03-23 보상 행 추가로 CARD_H 64->86)
 - [x] LevelUpScene: 카드 라벨 10px, 레벨 표시 10px, 효과 설명 10px
 - [x] 8개 씬 전체에서 10px 미만 fontSize 잔존 없음 (grep 검증)
 - [x] CARD_W 미변경, i18n 텍스트 미변경, 타이틀 폰트 미변경
