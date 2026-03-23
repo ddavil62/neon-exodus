@@ -803,6 +803,7 @@ export default class WeaponSystem {
     for (const gfx of orbInfo.graphics) {
       const orbX = gfx.x;
       const orbY = gfx.y;
+      let orbHit = false;
 
       enemyPool.forEach((enemy) => {
         if (!enemy.active) return;
@@ -814,8 +815,14 @@ export default class WeaponSystem {
           enemy.takeDamage(finalDamage, true, null, weapon.id);
           this.recordDamage(weapon.id, finalDamage);
           if (isCrit) this._showCritEffect(enemy.x, enemy.y);
+          orbHit = true;
         }
       });
+
+      // 오브별 독립 히트 이펙트 (enemy 쿨다운과 별개)
+      if (orbHit) {
+        VFXSystem.hitSpark(this.scene, orbX, orbY);
+      }
     }
   }
 
@@ -1455,14 +1462,21 @@ export default class WeaponSystem {
     // 기본 틱 데미지 + 독 스택 보너스 (스택당 3 추가)
     const dmg = Math.floor((cloud.tickDamage + cloud.poisonStack * 3) * atkMult);
 
+    let cloudHit = false;
     enemyPool.forEach(enemy => {
       if (!enemy.active) return;
       const dist = Phaser.Math.Distance.Between(cloud.x, cloud.y, enemy.x, enemy.y);
       if (dist <= cloud.radius) {
         enemy.takeDamage(dmg, false, null, weaponId);
         this.recordDamage(weaponId, dmg);
+        cloudHit = true;
       }
     });
+
+    // 클라우드 히트 이펙트 (enemy 쿨다운과 별개로 구름 중심에 1회)
+    if (cloudHit) {
+      VFXSystem.hitSpark(this.scene, cloud.x, cloud.y);
+    }
   }
 
   // ── 중력(gravity) 타입 업데이트 ──
@@ -1527,14 +1541,20 @@ export default class WeaponSystem {
           vortex.tickTimer = 500;
           const atkMult = this.player.getEffectiveAttackMultiplier?.() || 1;
           const dmg = Math.floor(vortex.pullDamage * atkMult);
+          let vortexHit = false;
           enemyPool.forEach(enemy => {
             if (!enemy.active) return;
             const dist = Phaser.Math.Distance.Between(vortex.x, vortex.y, enemy.x, enemy.y);
             if (dist <= vortex.pullRadius) {
               enemy.takeDamage(dmg, false, null, weapon.id);
               this.recordDamage(weapon.id, dmg);
+              vortexHit = true;
             }
           });
+          // 소용돌이 중심에 히트 이펙트 (enemy 쿨다운과 별개)
+          if (vortexHit) {
+            VFXSystem.hitSpark(this.scene, vortex.x, vortex.y);
+          }
         }
       }
 
