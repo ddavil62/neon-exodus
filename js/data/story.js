@@ -19,6 +19,7 @@ export const CUTSCENES = {
       { speaker: 'narrator', textKey: 'cutscene.prologue.2', portrait: null },
       { speaker: 'berserker', textKey: 'cutscene.prologue.3', portrait: 'portrait_berserker', side: 'left' },
       { speaker: 'engineer', textKey: 'cutscene.prologue.4', portrait: 'portrait_engineer', side: 'right' },
+      { speaker: 'engineer', textKey: 'cutscene.prologue.4b', portrait: 'portrait_engineer', side: 'right' },
       { speaker: 'narrator', textKey: 'cutscene.prologue.5', portrait: null },
     ],
   },
@@ -42,6 +43,17 @@ export const CUTSCENES = {
     dialogues: [
       { speaker: 'sniper', textKey: 'cutscene.s1_clear.1', portrait: 'portrait_sniper', side: 'left' },
       { speaker: 'engineer', textKey: 'cutscene.s1_clear.2', portrait: 'portrait_engineer', side: 'right' },
+    ],
+  },
+
+  upgrade_unlock: {
+    id: 'upgrade_unlock',
+    trigger: 'first_stage1_run',
+    bgKey: 'bg_tile',
+    dialogues: [
+      { speaker: 'engineer', textKey: 'cutscene.upgrade_unlock.1', portrait: 'portrait_engineer', side: 'left' },
+      { speaker: 'engineer', textKey: 'cutscene.upgrade_unlock.2', portrait: 'portrait_engineer', side: 'left' },
+      { speaker: 'narrator', textKey: 'cutscene.upgrade_unlock.3', portrait: null },
     ],
   },
 

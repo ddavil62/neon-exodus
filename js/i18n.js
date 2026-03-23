@@ -756,7 +756,12 @@ const TRANSLATIONS = {
     'cutscene.prologue.2': '남은 생존자 6명. 외부 구원은 오지 않는다.',
     'cutscene.prologue.3': '어디로 가든 놈들이 있어. 길을 뚫자.',
     'cutscene.prologue.4': '봉쇄선 관제 시스템을 먼저 무력화해야 해.\nCore Processor라는 놈이다.',
+    'cutscene.prologue.4b': '이 구역 어딘가에 구시대 연구소가 있을 거야.\n찾으면 장비를 강화할 수 있다.',
     'cutscene.prologue.5': '6명의 생존자가 네오 아크의 심장부를 향해 출발한다.',
+
+    'cutscene.upgrade_unlock.1': '구시대 연구소의 데이터 일부를 확보했다!',
+    'cutscene.upgrade_unlock.2': '이 데이터로 장비를 강화할 수 있어.\n연구소 시스템을 가동시키겠다.',
+    'cutscene.upgrade_unlock.3': '메타 업그레이드 — 연구소가 해금되었다.',
 
     'cutscene.s1_intro.1': '봉쇄벽이 저기 있다. 뚫고 들어가자.',
     'cutscene.s1_intro.2': '외곽 관제 시스템이 봉쇄선을 제어하고 있어.\n그걸 먼저 파괴해야 해.',
@@ -1539,7 +1544,12 @@ const TRANSLATIONS = {
     'cutscene.prologue.2': '6 survivors remain. No rescue is coming.',
     'cutscene.prologue.3': 'They\'re everywhere we go. Let\'s punch through.',
     'cutscene.prologue.4': 'We need to disable the blockade control system first.\nIt\'s called the Core Processor.',
+    'cutscene.prologue.4b': 'There should be an old-era research lab somewhere in this sector.\nIf we find it, we can upgrade our gear.',
     'cutscene.prologue.5': 'The six survivors set out toward the heart of Neo Ark.',
+
+    'cutscene.upgrade_unlock.1': 'We secured some data from the old-era research lab!',
+    'cutscene.upgrade_unlock.2': 'With this data, we can enhance our equipment.\nI\'ll boot up the lab systems.',
+    'cutscene.upgrade_unlock.3': 'Meta Upgrade — Research Lab unlocked.',
 
     'cutscene.s1_intro.1': 'The barricade is right there. Let\'s break through.',
     'cutscene.s1_intro.2': 'The perimeter control system manages the blockade.\nWe need to destroy it first.',

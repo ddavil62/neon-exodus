@@ -22,6 +22,7 @@ const DEFAULT_SAVE = {
   achievements: {},         // { achievementId: true }
   autoHuntUnlocked: false,  // 자동 사냥 IAP 구매 여부
   autoHuntEnabled: false,   // 마지막 런의 자동 사냥 토글 상태 (다음 런에 자동 적용)
+  upgradeUnlocked: false,   // 메타 업그레이드(연구소) 해금 여부
   cutscenesSeen: {},        // { cutsceneId: true }
   stageClears: {},          // { stageId: 클리어 횟수 }
   unlockedWeapons: [],      // 스테이지 해금 무기 ID 배열
@@ -465,6 +466,25 @@ export class SaveManager {
     return !!(data.cutscenesSeen && data.cutscenesSeen[cutsceneId]);
   }
 
+  // ── 메타 업그레이드 해금 ──
+
+  /**
+   * 메타 업그레이드(연구소)가 해금되었는지 확인한다.
+   * @returns {boolean}
+   */
+  static isUpgradeUnlocked() {
+    return SaveManager.getData().upgradeUnlocked === true;
+  }
+
+  /**
+   * 메타 업그레이드(연구소)를 해금 처리하고 세이브한다.
+   */
+  static setUpgradeUnlocked() {
+    const data = SaveManager.getData();
+    data.upgradeUnlocked = true;
+    SaveManager.save();
+  }
+
   // ── 초기화 ──
 
   /**
@@ -590,6 +610,15 @@ export class SaveManager {
     if (data.version < 8) {
       if (!data.cutscenesSeen) data.cutscenesSeen = {};
       data.version = 8;
+    }
+
+    // v8 → v9: 메타 업그레이드 해금 상태 추가
+    // 기존 유저는 1스테이지 플레이 이력이 있으면 자동 해금 (버튼 미표시 방지)
+    if (data.version < 9) {
+      const hasPlayed = (data.stageClears && Object.keys(data.stageClears).length > 0) ||
+                        (data.stats && data.stats.totalRuns > 0);
+      data.upgradeUnlocked = !!hasPlayed;
+      data.version = 9;
     }
 
     data.version = SAVE_DATA_VERSION;

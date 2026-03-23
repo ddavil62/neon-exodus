@@ -54,8 +54,12 @@ export default class MenuScene extends Phaser.Scene {
       color: UI_COLORS.textSecondary,
     }).setOrigin(0.5);
 
-    // ── 출격 버튼 (프롤로그 미시청 시 컷신 → StageSelectScene) ──
-    this._createButton(centerX, 280, t('menu.start'), UI_COLORS.btnPrimary, () => {
+    // ── 메뉴 버튼 (동적 Y 배치) ──
+    let nextY = 280;
+    const BTN_GAP = 50;
+
+    // 출격 버튼 (프롤로그 미시청 시 컷신 → StageSelectScene)
+    this._createButton(centerX, nextY, t('menu.start'), UI_COLORS.btnPrimary, () => {
       SoundSystem.resume();
       if (!SaveManager.isCutsceneViewed('prologue')) {
         this.scene.start('CutsceneScene', {
@@ -67,40 +71,46 @@ export default class MenuScene extends Phaser.Scene {
         this.scene.start('StageSelectScene');
       }
     });
+    nextY += BTN_GAP;
 
-    // ── 업그레이드 버튼 (활성화) ──
-    this._createButton(centerX, 330, t('menu.upgrade'), UI_COLORS.btnPrimary, () => {
-      this.scene.start('UpgradeScene');
-    });
+    // 업그레이드 버튼 (연구소 해금 후에만 표시)
+    if (SaveManager.isUpgradeUnlocked()) {
+      this._createButton(centerX, nextY, t('menu.upgrade'), UI_COLORS.btnPrimary, () => {
+        this.scene.start('UpgradeScene');
+      });
+      nextY += BTN_GAP;
+    }
 
-    // ── 도전과제 버튼 (활성화) ──
-    this._createButton(centerX, 380, t('menu.achievements'), UI_COLORS.btnPrimary, () => {
+    // 도전과제 버튼
+    this._createButton(centerX, nextY, t('menu.achievements'), UI_COLORS.btnPrimary, () => {
       this.scene.start('AchievementScene');
     });
+    nextY += BTN_GAP;
 
-    // ── 도감 버튼 (활성화) ──
-    this._createButton(centerX, 430, t('menu.collection'), UI_COLORS.btnPrimary, () => {
+    // 도감 버튼
+    this._createButton(centerX, nextY, t('menu.collection'), UI_COLORS.btnPrimary, () => {
       this.scene.start('CollectionScene');
     });
+    nextY += BTN_GAP;
 
-    // ── 자동 사냥 구매 버튼 (미해금 시 표시) ──
+    // 자동 사냥 구매 버튼 (미해금 시 표시)
     if (!IAPManager.isAutoHuntUnlocked()) {
       const price = IAPManager.getLocalizedPrice();
       const btnLabel = `${t('autoHunt.purchase')} (${price})`;
-      this._createButton(centerX, 480, btnLabel, COLORS.NEON_ORANGE, () => {
+      this._createButton(centerX, nextY, btnLabel, COLORS.NEON_ORANGE, () => {
         this._showAutoHuntPurchase();
       });
     } else {
-      // 해금 완료 표시
-      this.add.text(centerX, 480, t('autoHunt.on'), {
+      this.add.text(centerX, nextY, t('autoHunt.on'), {
         fontSize: '12px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonGreen,
       }).setOrigin(0.5);
     }
+    nextY += BTN_GAP;
 
-    // ── 설정 버튼 ──
-    this._createButton(centerX, 530, t('menu.settings'), UI_COLORS.btnSecondary, () => {
+    // 설정 버튼
+    this._createButton(centerX, nextY, t('menu.settings'), UI_COLORS.btnSecondary, () => {
       this.scene.start('SettingsScene');
     });
 

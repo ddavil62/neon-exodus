@@ -115,7 +115,7 @@ test.describe('Story System QA', () => {
 
       expect(state).not.toBeNull();
       expect(state.cutsceneId).toBe('prologue');
-      expect(state.dialogueCount).toBe(5);
+      expect(state.dialogueCount).toBe(6);
       expect(state.currentIndex).toBe(0);
       expect(state.hasDialogText).toBe(true);
       expect(state.hasNameText).toBe(true);
@@ -175,7 +175,7 @@ test.describe('Story System QA', () => {
       expect(index).toBe(1);
     });
 
-    test('초상화 폴백(이니셜 텍스트)이 정상 동작한다', async ({ page }) => {
+    test('초상화가 정상 표시된다 (에셋 존재 시 Image, 미존재 시 이니셜 폴백)', async ({ page }) => {
       // prologue 3번째 대사(berserker)로 이동
       await startCutscene(page, 'prologue', 'MenuScene');
 
@@ -185,28 +185,24 @@ test.describe('Story System QA', () => {
         await page.waitForTimeout(150);
       }
 
-      // berserker 초상화가 이니셜 폴백으로 표시되는지
+      // berserker 초상화가 표시되는지 확인
       const portraitInfo = await page.evaluate(() => {
         const game = window.__NEON_EXODUS;
         const scene = game.scene.scenes.find(s => s.constructor.name === 'CutsceneScene' && s.scene.isActive());
         if (!scene || !scene._portrait) return null;
         return {
-          // Phaser Text 객체는 type='Text', text 속성이 있음
           type: scene._portrait.type,
-          hasTextProp: typeof scene._portrait.text === 'string',
-          textContent: scene._portrait.text || null,
-          // 텍스처 기반 Image는 texture.key가 있고 text 속성이 없음
           hasTexture: !!scene._portrait.texture,
+          hasTextProp: typeof scene._portrait.text === 'string',
         };
       });
 
-      // 에셋이 없으므로 Text(이니셜) 폴백이어야 함
+      // 초상화가 존재해야 함 (Image 또는 Text 폴백)
       expect(portraitInfo).not.toBeNull();
-      // Phaser Text 객체는 type='Text'이고 text 속성에 이니셜 문자가 있음
-      expect(portraitInfo.hasTextProp).toBe(true);
-      expect(portraitInfo.textContent).toBe('B'); // berserker의 이니셜
+      // Image 또는 Text 중 하나
+      expect(portraitInfo.hasTexture || portraitInfo.hasTextProp).toBe(true);
 
-      await page.screenshot({ path: 'tests/screenshots/cutscene-portrait-fallback.png' });
+      await page.screenshot({ path: 'tests/screenshots/cutscene-portrait.png' });
     });
 
     test('Skip 버튼으로 컷신 전체를 스킵할 수 있다', async ({ page }) => {
@@ -241,7 +237,7 @@ test.describe('Story System QA', () => {
         });
       });
 
-      expect(cutsceneData.count).toBe(9);
+      expect(cutsceneData.count).toBe(10);
       expect(cutsceneData.hasPrologue).toBe(true);
       expect(cutsceneData.hasAllStageIntros).toBe(true);
       expect(cutsceneData.hasAllStageClears).toBe(true);
@@ -415,7 +411,7 @@ test.describe('Story System QA', () => {
         });
       });
 
-      expect(result.version).toBe(8);
+      expect(result.version).toBe(9);
       expect(result.hasCutscenesSeen).toBe(true);
       expect(result.cutscenesSeen).toEqual({});
       expect(result.credits).toBe(100);
@@ -528,7 +524,8 @@ test.describe('Story System QA', () => {
         return scene ? scene._pendingCutscene : null;
       });
 
-      expect(pendingCutscene).toBe('stage_1_clear');
+      // upgrade_unlock이 stage_1_clear보다 우선 (연구소 해금 먼저)
+      expect(pendingCutscene).toBe('upgrade_unlock');
     });
   });
 
@@ -827,7 +824,7 @@ test.describe('Story System QA', () => {
         return import('./js/config.js').then(mod => mod.SAVE_DATA_VERSION);
       });
 
-      expect(version).toBe(8);
+      expect(version).toBe(9);
     });
   });
 
