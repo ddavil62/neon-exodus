@@ -433,6 +433,14 @@ export default class SoundSystem {
 
     const playLoop = () => {
       if (SoundSystem._currentBgmId !== 'bgm_game') return;
+
+      // 이전 루프의 잔여 노드 정리 (루프 경계 겹침 방지)
+      if (SoundSystem._bgmNodes) {
+        SoundSystem._bgmNodes.forEach(n => {
+          try { n.stop(); } catch (e) { /* 이미 정지됨 */ }
+        });
+      }
+
       const now = ctx.currentTime;
       const nodes = [];
 
@@ -500,6 +508,14 @@ export default class SoundSystem {
 
     const playLoop = () => {
       if (SoundSystem._currentBgmId !== 'bgm_menu') return;
+
+      // 이전 루프의 잔여 노드 정리 (루프 경계 겹침 방지)
+      if (SoundSystem._bgmNodes) {
+        SoundSystem._bgmNodes.forEach(n => {
+          try { n.stop(); } catch (e) { /* 이미 정지됨 */ }
+        });
+      }
+
       const now = ctx.currentTime;
       const nodes = [];
 
