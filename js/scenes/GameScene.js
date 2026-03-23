@@ -375,6 +375,15 @@ export default class GameScene extends Phaser.Scene {
 
     if (this.isPaused || this.isGameOver) return;
 
+    // 레벨업 복귀 후 조이스틱 포인터 재연결 (1프레임 지연으로 stale 입력 방지)
+    if (this._joystickResumeCheck && this.joystick) {
+      this._joystickResumeCheck = false;
+      const pointer = this.input.activePointer;
+      if (pointer.isDown) {
+        this.joystick.activateAt(pointer);
+      }
+    }
+
     // 시간 갱신
     this.runTime += delta / 1000;
 
@@ -467,14 +476,11 @@ export default class GameScene extends Phaser.Scene {
         this.player.body.setVelocity(0, 0);
       }
 
-      // 조이스틱: 활성 포인터가 있으면 즉시 연결, 없으면 리셋
+      // 조이스틱: 즉시 리셋 후, resume 완료 1프레임 뒤에 포인터 상태를 재확인한다.
+      // pause 중 pointerup이 누락되어 stale 상태가 남는 문제 방지.
       if (this.joystick) {
-        const pointer = this.input.activePointer;
-        if (pointer.isDown) {
-          this.joystick.activateAt(pointer);
-        } else {
-          this.joystick.reset();
-        }
+        this.joystick.reset();
+        this._joystickResumeCheck = true;
       }
     });
   }
