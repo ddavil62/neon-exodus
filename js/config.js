@@ -29,10 +29,10 @@ export const PLAYER_START_X = 0;
 export const PLAYER_START_Y = 0;
 
 /** 무기 드롭 플레이어 기준 오프셋 최소 범위 (px) */
-export const WEAPON_DROP_OFFSET_MIN = 400;
+export const WEAPON_DROP_OFFSET_MIN = 800;
 
 /** 무기 드롭 플레이어 기준 오프셋 최대 범위 (px) */
-export const WEAPON_DROP_OFFSET_MAX = 800;
+export const WEAPON_DROP_OFFSET_MAX = 1000;
 
 // ── 스프라이트 설정 ──
 
