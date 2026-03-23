@@ -88,6 +88,13 @@ export default class CharacterScene extends Phaser.Scene {
     /** @type {Array<Object>} 이번 진입에서 새로 해금된 캐릭터 목록 */
     this._newlyUnlocked = [];
 
+    /** @type {Array<Phaser.GameObjects.GameObject>} 툴팁 오버레이 요소 배열 */
+    this._tooltipElements = [];
+    /** @type {boolean} 툴팁 표시 여부 */
+    this._tooltipVisible = false;
+    /** @type {Phaser.Time.TimerEvent|null} 롱탭 타이머 */
+    this._longPressTimer = null;
+
     // ── 캐릭터 카드 생성 (선택된 카드는 확장) ──
     let accY = LIST_START_Y;
     visibleChars.forEach((charData, i) => {
@@ -122,6 +129,11 @@ export default class CharacterScene extends Phaser.Scene {
             this._scrollMax
           );
           this._container.setY(this._scrollOffset);
+
+          // 스크롤 중 툴팁 닫기
+          if (this._tooltipVisible && Math.abs(dy) > 2) {
+            this._hideSkillTooltip();
+          }
         }
       });
     }
@@ -367,6 +379,17 @@ export default class CharacterScene extends Phaser.Scene {
         this._container.add(spBadge);
       }
 
+      // 터치 영역 (카드 전체 — 스킬 롱탭 zone보다 먼저 추가하여 depth가 낮음)
+      const zone = this.add.zone(x, y, CARD_W, cardHeight)
+        .setInteractive({ useHandCursor: true });
+      this._container.add(zone);
+
+      zone.on('pointerdown', () => {
+        this._selectedId = charData.id;
+        // 전체 UI 재생성
+        this._rebuildCards();
+      });
+
       if (!isSelected) {
         // 미선택: 간단 설명
         const passiveText = this.add.text(x - CARD_W / 2 + 16, topY + 44, t(charData.passiveKey), {
@@ -385,20 +408,9 @@ export default class CharacterScene extends Phaser.Scene {
         }).setAlpha(0.7);
         this._container.add(descText);
       } else {
-        // 선택됨: 스킬 4행 표시
+        // 선택됨: 스킬 4행 표시 (zone 이후에 추가되어 롱탭 zone이 카드 zone보다 위)
         this._renderSkillRows(x, topY, charData.id, prog);
       }
-
-      // 터치 영역
-      const zone = this.add.zone(x, y, CARD_W, cardHeight)
-        .setInteractive({ useHandCursor: true });
-      this._container.add(zone);
-
-      zone.on('pointerdown', () => {
-        this._selectedId = charData.id;
-        // 전체 UI 재생성
-        this._rebuildCards();
-      });
     } else {
       // 잠금 상태: 잠금 아이콘 + 가독성 확보된 텍스트
       const lockIcon = this.add.text(x - CARD_W / 2 + 16, y - 16, '\uD83D\uDD12', {
@@ -424,6 +436,7 @@ export default class CharacterScene extends Phaser.Scene {
 
   /**
    * 선택된 카드의 스킬 4행을 렌더링한다.
+   * 각 스킬 행에 롱탭 감지 zone을 추가하여 스킬 설명 툴팁을 표시한다.
    * @param {number} x - 카드 중심 X
    * @param {number} topY - 카드 상단 Y
    * @param {string} charId - 캐릭터 ID
@@ -445,6 +458,7 @@ export default class CharacterScene extends Phaser.Scene {
 
       const rowY = startY + i * rowH;
       const lv = prog.skills[slot] || 0;
+      const isRLocked = slot === 'R' && !canInvestUlt(prog.level, lv);
 
       // 슬롯 라벨
       const label = this.add.text(leftX, rowY, `[${slot}]`, {
@@ -463,7 +477,7 @@ export default class CharacterScene extends Phaser.Scene {
       this._container.add(skillName);
 
       // R 잠금 상태 체크
-      if (slot === 'R' && !canInvestUlt(prog.level, lv)) {
+      if (isRLocked) {
         const gate = lv < 3 ? [6, 11, 16][lv] : 16;
         const lockStr = t('skill.locked', gate);
         const lockLabel = this.add.text(x + CARD_W / 2 - 16, rowY, lockStr, {
@@ -472,52 +486,226 @@ export default class CharacterScene extends Phaser.Scene {
           color: UI_COLORS.textSecondary,
         }).setOrigin(1, 0).setAlpha(0.6);
         this._container.add(lockLabel);
-        return;
       }
 
-      // 레벨 표시
-      const lvText = this.add.text(x + CARD_W / 2 - 70, rowY, `${lv}/${skill.maxLevel}`, {
-        fontSize: '11px',
-        fontFamily: 'Galmuri11, monospace',
-        color: lv >= skill.maxLevel ? UI_COLORS.neonGreen : UI_COLORS.textPrimary,
-      }).setOrigin(1, 0);
-      this._container.add(lvText);
+      if (!isRLocked) {
+        // 레벨 표시
+        const lvText = this.add.text(x + CARD_W / 2 - 70, rowY, `${lv}/${skill.maxLevel}`, {
+          fontSize: '11px',
+          fontFamily: 'Galmuri11, monospace',
+          color: lv >= skill.maxLevel ? UI_COLORS.neonGreen : UI_COLORS.textPrimary,
+        }).setOrigin(1, 0);
+        this._container.add(lvText);
 
-      // [+1] 버튼
-      const canUpgrade = prog.sp >= 1 && lv < skill.maxLevel &&
-        (slot !== 'R' || canInvestUlt(prog.level, lv));
+        // [+1] 버튼
+        const canUpgrade = prog.sp >= 1 && lv < skill.maxLevel &&
+          (slot !== 'R' || canInvestUlt(prog.level, lv));
 
-      const btnX = x + CARD_W / 2 - 28;
-      const btnW = 36;
-      const btnH = 32;
+        const btnX = x + CARD_W / 2 - 28;
+        const btnW = 36;
+        const btnH = 32;
 
-      const btnBg = this.add.graphics();
-      const btnColor = canUpgrade ? 0x00AAAA : 0x333344;
-      btnBg.fillStyle(btnColor, 0.8);
-      btnBg.fillRoundedRect(btnX - btnW / 2, rowY - 2, btnW, btnH, 4);
-      this._container.add(btnBg);
+        const btnBg = this.add.graphics();
+        const btnColor = canUpgrade ? 0x00AAAA : 0x333344;
+        btnBg.fillStyle(btnColor, 0.8);
+        btnBg.fillRoundedRect(btnX - btnW / 2, rowY - 2, btnW, btnH, 4);
+        this._container.add(btnBg);
 
-      const btnLabel = this.add.text(btnX, rowY + btnH / 2 - 2, t('skill.upgrade'), {
-        fontSize: '10px',
-        fontFamily: 'Galmuri11, monospace',
-        color: canUpgrade ? '#FFFFFF' : '#666666',
-      }).setOrigin(0.5);
-      this._container.add(btnLabel);
+        const btnLabel = this.add.text(btnX, rowY + btnH / 2 - 2, t('skill.upgrade'), {
+          fontSize: '10px',
+          fontFamily: 'Galmuri11, monospace',
+          color: canUpgrade ? '#FFFFFF' : '#666666',
+        }).setOrigin(0.5);
+        this._container.add(btnLabel);
 
-      if (canUpgrade) {
-        const btnZone = this.add.zone(btnX, rowY + btnH / 2 - 2, btnW, btnH)
-          .setInteractive({ useHandCursor: true });
-        this._container.add(btnZone);
+        if (canUpgrade) {
+          const btnZone = this.add.zone(btnX, rowY + btnH / 2 - 2, btnW, btnH)
+            .setInteractive({ useHandCursor: true });
+          this._container.add(btnZone);
 
-        btnZone.on('pointerdown', () => {
-          const success = SaveManager.allocateSkillPoint(charId, slot);
-          if (success) {
-            SoundSystem.play('levelup');
-            this._rebuildCards();
-          }
+          btnZone.on('pointerdown', () => {
+            const success = SaveManager.allocateSkillPoint(charId, slot);
+            if (success) {
+              SoundSystem.play('levelup');
+              this._rebuildCards();
+            }
+          });
+        }
+      }
+
+      // ── 롱탭 감지 zone (카드 zone보다 나중에 추가되어 이벤트 우선순위가 높음) ──
+      const longPressZoneW = 190;
+      const longPressZoneH = 30;
+      const longPressZoneX = leftX + longPressZoneW / 2;
+      const longPressZoneY = rowY - 2 + longPressZoneH / 2;
+
+      const lpZone = this.add.zone(longPressZoneX, longPressZoneY, longPressZoneW, longPressZoneH)
+        .setInteractive();
+      this._container.add(lpZone);
+
+      let startPointerY = 0;
+
+      lpZone.on('pointerdown', (pointer) => {
+        // 이미 툴팁이 열려 있으면 닫기
+        if (this._tooltipVisible) {
+          this._hideSkillTooltip();
+          return;
+        }
+        startPointerY = pointer.y;
+        // 500ms 지연 후 툴팁 표시
+        this._longPressTimer = this.time.delayedCall(500, () => {
+          // 롱탭 감지 영역의 world Y 계산 (컨테이너 스크롤 오프셋 반영)
+          const worldY = rowY + (this._scrollOffset || 0);
+          this._showSkillTooltip(skill, lv, worldY);
         });
-      }
+      });
+
+      lpZone.on('pointerup', () => {
+        // 500ms 미만 탭이면 타이머 취소
+        if (this._longPressTimer) {
+          this._longPressTimer.remove(false);
+          this._longPressTimer = null;
+        }
+        // 이미 툴팁이 표시 중이면 닫기
+        if (this._tooltipVisible) {
+          this._hideSkillTooltip();
+        }
+      });
+
+      lpZone.on('pointermove', (pointer) => {
+        // 드래그 감지 시 타이머 취소 (스크롤 우선)
+        if (this._longPressTimer && Math.abs(pointer.y - startPointerY) > 5) {
+          this._longPressTimer.remove(false);
+          this._longPressTimer = null;
+        }
+      });
     });
+  }
+
+  // ── 스킬 툴팁 ──
+
+  /**
+   * 스킬 설명 툴팁 오버레이를 표시한다.
+   * 씬 레이어에 직접 추가하여 GeometryMask를 회피한다.
+   * @param {Object} skill - 스킬 정의 객체 (nameKey, levels, maxLevel)
+   * @param {number} lv - 현재 스킬 레벨
+   * @param {number} worldY - 스킬 행의 월드 Y 좌표
+   * @private
+   */
+  _showSkillTooltip(skill, lv, worldY) {
+    // 기존 툴팁이 있으면 먼저 정리
+    this._hideSkillTooltip();
+
+    this._tooltipElements = [];
+    this._tooltipVisible = true;
+
+    const centerX = GAME_WIDTH / 2;
+    const panelW = 280;
+    const pad = 12;
+    const contentW = panelW - pad * 2;
+
+    // 표시할 설명 텍스트 결정
+    const isPreview = lv === 0;
+    const descIndex = isPreview ? 0 : lv - 1;
+    const descKey = skill.levels[descIndex]?.descKey || '';
+    const descStr = t(descKey);
+
+    // 레벨 문자열
+    const lvStr = `Lv.${lv}/${skill.maxLevel}`;
+
+    // ── 설명 텍스트의 높이를 미리 계산 ──
+    const measureText = this.add.text(0, 0, descStr, {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      wordWrap: { width: contentW },
+    }).setVisible(false);
+    const descH = measureText.height;
+    measureText.destroy();
+
+    // 패널 높이 계산: 제목행(20) + 설명(descH) + 미리보기 안내(isPreview ? 16 : 0) + 패딩
+    const previewLineH = isPreview ? 18 : 0;
+    const panelH = Math.max(60, pad + 20 + 4 + descH + previewLineH + pad);
+
+    // ── 위치 결정: 스킬 행 위에 표시, 넘치면 아래로 ──
+    let tooltipY = worldY - panelH - 6;
+    if (tooltipY < 10) {
+      tooltipY = worldY + 34;
+    }
+
+    const panelX = centerX - panelW / 2;
+
+    // ── blocker zone: 전체 화면을 덮어 다른 인터랙션 차단 ──
+    const blocker = this.add.zone(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT)
+      .setInteractive()
+      .setDepth(999);
+    blocker.on('pointerdown', () => {
+      this._hideSkillTooltip();
+    });
+    this._tooltipElements.push(blocker);
+
+    // ── 반투명 배경 패널 ──
+    const bg = this.add.graphics().setDepth(1000);
+    bg.fillStyle(COLORS.UI_PANEL, 0.95);
+    bg.fillRoundedRect(panelX, tooltipY, panelW, panelH, 8);
+    bg.lineStyle(1, COLORS.NEON_CYAN, 0.6);
+    bg.strokeRoundedRect(panelX, tooltipY, panelW, panelH, 8);
+    this._tooltipElements.push(bg);
+
+    // ── 스킬명 (좌측) ──
+    const nameText = this.add.text(panelX + pad, tooltipY + pad, t(skill.nameKey), {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setDepth(1001);
+    this._tooltipElements.push(nameText);
+
+    // ── 레벨 (우측 정렬) ──
+    const lvLabel = this.add.text(panelX + panelW - pad, tooltipY + pad + 2, lvStr, {
+      fontSize: '10px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+    }).setOrigin(1, 0).setDepth(1001);
+    this._tooltipElements.push(lvLabel);
+
+    // ── 설명 텍스트 ──
+    const descColor = isPreview ? UI_COLORS.textSecondary : UI_COLORS.textPrimary;
+    const descText = this.add.text(panelX + pad, tooltipY + pad + 22, descStr, {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      color: descColor,
+      wordWrap: { width: contentW },
+    }).setDepth(1001);
+    this._tooltipElements.push(descText);
+
+    // ── 미리보기 안내 텍스트 (lv === 0일 때만) ──
+    if (isPreview) {
+      const previewLabel = this.add.text(
+        panelX + pad, tooltipY + pad + 22 + descH + 4,
+        t('skill.tooltip.preview'),
+        {
+          fontSize: '10px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.textSecondary,
+        }
+      ).setDepth(1001).setAlpha(0.7);
+      this._tooltipElements.push(previewLabel);
+    }
+  }
+
+  /**
+   * 스킬 설명 툴팁 오버레이를 닫는다.
+   * @private
+   */
+  _hideSkillTooltip() {
+    if (this._tooltipElements) {
+      this._tooltipElements.forEach(el => el.destroy());
+      this._tooltipElements = [];
+    }
+    this._tooltipVisible = false;
+    if (this._longPressTimer) {
+      this._longPressTimer.remove(false);
+      this._longPressTimer = null;
+    }
   }
 
   /**
@@ -525,6 +713,8 @@ export default class CharacterScene extends Phaser.Scene {
    * @private
    */
   _rebuildCards() {
+    // 기존 툴팁이 열려 있으면 닫기
+    this._hideSkillTooltip();
     this._container.removeAll(true);
     this._cardElements = [];
     const stats = SaveManager.getStats();
