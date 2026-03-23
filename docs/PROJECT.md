@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-23 (메타 드론 동반자 시스템)
+> 최종 업데이트: 2026-03-23 (배경 리디자인 - 타일 + 장식 오브젝트)
 
 ## 프로젝트 개요
 
@@ -53,12 +53,12 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종 + 장식 오브젝트 16종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 배경 타일 128x128 4종 프로시저럴 패턴(_generateBackgroundTile + _regenerateTileTexture), 장식 오브젝트 16종 프로시저럴 폴백(_generateDecoTextures), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
 │   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, 설정, 자동 사냥 구매)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (5탭 카드 그리드: 기본/성장/특수/드론/한계돌파)
@@ -93,7 +93,7 @@ neon-exodus/
 │       ├── weapons.js             # 무기 10종 (기본 6종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 10종 (drone/hivemind 제거)
 │       ├── droneUpgrades.js      # 메타 드론 업그레이드 5종 데이터 (기본 스탯 + costFormula)
 │       ├── enemies.js             # 잡몹 10종 + 미니보스 2종 + 보스 6종
-│       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER)
+│       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER, decoTypes, decoTint)
 │       ├── passives.js            # 패시브 아이템 11종
 │       ├── waves.js               # 스폰 테이블 6구간 + 미니보스/보스 스케줄
 │       ├── upgrades.js            # 영구 업그레이드 22종
@@ -179,7 +179,8 @@ neon-exodus/
 │   ├── generate-walk-anim.js      # 캐릭터별 idle + 걷기 애니메이션 스프라이트시트 생성 스크립트 (GPT Image API, --char 옵션, 현행)
 │   ├── generate-consumable-sprites.js # (레거시) 소모성 아이템 6종 24x24 아이콘 생성 스크립트 (GPT Image API)
 │   ├── generate-phase2-assets.js  # Phase 2 아트 에셋 31종 생성 스크립트 (GPT Image API 8종 + SVG 직접 생성 23종, 현행)
-│   └── generate-phase4-assets.js  # Phase 4 무기 이펙트 에셋 10종 생성 스크립트 (SVG 직접 생성, 현행)
+│   ├── generate-phase4-assets.js  # Phase 4 무기 이펙트 에셋 10종 생성 스크립트 (SVG 직접 생성, 현행)
+│   └── generate-bg-assets.js     # 배경 타일 4종 + 장식 오브젝트 16종 GPT Image API 생성 스크립트 (현행)
 ├── tests/
 │   ├── phase1-integration.spec.js # Phase 1 통합 테스트
 │   ├── phase2-qa.spec.js          # Phase 2 QA 테스트
@@ -229,8 +230,8 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 게임 설정 | `js/config.js` | 해상도, 월드, 래핑(WRAP_RADIUS), 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 382키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
-| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수 |
-| 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴 |
+| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수, 장식 오브젝트 타입(decoTypes)/틴트(decoTint) |
+| 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴, 배경 장식 오브젝트 배치(_initDecos)/래핑(_wrapDecos) |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기 |
@@ -829,6 +830,59 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/entities/EnemyTypes.js`, `js/scenes/BootScene.js`, `js/entities/Projectile.js`, `js/entities/Player.js`, `js/scenes/GameScene.js`
 - 구현 일자: 2026-03-11
 - 스펙 문서: `.claude/specs/2026-03-11-visual-clarity.md`
+
+### 배경 시스템
+
+스테이지별 고유 배경 타일과 장식 오브젝트로 시각적 차별화 및 적 가독성을 확보한다.
+
+#### 배경 타일 (128x128, 프로시저럴 + GPT Image 병행)
+
+| 스테이지 | 텍스처 키 | 기조색 | 패턴 |
+|---------|---------|--------|------|
+| S1 도시 외곽 | `bg_tile` | `0x0C0C18` | 시안 점선 + 맨홀 커버 (alpha 0.12/0.08) |
+| S2 산업 지구 | `bg_tile_s2` | `0x0E0A06` | 금속 격자 + 오렌지 해칭 (alpha 0.10) |
+| S3 지하 서버 | `bg_tile_s3` | `0x06040E` | 보라 PCB 회로 + 비아 포인트 (alpha 0.15/0.10) |
+| S4 더 코어 | `bg_tile_s4` | `0x010801` | 녹색 육각형 에너지 그리드 (alpha 0.10/0.18/0.08) |
+
+- BootScene._generateBackgroundTile()에서 128x128 프로시저럴 생성
+- _regenerateTileTexture()로 기존 PNG 제거 후 항상 프로시저럴 디자인 우선 적용
+- GPT Image API 생성 스크립트: `scripts/generate-bg-assets.js` (에셋 미존재 시 프로시저럴 폴백)
+
+#### 장식 오브젝트 (16종, 4종 x 4스테이지)
+
+| 스테이지 | 텍스처 키 | decoTint |
+|---------|---------|----------|
+| S1 도시 외곽 | deco_s1_lamppost, deco_s1_car, deco_s1_manhole, deco_s1_debris | 0x4D4D8A |
+| S2 산업 지구 | deco_s2_drum, deco_s2_pipe, deco_s2_crane, deco_s2_sign | 0x54391E |
+| S3 지하 서버 | deco_s3_rack, deco_s3_cable, deco_s3_fan, deco_s3_terminal | 0x301E5A |
+| S4 더 코어 | deco_s4_node, deco_s4_pillar, deco_s4_core, deco_s4_shard | 0x1E4E1E |
+
+- BootScene.preload()에서 PNG 로딩, _generateDecoTextures()에서 프로시저럴 폴백
+- stages.js에 decoTypes(텍스처 키 배열), decoTint(틴트 색상) 필드 추가
+
+#### 배치 시스템 (GameScene)
+
+- **_initDecos()**: create() 시 플레이어 주변 800px 반경에 15~25개 랜덤 배치
+  - Depth 1~2 (배경 타일 위, 모든 엔티티 아래)
+  - alpha 0.15~0.25, decoTint 적용, 0~359도 랜덤 회전
+  - Phaser.GameObjects.Image 정적 배치, 물리 충돌 없음
+- **_wrapDecos()**: update()에서 _wrapEntities() 직후 호출, WRAP_RADIUS 기반 래핑
+- **_cleanup()**: 씬 전환 시 데코 오브젝트 정리
+
+#### Depth 구조
+
+| Depth | 용도 |
+|-------|------|
+| -10 | bgTile (타일 배경) |
+| 1~2 | 장식 오브젝트 |
+| 5 | 소모품 |
+| 7~9 | VFX, 글로우, 무기 |
+| 10 | 플레이어 |
+| 11+ | 적 |
+
+- 관련 파일: `js/scenes/BootScene.js`, `js/scenes/GameScene.js`, `js/data/stages.js`, `scripts/generate-bg-assets.js`
+- 구현 일자: 2026-03-23
+- 스펙 문서: `.claude/specs/2026-03-23-neon-exodus-bg-redesign.md`
 
 ### 스폰 시스템
 

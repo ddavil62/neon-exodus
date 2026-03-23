@@ -77,9 +77,9 @@ test.describe('배경 리디자인 QA', () => {
         return gs._decos ? gs._decos.length : 0;
       });
 
-      // 데코가 15~25개 범위인지 확인
-      expect(decoCount).toBeGreaterThanOrEqual(15);
-      expect(decoCount).toBeLessThanOrEqual(25);
+      // 데코가 18~28개 범위인지 확인
+      expect(decoCount).toBeGreaterThanOrEqual(18);
+      expect(decoCount).toBeLessThanOrEqual(28);
     });
   }
 });
