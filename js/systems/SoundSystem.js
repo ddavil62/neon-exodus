@@ -27,6 +27,12 @@ export default class SoundSystem {
   /** @type {number|null} BGM 루프 인터벌 ID */
   static _bgmInterval = null;
 
+  /** @type {number} XP 수집 연속 카운터 (상승 스케일용) */
+  static _xpCombo = 0;
+
+  /** @type {number} 마지막 XP 수집 시각 (ms) */
+  static _xpLastTime = 0;
+
   /** @type {boolean} BGM 활성화 여부 */
   static _bgmEnabled = true;
 
@@ -404,15 +410,29 @@ export default class SoundSystem {
    * @private
    */
   static _playXpCollect(ctx, now, vol) {
+    const jsNow = Date.now();
+    // 200ms 이내 연속 수집 시 콤보 증가, 아니면 리셋
+    if (jsNow - SoundSystem._xpLastTime < 200) {
+      SoundSystem._xpCombo = Math.min(SoundSystem._xpCombo + 1, 12);
+    } else {
+      SoundSystem._xpCombo = 0;
+    }
+    SoundSystem._xpLastTime = jsNow;
+
+    // 기본 주파수 800Hz + 콤보당 반음씩 상승 (상승 스케일 효과)
+    const freq = 800 * Math.pow(2, SoundSystem._xpCombo / 12);
+    // 콤보가 높을수록 볼륨 감쇠 (동시 재생 귀 보호)
+    const comboAtten = 1 / (1 + SoundSystem._xpCombo * 0.15);
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(1200, now);
-    gain.gain.setValueAtTime(0.1 * vol, now);
-    gain.gain.linearRampToValueAtTime(0, now + 0.03);
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0.08 * vol * comboAtten, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.05);
     osc.connect(gain).connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.03);
+    osc.stop(now + 0.06);
   }
 
   // ── BGM 구현 ──
