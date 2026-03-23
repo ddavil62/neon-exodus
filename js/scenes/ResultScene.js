@@ -319,7 +319,7 @@ export default class ResultScene extends Phaser.Scene {
       this._goToMenu();
     }, 1400);
 
-    // ── 컷신 판정 (upgrade_unlock > 클리어 컷신 순) ──
+    // ── 컷신 판정 (upgrade_unlock > drone_unlock > 클리어 컷신 순) ──
     /** @type {string|null} 대기 중인 컷신 ID */
     this._pendingCutscene = null;
 
@@ -328,6 +328,10 @@ export default class ResultScene extends Phaser.Scene {
       this._pendingCutscene = 'upgrade_unlock';
       // 컷신 발동 전에 해금 상태를 먼저 저장 (컷신 후 메뉴에서 버튼 표시)
       SaveManager.setUpgradeUnlocked();
+    // 2스테이지 첫 도전 종료 시 드론 해금 컷신 (클리어/사망 무관)
+    } else if (this.stageId === 'stage_2' && !SaveManager.isCutsceneViewed('drone_unlock')) {
+      this._pendingCutscene = 'drone_unlock';
+      SaveManager.setDroneUnlocked();
     } else if (this.victory && this.stageId) {
       // 클리어 컷신 판정
       const stageNum = this.stageId.replace('stage_', '');

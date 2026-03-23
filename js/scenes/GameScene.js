@@ -47,6 +47,7 @@ import VFXSystem from '../systems/VFXSystem.js';
 import { AdManager } from '../managers/AdManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
 import AutoPilotSystem from '../systems/AutoPilotSystem.js';
+import DroneCompanionSystem from '../systems/DroneCompanionSystem.js';
 import { getPassiveById } from '../data/passives.js';
 import { STAGES } from '../data/stages.js';
 import WeaponDropItem from '../entities/WeaponDropItem.js';
@@ -65,7 +66,6 @@ const WEAPON_ICON_MAP = {
   plasma_orb:       '\u{1F49C}',
   electric_chain:   '\u{1F329}\uFE0F',
   missile:          '\u{1F680}',
-  drone:            '\u{1F916}',
   emp_blast:        '\u{1F4A5}',
   force_blade:      '\u2694\uFE0F',
   nano_swarm:       '\u{1F9EA}',
@@ -77,7 +77,6 @@ const WEAPON_ICON_MAP = {
   nuke_missile:     '\u2622\uFE0F',
   ion_cannon:       '\u{1F4A0}',
   guardian_sphere:  '\u{1F6E1}\uFE0F',
-  hivemind:         '\u{1F41D}',
   perpetual_emp:    '\u{1F4AB}',
   phantom_strike:   '\u{1F47B}',
   bioplasma:        '\u{1F9EC}',
@@ -201,9 +200,9 @@ export default class GameScene extends Phaser.Scene {
         // 히든: 무기 슬롯 +2, 레벨업 무기 추천 가중치 x2
         this.maxWeaponSlots += up.extraWeaponSlots;
         this.player.weaponChoiceBias = up.weaponChoiceBias;
-      } else if (up.stat === 'droneSummonBonus') {
-        // 엔지니어: 드론 소환 보너스
-        this.player.droneSummonBonus = up.value;
+      } else if (up.stat === 'droneDamageBonus') {
+        // 엔지니어: 드론 데미지 +30%
+        this.player.droneDamageBonus = up.value;
       }
     }
 
@@ -245,6 +244,15 @@ export default class GameScene extends Phaser.Scene {
     // 초기 무기 레벨 (메타 보너스 반영)
     const startWeaponLv = Math.min(bonuses.startWeaponLevel || 1, 8);
     this.weaponSystem.addWeapon(startWeaponId, startWeaponLv);
+
+    // ── 메타 드론 동반자 초기화 (해금 시에만) ──
+    this.droneCompanion = null;
+    if (SaveManager.isDroneUnlocked()) {
+      this.droneCompanion = new DroneCompanionSystem(
+        this, this.player, this.weaponSystem.projectilePool
+      );
+      this.droneCompanion.init();
+    }
 
     this.waveSystem = new WaveSystem(this, this.player, this.stageData);
 
@@ -380,6 +388,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.weaponSystem.update(time, delta);
     this.weaponSystem.renderBeams();
+    if (this.droneCompanion) this.droneCompanion.update(time, delta);
     this.waveSystem.update(time, delta);
 
     // XP 보석 업데이트
@@ -2350,6 +2359,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.joystick) this.joystick.destroy();
     if (this.autoPilot) this.autoPilot.destroy();
     if (this.weaponSystem) this.weaponSystem.destroy();
+    if (this.droneCompanion) this.droneCompanion.destroy();
     if (this.waveSystem) this.waveSystem.destroy();
     if (this.xpGemPool) this.xpGemPool.destroy();
     if (this.consumablePool) this.consumablePool.destroy();

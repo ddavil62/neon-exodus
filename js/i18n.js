@@ -86,10 +86,13 @@ const TRANSLATIONS = {
     'upgrade.category.basic': '기본 스탯',
     'upgrade.category.growth': '성장 가속',
     'upgrade.category.special': '특수',
+    'upgrade.category.drone': '드론',
     'upgrade.category.limitBreak': '한도 돌파',
     'upgrade.downgrade': '-',
     'upgrade.downgradeRefund': '환불: {0}',
     'upgrade.limitBreakHint': '기본 스탯 전부 최대 레벨\n달성 시 해금',
+    'upgrade.droneLockedHint': '스테이지 2 진행 시 해금',
+    'upgrade.droneHivemindHint': '드론 업그레이드 전부 최대 레벨\n달성 시 해금',
 
     // ── 도감 ──
     'collection.title': '도감',
@@ -336,6 +339,18 @@ const TRANSLATIONS = {
     'meta.goldRush.name': '골드 러시',
     'meta.goldRush.desc': '5분마다 크레딧 보너스 웨이브',
 
+    // ── 드론 업그레이드 ──
+    'drone.upgrade.damage.name': '드론 화력',
+    'drone.upgrade.damage.desc': '드론 공격력 +5',
+    'drone.upgrade.fireRate.name': '드론 연사',
+    'drone.upgrade.fireRate.desc': '드론 발사 간격 -50ms',
+    'drone.upgrade.range.name': '드론 사거리',
+    'drone.upgrade.range.desc': '드론 사거리 +15px',
+    'drone.upgrade.reinforcement.name': '드론 증원',
+    'drone.upgrade.reinforcement.desc': '동시 운용 드론 +1',
+    'drone.upgrade.hivemind.name': '하이브마인드',
+    'drone.upgrade.hivemind.desc': '드론 공격에 체인 번개 추가',
+
     // ── 캐릭터 ──
     'character.agent.name': '에이전트',
     'character.agent.desc': '밸런스형. 블래스터를 기본 무기로 사용한다.',
@@ -345,8 +360,8 @@ const TRANSLATIONS = {
     'character.sniper.passive': '크리티컬 데미지 +30%',
     'character.sniper.unlock': '누적 5000킬 달성',
     'character.engineer.name': '엔지니어',
-    'character.engineer.desc': '드론 소환물 +1. 드론 전문.',
-    'character.engineer.passive': '드론 소환물 +1',
+    'character.engineer.desc': '드론 데미지 +30%. 드론 전문.',
+    'character.engineer.passive': '드론 데미지 +30%',
     'character.engineer.unlock': '10런 클리어',
     'character.berserker.name': '버서커',
     'character.berserker.desc': '체력 50% 이하 시 공격력 +40%.',
@@ -763,6 +778,10 @@ const TRANSLATIONS = {
     'cutscene.upgrade_unlock.2': '이 데이터로 장비를 강화할 수 있어.\n연구소 시스템을 가동시키겠다.',
     'cutscene.upgrade_unlock.3': '메타 업그레이드 — 연구소가 해금되었다.',
 
+    'cutscene.drone_unlock.1': '잠깐, 이건... 구시대 전투 드론이야!',
+    'cutscene.drone_unlock.2': '코어는 살아있어. 수리하면 우리 편으로 가동할 수 있겠는걸.',
+    'cutscene.drone_unlock.3': '전투 드론이 복구되었다. 이제 모든 작전에서 드론이 동행한다.',
+
     'cutscene.s1_intro.1': '봉쇄벽이 저기 있다. 뚫고 들어가자.',
     'cutscene.s1_intro.2': '외곽 관제 시스템이 봉쇄선을 제어하고 있어.\n그걸 먼저 파괴해야 해.',
 
@@ -874,10 +893,13 @@ const TRANSLATIONS = {
     'upgrade.category.basic': 'Basic Stats',
     'upgrade.category.growth': 'Growth',
     'upgrade.category.special': 'Special',
+    'upgrade.category.drone': 'Drone',
     'upgrade.category.limitBreak': 'Limit Break',
     'upgrade.downgrade': '-',
     'upgrade.downgradeRefund': 'Refund: {0}',
     'upgrade.limitBreakHint': 'Unlock by maxing all\nbasic stat upgrades',
+    'upgrade.droneLockedHint': 'Unlock by completing Stage 2',
+    'upgrade.droneHivemindHint': 'Unlock by maxing all\ndrone upgrades',
 
     // ── Collection ──
     'collection.title': 'Collection',
@@ -1124,6 +1146,18 @@ const TRANSLATIONS = {
     'meta.goldRush.name': 'Gold Rush',
     'meta.goldRush.desc': 'Bonus credit wave every 5 min',
 
+    // ── Drone Upgrades ──
+    'drone.upgrade.damage.name': 'Drone Power',
+    'drone.upgrade.damage.desc': 'Drone ATK +5',
+    'drone.upgrade.fireRate.name': 'Drone Fire Rate',
+    'drone.upgrade.fireRate.desc': 'Drone fire interval -50ms',
+    'drone.upgrade.range.name': 'Drone Range',
+    'drone.upgrade.range.desc': 'Drone range +15px',
+    'drone.upgrade.reinforcement.name': 'Reinforcement',
+    'drone.upgrade.reinforcement.desc': 'Simultaneous drones +1',
+    'drone.upgrade.hivemind.name': 'Hivemind',
+    'drone.upgrade.hivemind.desc': 'Adds chain lightning to drone attacks',
+
     // ── Characters ──
     'character.agent.name': 'Agent',
     'character.agent.desc': 'Balanced type. Starts with Blaster.',
@@ -1133,8 +1167,8 @@ const TRANSLATIONS = {
     'character.sniper.passive': 'Crit Damage +30%',
     'character.sniper.unlock': 'Accumulate 5000 kills',
     'character.engineer.name': 'Engineer',
-    'character.engineer.desc': 'Drone summon +1. Drone specialist.',
-    'character.engineer.passive': 'Drone summon +1',
+    'character.engineer.desc': 'Drone DMG +30%. Drone specialist.',
+    'character.engineer.passive': 'Drone DMG +30%',
     'character.engineer.unlock': 'Clear 10 runs',
     'character.berserker.name': 'Berserker',
     'character.berserker.desc': 'ATK +40% when HP below 50%.',
@@ -1550,6 +1584,10 @@ const TRANSLATIONS = {
     'cutscene.upgrade_unlock.1': 'We secured some data from the old-era research lab!',
     'cutscene.upgrade_unlock.2': 'With this data, we can enhance our equipment.\nI\'ll boot up the lab systems.',
     'cutscene.upgrade_unlock.3': 'Meta Upgrade — Research Lab unlocked.',
+
+    'cutscene.drone_unlock.1': 'Wait, this is... an old-era combat drone!',
+    'cutscene.drone_unlock.2': 'The core is still alive. If I repair it, we can deploy it on our side.',
+    'cutscene.drone_unlock.3': 'Combat drone restored. The drone will now accompany all operations.',
 
     'cutscene.s1_intro.1': 'The barricade is right there. Let\'s break through.',
     'cutscene.s1_intro.2': 'The perimeter control system manages the blockade.\nWe need to destroy it first.',

@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-22 (무한 월드 전환)
+> 최종 업데이트: 2026-03-23 (메타 드론 동반자 시스템)
 
 ## 프로젝트 개요
 
@@ -58,10 +58,10 @@ neon-exodus/
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
-│   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (4탭 카드 그리드, 카테고리 아이콘)
+│   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (5탭 카드 그리드: 기본/성장/특수/드론/한계돌파)
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (100개, 7카테고리, 진행률)
 │   │   └── CollectionScene.js     # 도감 화면 (5탭: 무기/패시브/적/도전과제/진화)
 │   ├── entities/
@@ -75,21 +75,23 @@ neon-exodus/
 │   ├── systems/
 │   │   ├── ObjectPool.js          # Phaser Group 기반 오브젝트 풀
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (데드존 8px, 최대반경 50px)
-│   │   ├── WeaponSystem.js        # 무기 관리, 자동 발사 (11종 타입: projectile/beam/orbital/chain/homing/summon/aoe/melee/cloud/gravity/rotating_blade)
+│   │   ├── WeaponSystem.js        # 무기 관리, 자동 발사 (10종 타입: projectile/beam/orbital/chain/homing/aoe/melee/cloud/gravity/rotating_blade)
+│   │   ├── DroneCompanionSystem.js # 메타 드론 동반자 시스템 (영구 해금, 메타 업그레이드 전용)
 │   │   ├── WaveSystem.js          # 적 스폰 웨이브 관리, 엔들리스 모드 스케일링
 │   │   ├── SoundSystem.js         # AudioContext 프로그래매틱 SFX 9종 + BGM 2곡
 │   │   ├── VFXSystem.js           # Phaser Particles 기반 VFX 6종
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
-│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v7, 설정/캐릭터클리어/미니보스킬 포함)
+│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v10, 드론 해금/업그레이드/컷신 포함)
 │   │   ├── HapticManager.js       # 햅틱 진동 관리 (Capacitor, enabled 플래그)
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
 │   │   ├── AdManager.js            # Google AdMob 보상형 광고 관리 (동적 import, 이벤트 기반 보상 판단, Mock 모드)
 │   │   └── IAPManager.js          # Google Play IAP 관리 (@capgo/native-purchases 연동, 구매/복원/가격조회, Mock 모드)
 │   └── data/
-│       ├── weapons.js             # 무기 11종 (기본 7종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 11종
+│       ├── weapons.js             # 무기 10종 (기본 6종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 10종 (drone/hivemind 제거)
+│       ├── droneUpgrades.js      # 메타 드론 업그레이드 5종 데이터 (기본 스탯 + costFormula)
 │       ├── enemies.js             # 잡몹 10종 + 미니보스 2종 + 보스 6종
 │       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER)
 │       ├── passives.js            # 패시브 아이템 11종
@@ -231,7 +233,8 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴 |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
-| 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/소환/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기, 드론 AI |
+| 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기 |
+| 메타 드론 | `js/systems/DroneCompanionSystem.js` | 영구 메타 드론 동반자 (스테이지 2 해금, 메타 업그레이드 전용, projectilePool 공유) |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
 | 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡, BGM/SFX enabled 토글 |
 | 설정 | `js/scenes/SettingsScene.js` | BGM/SFX/햅틱 ON/OFF 토글 UI, SaveManager 연동 |

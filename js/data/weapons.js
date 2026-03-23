@@ -113,28 +113,6 @@ export const MISSILE_LEVELS = [
   { level: 8, damage: 100, cooldown: 1400, speed: 290, turnSpeed: 2.8, explosionRadius: 95, range: 550 },
 ];
 
-// ── 드론: Phase 4 소환 무기 (Lv1~Lv8) ──
-
-/**
- * 드론 레벨별 데이터.
- * droneCount: 동시 활성 드론 수
- * damage: 드론 한 발당 데미지 (attackMultiplier 적용)
- * cooldown: 드론 발사 간격 (ms)
- * shootRange: 발사 사거리 (px)
- * moveSpeed: 드론 이동 속도 (px/s)
- * @type {Array<{level: number, droneCount: number, damage: number, cooldown: number, shootRange: number, moveSpeed: number}>}
- */
-export const DRONE_LEVELS = [
-  { level: 1, droneCount: 1, damage: 12, cooldown: 1000, shootRange: 120, moveSpeed: 450 },
-  { level: 2, droneCount: 1, damage: 18, cooldown: 950,  shootRange: 125, moveSpeed: 474 },
-  { level: 3, droneCount: 2, damage: 22, cooldown: 900,  shootRange: 130, moveSpeed: 495 },
-  { level: 4, droneCount: 2, damage: 28, cooldown: 850,  shootRange: 135, moveSpeed: 516 },
-  { level: 5, droneCount: 3, damage: 34, cooldown: 800,  shootRange: 140, moveSpeed: 540 },
-  { level: 6, droneCount: 3, damage: 40, cooldown: 750,  shootRange: 145, moveSpeed: 564 },
-  { level: 7, droneCount: 4, damage: 46, cooldown: 700,  shootRange: 150, moveSpeed: 585 },
-  { level: 8, droneCount: 4, damage: 50, cooldown: 600,  shootRange: 160, moveSpeed: 600 },
-];
-
 // ── EMP 폭발: Phase 4 범위 무기 (Lv1~Lv8) ──
 
 /**
@@ -301,15 +279,6 @@ export const WEAPONS = [
     phase: 3,
   },
   {
-    id: 'drone',
-    nameKey: 'weapon.drone.name',
-    descKey: 'weapon.drone.desc',
-    type: 'summon',
-    maxLevel: 8,
-    levels: DRONE_LEVELS,
-    phase: 4,
-  },
-  {
     id: 'emp_blast',
     nameKey: 'weapon.emp_blast.name',
     descKey: 'weapon.emp_blast.desc',
@@ -404,13 +373,6 @@ export const WEAPON_EVOLUTIONS = [
     resultDescKey: 'weapon.evolution.guardianSphere.desc',
   },
   {
-    weaponId: 'drone',
-    passiveId: 'magnet_module',
-    resultId: 'hivemind',
-    resultNameKey: 'weapon.evolution.hivemind.name',
-    resultDescKey: 'weapon.evolution.hivemind.desc',
-  },
-  {
     weaponId: 'emp_blast',
     passiveId: 'cooldown_chip',
     resultId: 'perpetual_emp',
@@ -499,15 +461,6 @@ export const EVOLVED_WEAPONS = [
     type: 'orbital',
     stats: {
       orbCount: 4, tickDamage: 28, orbRadius: 100, angularSpeed: 16.0, tickInterval: 280,
-    },
-  },
-  {
-    id: 'hivemind',
-    nameKey: 'weapon.evolution.hivemind.name',
-    descKey: 'weapon.evolution.hivemind.desc',
-    type: 'summon',
-    stats: {
-      droneCount: 4, damage: 40, cooldown: 600, shootRange: 180, moveSpeed: 650,
     },
   },
   {

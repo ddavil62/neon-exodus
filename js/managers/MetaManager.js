@@ -2,9 +2,11 @@
  * @fileoverview 영구 업그레이드 관리 매니저.
  * 크레딧을 소모하여 영구 업그레이드를 구매하고,
  * 런 시작 시 적용할 통합 보너스를 계산한다.
+ * 기본 업그레이드(UPGRADES)와 드론 업그레이드(DRONE_UPGRADES)를 통합 관리한다.
  */
 
 import { UPGRADES, getUpgradeById, areAllBasicMaxed } from '../data/upgrades.js';
+import { DRONE_UPGRADES, getDroneUpgradeById, areAllDroneMaxed } from '../data/droneUpgrades.js';
 import { SaveManager } from './SaveManager.js';
 
 // ── MetaManager 클래스 ──
@@ -14,25 +16,66 @@ import { SaveManager } from './SaveManager.js';
  * 싱글톤처럼 static 메서드로만 동작한다.
  */
 export class MetaManager {
+
+  // ── 내부 유틸 ──
+
+  /**
+   * UPGRADES 또는 DRONE_UPGRADES에서 업그레이드를 찾는다.
+   * @param {string} upgradeId - 업그레이드 ID
+   * @returns {Object|undefined}
+   * @private
+   */
+  static _findUpgrade(upgradeId) {
+    return getUpgradeById(upgradeId) || getDroneUpgradeById(upgradeId);
+  }
+
+  /**
+   * 드론 업그레이드인지 확인한다.
+   * @param {string} upgradeId - 업그레이드 ID
+   * @returns {boolean}
+   * @private
+   */
+  static _isDroneUpgrade(upgradeId) {
+    return !!getDroneUpgradeById(upgradeId);
+  }
+
+  // ── 레벨 조회/설정 ──
+
   /**
    * 특정 업그레이드의 현재 레벨을 반환한다.
    * @param {string} upgradeId - 업그레이드 ID
    * @returns {number} 현재 레벨 (미구매 시 0)
    */
   static getUpgradeLevel(upgradeId) {
+    if (MetaManager._isDroneUpgrade(upgradeId)) {
+      return SaveManager.getDroneUpgradeLevel(upgradeId);
+    }
     return SaveManager.getUpgradeLevel(upgradeId);
   }
 
   /**
+   * 특정 업그레이드의 레벨을 설정한다.
+   * @param {string} upgradeId - 업그레이드 ID
+   * @param {number} level - 설정할 레벨
+   * @private
+   */
+  static _setUpgradeLevel(upgradeId, level) {
+    if (MetaManager._isDroneUpgrade(upgradeId)) {
+      SaveManager.setDroneUpgradeLevel(upgradeId, level);
+    } else {
+      SaveManager.setUpgradeLevel(upgradeId, level);
+    }
+  }
+
+  // ── 구매 ──
+
+  /**
    * 업그레이드 구매 가능 여부를 확인한다.
-   * - 현재 레벨 < 최대 레벨
-   * - 비용 충족 (크레딧)
-   * - 해금 조건 충족 (limitBreak 카테고리: 기본 스탯 전부 최대 후 해금)
    * @param {string} upgradeId - 업그레이드 ID
    * @returns {boolean} 구매 가능 여부
    */
   static canUpgrade(upgradeId) {
-    const upgrade = getUpgradeById(upgradeId);
+    const upgrade = MetaManager._findUpgrade(upgradeId);
     if (!upgrade) return false;
 
     const currentLevel = MetaManager.getUpgradeLevel(upgradeId);
@@ -44,23 +87,19 @@ export class MetaManager {
     const cost = MetaManager.getUpgradeCost(upgradeId);
     if (SaveManager.getCredits() < cost) return false;
 
-    // 해금 조건 확인 (limitBreak 카테고리)
-    if (upgrade.unlockCondition === 'allBasicMaxed') {
-      const upgradeLevels = SaveManager.getData().upgrades;
-      if (!areAllBasicMaxed(upgradeLevels)) return false;
-    }
+    // 해금 조건 확인
+    if (!MetaManager.isUnlocked(upgradeId)) return false;
 
     return true;
   }
 
   /**
    * 업그레이드 해금 조건이 충족되었는지 확인한다.
-   * 해금 조건이 없으면 true를 반환한다.
    * @param {string} upgradeId - 업그레이드 ID
    * @returns {boolean} 해금 여부
    */
   static isUnlocked(upgradeId) {
-    const upgrade = getUpgradeById(upgradeId);
+    const upgrade = MetaManager._findUpgrade(upgradeId);
     if (!upgrade) return false;
 
     if (!upgrade.unlockCondition) return true;
@@ -70,17 +109,21 @@ export class MetaManager {
       return areAllBasicMaxed(upgradeLevels);
     }
 
+    if (upgrade.unlockCondition === 'allDroneMaxed') {
+      const droneLevels = SaveManager.getData().droneUpgrades || {};
+      return areAllDroneMaxed(droneLevels);
+    }
+
     return true;
   }
 
   /**
    * 특정 업그레이드의 현재 비용을 계산한다.
-   * costFormula는 다음 레벨(1-indexed)을 인자로 받는다: cost x (currentLevel + 1).
    * @param {string} upgradeId - 업그레이드 ID
    * @returns {number} 구매 비용 (업그레이드가 없거나 최대 레벨이면 Infinity)
    */
   static getUpgradeCost(upgradeId) {
-    const upgrade = getUpgradeById(upgradeId);
+    const upgrade = MetaManager._findUpgrade(upgradeId);
     if (!upgrade) return Infinity;
 
     const currentLevel = MetaManager.getUpgradeLevel(upgradeId);
@@ -92,7 +135,6 @@ export class MetaManager {
 
   /**
    * 업그레이드를 구매한다.
-   * 비용을 차감하고 레벨을 증가시킨 뒤 세이브한다.
    * @param {string} upgradeId - 업그레이드 ID
    * @returns {boolean} 구매 성공 여부
    */
@@ -106,19 +148,20 @@ export class MetaManager {
     SaveManager.addCredits(-cost);
 
     // 레벨 증가
-    SaveManager.setUpgradeLevel(upgradeId, currentLevel + 1);
+    MetaManager._setUpgradeLevel(upgradeId, currentLevel + 1);
 
     return true;
   }
 
+  // ── 다운그레이드 ──
+
   /**
    * 업그레이드 다운그레이드 가능 여부를 확인한다.
-   * 현재 레벨 > 0이고 업그레이드 데이터가 존재하면 가능.
    * @param {string} upgradeId - 업그레이드 ID
    * @returns {boolean} 다운그레이드 가능 여부
    */
   static canDowngrade(upgradeId) {
-    const upgrade = getUpgradeById(upgradeId);
+    const upgrade = MetaManager._findUpgrade(upgradeId);
     if (!upgrade) return false;
 
     const currentLevel = MetaManager.getUpgradeLevel(upgradeId);
@@ -127,18 +170,16 @@ export class MetaManager {
 
   /**
    * 업그레이드 다운그레이드 시 환불액을 계산한다.
-   * costFormula는 1-indexed 레벨을 인자로 받으므로 현재 레벨 그대로 전달한다.
    * @param {string} upgradeId - 업그레이드 ID
-   * @returns {number} 환불액 (레벨 0이거나 업그레이드가 없으면 0)
+   * @returns {number} 환불액
    */
   static getDowngradeRefund(upgradeId) {
-    const upgrade = getUpgradeById(upgradeId);
+    const upgrade = MetaManager._findUpgrade(upgradeId);
     if (!upgrade) return 0;
 
     const currentLevel = MetaManager.getUpgradeLevel(upgradeId);
     if (currentLevel <= 0) return 0;
 
-    // 현재 레벨 구매 시 지불한 비용을 환불
     return upgrade.costFormula(currentLevel);
   }
 
@@ -157,22 +198,18 @@ export class MetaManager {
     SaveManager.addCredits(refund);
 
     // 레벨 감소
-    SaveManager.setUpgradeLevel(upgradeId, currentLevel - 1);
+    MetaManager._setUpgradeLevel(upgradeId, currentLevel - 1);
 
     return true;
   }
 
+  // ── 보너스 계산 ──
+
   /**
    * 모든 영구 업그레이드의 현재 레벨을 기반으로 통합 플레이어 보너스를 계산한다.
-   * 런 시작 시 이 값을 적용하여 플레이어 능력치를 결정한다.
    * @returns {Object} 통합 보너스 객체
    */
   static getPlayerBonuses() {
-    /**
-     * 업그레이드 ID로 현재 레벨을 간편 조회한다.
-     * @param {string} id - 업그레이드 ID
-     * @returns {number} 현재 레벨
-     */
     const lv = (id) => MetaManager.getUpgradeLevel(id);
 
     return {
@@ -208,13 +245,20 @@ export class MetaManager {
     };
   }
 
+  // ── 업그레이드 목록 ──
+
   /**
    * 전체 업그레이드 목록을 현재 레벨/비용 정보와 함께 반환한다.
    * UpgradeScene UI에서 사용하기 위한 데이터.
+   * @param {string} [category] - 특정 카테고리만 필터 (생략 시 전체)
    * @returns {Array<Object>} 업그레이드 데이터 + 현재 상태 배열
    */
-  static getAllUpgrades() {
-    return UPGRADES.map(upgrade => {
+  static getAllUpgrades(category) {
+    // 기본 + 드론 업그레이드를 합침
+    const all = [...UPGRADES, ...DRONE_UPGRADES];
+    const filtered = category ? all.filter(u => u.category === category) : all;
+
+    return filtered.map(upgrade => {
       const currentLevel = MetaManager.getUpgradeLevel(upgrade.id);
       const isMaxed = currentLevel >= upgrade.maxLevel;
       const isLocked = !MetaManager.isUnlocked(upgrade.id);
@@ -233,9 +277,8 @@ export class MetaManager {
   }
 
   /**
-   * 모든 영구 업그레이드가 최대 레벨인지 확인한다.
-   * 풀 업그레이드 도전과제 확인용.
-   * @returns {boolean} 모든 업그레이드가 최대 레벨인지 여부
+   * 모든 기본 영구 업그레이드가 최대 레벨인지 확인한다.
+   * @returns {boolean}
    */
   static areAllMaxed() {
     return UPGRADES.every(u => MetaManager.getUpgradeLevel(u.id) >= u.maxLevel);

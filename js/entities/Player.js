@@ -157,8 +157,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     /** HP 재생 배수 (메딕 패시브: x2.0) */
     this.regenMultiplier = 1.0;
 
-    /** 드론 소환 보너스 (engineer: +1, 드론 droneCount에 더함) */
-    this.droneSummonBonus = 0;
+    /** 드론 데미지 보너스 (engineer: +30%) */
+    this.droneDamageBonus = 0;
 
     /** 레벨업 무기 추천 가중치 (hidden: 2.0) */
     this.weaponChoiceBias = 1.0;

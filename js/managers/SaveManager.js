@@ -23,6 +23,8 @@ const DEFAULT_SAVE = {
   autoHuntUnlocked: false,  // 자동 사냥 IAP 구매 여부
   autoHuntEnabled: false,   // 마지막 런의 자동 사냥 토글 상태 (다음 런에 자동 적용)
   upgradeUnlocked: false,   // 메타 업그레이드(연구소) 해금 여부
+  droneUnlocked: false,     // 메타 드론 동반자 해금 여부
+  droneUpgrades: {},        // { droneUpgradeId: level }
   cutscenesSeen: {},        // { cutsceneId: true }
   stageClears: {},          // { stageId: 클리어 횟수 }
   unlockedWeapons: [],      // 스테이지 해금 무기 ID 배열
@@ -485,6 +487,47 @@ export class SaveManager {
     SaveManager.save();
   }
 
+  // ── 메타 드론 해금 ──
+
+  /**
+   * 메타 드론 동반자가 해금되었는지 확인한다.
+   * @returns {boolean}
+   */
+  static isDroneUnlocked() {
+    return SaveManager.getData().droneUnlocked === true;
+  }
+
+  /**
+   * 메타 드론 동반자를 해금 처리하고 세이브한다.
+   */
+  static setDroneUnlocked() {
+    const data = SaveManager.getData();
+    data.droneUnlocked = true;
+    SaveManager.save();
+  }
+
+  /**
+   * 드론 업그레이드의 현재 레벨을 반환한다.
+   * @param {string} id - 드론 업그레이드 ID
+   * @returns {number} 현재 레벨 (미구매 시 0)
+   */
+  static getDroneUpgradeLevel(id) {
+    const data = SaveManager.getData();
+    return (data.droneUpgrades && data.droneUpgrades[id]) || 0;
+  }
+
+  /**
+   * 드론 업그레이드의 레벨을 설정한다.
+   * @param {string} id - 드론 업그레이드 ID
+   * @param {number} level - 설정할 레벨
+   */
+  static setDroneUpgradeLevel(id, level) {
+    const data = SaveManager.getData();
+    if (!data.droneUpgrades) data.droneUpgrades = {};
+    data.droneUpgrades[id] = level;
+    SaveManager.save();
+  }
+
   // ── 초기화 ──
 
   /**
@@ -619,6 +662,19 @@ export class SaveManager {
                         (data.stats && data.stats.totalRuns > 0);
       data.upgradeUnlocked = !!hasPlayed;
       data.version = 9;
+    }
+
+    // v9 → v10: 메타 드론 동반자 해금 + 드론 업그레이드 필드 추가
+    // 기존 유저: 스테이지 2 이상 클리어 이력이 있으면 드론 자동 해금
+    if (data.version < 10) {
+      const hasStage2 = data.stageClears && (
+        data.stageClears['stage_2'] > 0 ||
+        data.stageClears['stage_3'] > 0 ||
+        data.stageClears['stage_4'] > 0
+      );
+      data.droneUnlocked = !!hasStage2;
+      if (!data.droneUpgrades) data.droneUpgrades = {};
+      data.version = 10;
     }
 
     data.version = SAVE_DATA_VERSION;

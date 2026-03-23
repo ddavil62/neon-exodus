@@ -19,7 +19,6 @@ const EVOLVED_TEXTURE_MAP = {
   precision_cannon: 'effect_precision_cannon',
   guardian_sphere:  'effect_guardian_sphere',
   nuke_missile:     'effect_nuke_missile',
-  hivemind:         'effect_hivemind',
   perpetual_emp:    'effect_perpetual_emp',
   phantom_strike:   'effect_phantom_strike',
   bioplasma:        'effect_bioplasma',
@@ -83,12 +82,6 @@ export default class WeaponSystem {
     /** 체인 번개 시각 효과 Graphics 객체 */
     this._chainGraphics = null;
 
-    /** 드론 GameObject 배열 (summon 타입) */
-    this._drones = [];
-
-    /** 드론 호버링 각도 오프셋 */
-    this._droneHoverAngle = 0;
-
     /**
      * 무기별 통계 맵 (weaponId → { kills, damage }).
      * 런 동안 각 무기의 킬 수와 총 데미지를 추적한다.
@@ -142,11 +135,6 @@ export default class WeaponSystem {
     // 도감에 무기 등록
     SaveManager.addToCollection('weaponsSeen', weaponId);
 
-    // summon 타입이면 드론 스폰
-    if (baseData.type === 'summon') {
-      this._spawnDrones(weaponId);
-    }
-
     return true;
   }
 
@@ -168,11 +156,6 @@ export default class WeaponSystem {
     }
 
     weapon.level++;
-
-    // summon 타입 레벨업 시 드론 수 갱신
-    if (weapon.data.type === 'summon') {
-      this._spawnDrones(weapon.id);
-    }
 
     return true;
   }
@@ -244,17 +227,6 @@ export default class WeaponSystem {
         chainCount: lvData.chainCount || 2,
         chainRange: lvData.chainRange || 120,
         chainDecay: lvData.chainDecay || 0.80,
-      };
-    }
-
-    // summon 타입 무기 (드론)
-    if (data.type === 'summon') {
-      return {
-        droneCount: lvData.droneCount || 1,
-        damage: lvData.damage || 12,
-        cooldown: lvData.cooldown || 1000,
-        shootRange: lvData.shootRange || 120,
-        moveSpeed: lvData.moveSpeed || 150,
       };
     }
 
@@ -390,8 +362,6 @@ export default class WeaponSystem {
         this._updateChain(weapon, time, delta);
       } else if (weaponType === 'homing') {
         this._updateHoming(weapon, time, delta);
-      } else if (weaponType === 'summon') {
-        this._updateDrones(weapon, time, delta);
       } else if (weaponType === 'aoe') {
         this._updateAoe(weapon, time, delta);
       } else if (weaponType === 'melee') {
@@ -1209,181 +1179,6 @@ export default class WeaponSystem {
     });
   }
 
-  // ── 소환(드론) 타입 업데이트 ──
-
-  /**
-   * 드론을 스폰한다. 부족한 수만큼 생성, 초과분은 제거한다.
-   * @param {string} weaponId - 무기 ID
-   * @private
-   */
-  _spawnDrones(weaponId) {
-    const weapon = this.getWeapon(weaponId);
-    if (!weapon) return;
-
-    const stats = this.getWeaponStats(weapon);
-    // engineer 패시브 droneSummonBonus 적용
-    const targetCount = stats.droneCount + (this.player.droneSummonBonus || 0);
-
-    // 현재 드론 수와 목표 드론 수 비교
-    const currentCount = this._drones.filter(d => d.weaponId === weaponId && d.active).length;
-
-    if (currentCount >= targetCount) return;
-
-    const toSpawn = targetCount - currentCount;
-    for (let i = 0; i < toSpawn; i++) {
-      // 드론 스프라이트 생성 (진화 시 전용 텍스처)
-      const droneTex = weapon._evolvedId && EVOLVED_TEXTURE_MAP[weapon._evolvedId]
-        ? EVOLVED_TEXTURE_MAP[weapon._evolvedId] : 'effect_drone';
-      const offsetAngle = Math.random() * Math.PI * 2;
-      const startX = this.player.x + Math.cos(offsetAngle) * 40;
-      const startY = this.player.y + Math.sin(offsetAngle) * 40;
-
-      const sprite = this.scene.add.image(startX, startY, droneTex).setDepth(6);
-
-      // Arcade Physics 동적 바디 등록
-      this.scene.physics.add.existing(sprite);
-      sprite.body.setCircle(8, 4, 4);
-
-      // gfx를 sprite로 매핑 (기존 API 호환)
-      const gfx = sprite;
-
-      const drone = {
-        gfx,
-        weaponId,
-        lastFired: 0,
-        targetEnemy: null,
-        active: true,
-        hoverOffset: Math.random() * Math.PI * 2,
-        /** 궤도 위상 각도 — 드론별 고유값으로 겹침 방지 */
-        orbitPhase: Math.random() * Math.PI * 2,
-      };
-
-      this._drones.push(drone);
-    }
-  }
-
-  /**
-   * 드론 AI를 매 프레임 업데이트한다.
-   * @param {Object} weapon - 무기 객체
-   * @param {number} time - 전체 경과 시간 (ms)
-   * @param {number} delta - 프레임 간격 (ms)
-   * @private
-   */
-  _updateDrones(weapon, time, delta) {
-    const stats = this.getWeaponStats(weapon);
-    const deltaSec = delta / 1000;
-    this._droneHoverAngle += deltaSec * 2; // 호버링 회전
-
-    for (const drone of this._drones) {
-      if (!drone.active || drone.weaponId !== weapon.id) continue;
-
-      const gfx = drone.gfx;
-
-      // 1. 플레이어 기준 가장 가까운 활성 적을 타겟으로 설정
-      drone.targetEnemy = this.findClosestEnemy(this.player.x, this.player.y, stats.shootRange * 2);
-
-      if (drone.targetEnemy && drone.targetEnemy.active) {
-        // 2. 타겟 주변을 선회하며 동시에 공격 (이동+공격 병행)
-        const dx = drone.targetEnemy.x - gfx.x;
-        const dy = drone.targetEnemy.y - gfx.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        // ── 이동: 적 주변 궤도를 미끄러지듯 선회 ──
-        const orbitRadius = stats.shootRange * 0.6;
-
-        if (dist > orbitRadius + 30) {
-          // 궤도 밖이면 적에게 접근
-          const moveX = (dx / dist) * stats.moveSpeed * deltaSec;
-          const moveY = (dy / dist) * stats.moveSpeed * deltaSec;
-          gfx.setPosition(gfx.x + moveX, gfx.y + moveY);
-        } else {
-          // 궤도 근처이면 적을 중심으로 원형 선회 (dronePhase로 드론별 위치 분산)
-          const orbitSpeed = 1.8; // rad/sec — 선회 속도
-          drone.orbitPhase += orbitSpeed * deltaSec;
-          const targetX = drone.targetEnemy.x + Math.cos(drone.orbitPhase) * orbitRadius;
-          const targetY = drone.targetEnemy.y + Math.sin(drone.orbitPhase) * orbitRadius;
-
-          const toDx = targetX - gfx.x;
-          const toDy = targetY - gfx.y;
-          const toDist = Math.sqrt(toDx * toDx + toDy * toDy);
-          if (toDist > 1) {
-            const speed = Math.min(stats.moveSpeed * deltaSec, toDist);
-            gfx.setPosition(gfx.x + (toDx / toDist) * speed, gfx.y + (toDy / toDist) * speed);
-          }
-        }
-
-        // ── 공격: 사거리 내이면 이동과 무관하게 발사 ──
-        if (dist <= stats.shootRange) {
-          drone.lastFired += delta;
-          const effectiveCooldown = stats.cooldown * (this.player.cooldownMultiplier || 1);
-          if (drone.lastFired >= effectiveCooldown) {
-            drone.lastFired = 0;
-            this._droneFire(drone, drone.targetEnemy, weapon);
-          }
-        }
-      } else {
-        // 3. 타겟 없으면 플레이어 주변 호버링 (반경 60px, 사인/코사인 자유 이동)
-        const angle = this._droneHoverAngle + drone.hoverOffset;
-        const targetX = this.player.x + Math.cos(angle) * 60;
-        const targetY = this.player.y + Math.sin(angle) * 60;
-
-        const dx = targetX - gfx.x;
-        const dy = targetY - gfx.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist > 2) {
-          const speed = Math.min(stats.moveSpeed * deltaSec, dist);
-          gfx.setPosition(
-            gfx.x + (dx / dist) * speed,
-            gfx.y + (dy / dist) * speed
-          );
-        }
-
-        drone.lastFired = 0;
-      }
-
-      // 호버링 미세 회전 (스프라이트 흔들림)
-      gfx.rotation = Math.sin(time * 0.003 + drone.hoverOffset) * 0.2;
-    }
-  }
-
-  /**
-   * 드론이 투사체를 발사한다.
-   * @param {Object} drone - 드론 데이터
-   * @param {Object} target - 타겟 적
-   * @param {Object} weapon - 무기 객체
-   * @private
-   */
-  _droneFire(drone, target, weapon) {
-    const stats = this.getWeaponStats(weapon);
-    const gfx = drone.gfx;
-
-    const dx = target.x - gfx.x;
-    const dy = target.y - gfx.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist === 0) return;
-
-    const dirX = dx / dist;
-    const dirY = dy / dist;
-
-    // 데미지에 attackMultiplier 적용
-    const atkMult = this.player.getEffectiveAttackMultiplier
-      ? this.player.getEffectiveAttackMultiplier()
-      : (this.player.attackMultiplier || 1);
-    const baseDamage = Math.floor(stats.damage * atkMult);
-    const { damage: finalDamage, isCrit } = this._rollCrit(baseDamage);
-
-    // 투사체 풀에서 가져와 발사
-    const proj = this.projectilePool.get(gfx.x, gfx.y);
-    if (proj) {
-      proj.fire(gfx.x, gfx.y, dirX, dirY, finalDamage, 350, 1);
-      proj.isCrit = isCrit;
-      proj.weaponId = weapon.id;
-    }
-
-    SoundSystem.play('shoot');
-  }
-
   // ── 범위(AoE) 타입 업데이트 ──
 
   /**
@@ -2005,12 +1800,6 @@ export default class WeaponSystem {
       }
     }
 
-    // 드론(summon) — drone → hivemind
-    for (const drone of this._drones) {
-      if (drone.weaponId === weapon.id && drone.active && drone.sprite) {
-        drone.sprite.setTexture(texKey);
-      }
-    }
   }
 
   /**
@@ -2155,12 +1944,6 @@ export default class WeaponSystem {
       this._chainGraphics.destroy();
       this._chainGraphics = null;
     }
-
-    // 드론 제거
-    for (const drone of this._drones) {
-      if (drone.gfx) drone.gfx.destroy();
-    }
-    this._drones = [];
 
     // 구름 제거
     for (const cloud of this._clouds) {

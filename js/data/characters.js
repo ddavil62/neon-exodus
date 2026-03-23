@@ -44,10 +44,10 @@ export const CHARACTERS = [
     descKey: 'character.engineer.desc',
     passiveKey: 'character.engineer.passive',
     unlockKey: 'character.engineer.unlock',
-    startWeapon: 'drone',
+    startWeapon: 'blaster',
     uniquePassive: {
-      stat: 'droneSummonBonus',
-      value: 1,
+      stat: 'droneDamageBonus',
+      value: 0.30,
     },
     unlockCondition: {
       type: 'totalClears',

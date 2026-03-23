@@ -1,7 +1,7 @@
 /**
  * @fileoverview 영구 업그레이드 구매 씬.
  *
- * 4개 탭(기본 스탯/성장 가속/특수/한계돌파)으로 구성된 카드 그리드 방식 UI.
+ * 5개 탭(기본 스탯/성장 가속/특수/드론/한계돌파)으로 구성된 카드 그리드 방식 UI.
  * MetaManager를 통해 크레딧을 소모하여 업그레이드를 구매한다.
  * 360x640 화면에서 스크롤 없이 최대 4행 x 2열 표시.
  */
@@ -10,7 +10,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t } from '../i18n.js';
 import { MetaManager } from '../managers/MetaManager.js';
 import { SaveManager } from '../managers/SaveManager.js';
-import { getUpgradesByCategory } from '../data/upgrades.js';
+
 
 // ── 카테고리 탭 정의 ──
 
@@ -19,6 +19,7 @@ const TABS = [
   { key: 'basic', labelKey: 'upgrade.category.basic' },
   { key: 'growth', labelKey: 'upgrade.category.growth' },
   { key: 'special', labelKey: 'upgrade.category.special' },
+  { key: 'drone', labelKey: 'upgrade.category.drone' },
   { key: 'limitBreak', labelKey: 'upgrade.category.limitBreak' },
 ];
 
@@ -77,7 +78,7 @@ export default class UpgradeScene extends Phaser.Scene {
       fontSize: '14px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
-      backgroundColor: '#1A1A2E',
+      backgroundColor: UI_COLORS.panelBgStr,
       padding: { x: 8, y: 4 },
     }).setInteractive({ useHandCursor: true });
 
@@ -115,12 +116,12 @@ export default class UpgradeScene extends Phaser.Scene {
   // ── 탭 ──
 
   /**
-   * 탭 버튼 4개를 생성한다.
+   * 탭 버튼 5개를 생성한다.
    * @private
    */
   _createTabs() {
     const tabY = 75;
-    const tabW = 80;
+    const tabW = 64;
     const tabH = 28;
     const totalW = TABS.length * tabW + (TABS.length - 1) * 4;
     const startX = (GAME_WIDTH - totalW) / 2 + tabW / 2;
@@ -186,6 +187,28 @@ export default class UpgradeScene extends Phaser.Scene {
     this._cardElements = [];
 
     const tab = TABS[this._currentTab];
+
+    // 드론 탭: 해금 전이면 전체 잠금 메시지 표시
+    if (tab.key === 'drone' && !SaveManager.isDroneUnlocked()) {
+      const centerX = GAME_WIDTH / 2;
+      const centerY = GRID_START_Y + 120;
+
+      const lockIcon = this.add.text(centerX, centerY - 20, '🔒', {
+        fontSize: '28px',
+      }).setOrigin(0.5);
+      this._cardElements.push(lockIcon);
+
+      const lockMsg = this.add.text(centerX, centerY + 16, t('upgrade.droneLockedHint'), {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.textSecondary,
+        wordWrap: { width: 280 },
+        align: 'center',
+      }).setOrigin(0.5);
+      this._cardElements.push(lockMsg);
+      return;
+    }
+
     const upgrades = MetaManager.getAllUpgrades().filter(u => u.category === tab.key);
 
     const gridStartX = (GAME_WIDTH - (GRID_COLS * CARD_W + (GRID_COLS - 1) * CARD_GAP_X)) / 2 + CARD_W / 2;
@@ -242,8 +265,11 @@ export default class UpgradeScene extends Phaser.Scene {
       }).setOrigin(0.5);
       this._cardElements.push(lockText);
 
-      // 잠금 안내 텍스트
-      const hintText = this.add.text(x, y + 18, t('upgrade.limitBreakHint'), {
+      // 잠금 안내 텍스트 (해금 조건에 따라 다른 힌트)
+      const hintKey = upgrade.unlockCondition === 'allDroneMaxed'
+        ? 'upgrade.droneHivemindHint'
+        : 'upgrade.limitBreakHint';
+      const hintText = this.add.text(x, y + 18, t(hintKey), {
         fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
@@ -284,7 +310,7 @@ export default class UpgradeScene extends Phaser.Scene {
     const descText = this.add.text(x, y + 2, t(upgrade.descKey), {
       fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
-      color: '#BBBBBB',
+      color: UI_COLORS.textMuted,
       wordWrap: { width: w - 16 },
       align: 'center',
     }).setOrigin(0.5);
