@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-03-24 -- 난이도 모드 시스템 (Normal / Hard / Nightmare)
+
+### 추가
+- `js/data/stages.js`: `DIFFICULTY_MODES` (3단계 난이도 배율/보상 데이터), `DIFFICULTY_ORDER`, `DC_REWARD_DEATH` 상수
+- `js/managers/SaveManager.js`: `getSelectedDifficulty()`, `setSelectedDifficulty()`, `isDifficultyUnlocked()` 신규 메서드 3개
+- `js/managers/SaveManager.js`: v10->v11 마이그레이션 (stageClears 구조 변환 숫자->객체, selectedDifficulty 필드)
+- `js/data/achievements.js`: 난이도 업적 5개 (hard_first_clear, hard_all_clear, nightmare_first_clear, nightmare_all_clear, nightmare_no_damage)
+- `js/managers/AchievementManager.js`: 난이도 업적 체크 로직 5개 (hardClear, hardAllClear, nightmareClear, nightmareAllClear, nightmareNoDamage)
+- `js/i18n.js`: 난이도/업적 관련 i18n 키 약 15개 추가
+
+### 변경
+- `js/config.js`: `SAVE_DATA_VERSION` 10 -> 11
+- `js/managers/SaveManager.js`: DEFAULT_SAVE에 `selectedDifficulty: 'normal'` 추가, `stageClears` 구조 변경 (`{ stageId: n }` -> `{ stageId: { normal: n, hard: n, nightmare: n } }`)
+- `js/managers/SaveManager.js`: `clearStage(stageId, difficulty)`, `isStageClear(stageId, difficulty)`, `getStageClearCount(stageId, difficulty)` API에 difficulty 파라미터 추가
+- `js/scenes/StageSelectScene.js`: 선택 카드 확장(92->136px), 난이도 버튼 3개(각 36px 높이), 보상 정보 텍스트 표시
+- `js/scenes/GameScene.js`: `init()`에 difficulty 수신, HUD 좌상단(y=44)에 난이도 배지(Hard/Nightmare만), WaveSystem에 difficultyMode 전달, `clearStage(stageId, difficulty)` 호출, resultData에 difficulty 추가
+- `js/scenes/ResultScene.js`: difficulty init, 크레딧 배율(creditMult) 적용, 데이터코어 보상(dcReward/DC_REWARD_DEATH) 지급 + UI 표시
+- `js/scenes/CharacterScene.js`: GameScene 전환 시 `difficulty: SaveManager.getSelectedDifficulty()` 전달
+- `js/systems/WaveSystem.js`: 생성자에 `difficultyMode` 파라미터 추가, `_diffHpMult`/`_diffAtkMult`/`_diffSpdMult` 배율 적용 (HP/ATK는 stageDiffMult와 곱셈, SPD는 독립 적용)
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-23-difficulty-mode-purpose.md`
+- 스펙: `.claude/specs/2026-03-23-difficulty-mode.md`
+- 구현 리포트: `.claude/specs/2026-03-23-difficulty-mode-report.md`
+- QA: `.claude/specs/2026-03-23-difficulty-mode-qa.md`
+- QA 결과: 수용기준 21/21 충족, 예외 시나리오 7/7 PASS, Playwright 30/30 전체 통과
+- 변경 파일: `js/data/stages.js`, `js/config.js`, `js/managers/SaveManager.js`, `js/scenes/StageSelectScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`, `js/scenes/CharacterScene.js`, `js/systems/WaveSystem.js`, `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/i18n.js` 총 11개
+- 스펙 대비 차이 (의도적 개선, AD 모드3 APPROVED):
+  - CARD_H_EXPANDED: 스펙 122px -> 구현 136px (버튼 36px + 보상 텍스트 공간 확보)
+  - 난이도 버튼 높이: 스펙 22px -> 구현 36px (모바일 터치 타겟 최소 기준 근접)
+  - HUD 배지 Y: 스펙 y=8 -> 구현 y=44 (HP/XP 바와 겹침 방지)
+- 업적 보상 형식: 기존 코드베이스 패턴(`{ type: 'credits', amount: 200 }`)과 일치. 스펙 표기(`{ credits: 200 }`)와 형식 차이가 있으나 실제 구현이 올바름
+
 ## 2026-03-23 -- 도감 업적 탭 제거 및 도전과제 보상 정보 추가
 
 ### 변경

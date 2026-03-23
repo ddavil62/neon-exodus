@@ -58,6 +58,13 @@ const TRANSLATIONS = {
     'levelup.allMaxed': '모든 업그레이드 완료!',
     'levelup.skip': '스킵',
 
+    // ── 난이도 ──
+    'difficulty.normal': '일반',
+    'difficulty.hard': '하드',
+    'difficulty.nightmare': '나이트메어',
+    'difficulty.locked': '{0} 클리어 필요',
+    'difficulty.reward': '보상 x{0} | DC +{1}',
+
     // ── 결과 화면 ──
     'result.victory': 'RUN CLEAR!',
     'result.defeat': 'GAME OVER',
@@ -66,6 +73,8 @@ const TRANSLATIONS = {
     'result.level': '도달 레벨: {0}',
     'result.creditsEarned': '획득 크레딧: +{0}',
     'result.dataCoreEarned': '획득 데이터 코어: +{0}',
+    'result.creditMult': '크레딧: +{0} (x{1})',
+    'result.dataCores': '데이터코어: +{0}',
     'result.bonusCredit': '클리어 보너스: +{0}',
     'result.continue': '계속',
     'result.retry': '재도전',
@@ -595,6 +604,18 @@ const TRANSLATIONS = {
     'achievement.enemy_collector.name': '적 도감 완성',
     'achievement.enemy_collector.desc': '모든 적 도감 완성',
 
+    // ── 도전과제: 난이도 ──
+    'achievement.hard_first_clear.name': '하드코어 입문',
+    'achievement.hard_first_clear.desc': '하드 모드 첫 클리어',
+    'achievement.hard_all_clear.name': '하드코어 정복',
+    'achievement.hard_all_clear.desc': '모든 스테이지 하드 클리어',
+    'achievement.nightmare_first_clear.name': '악몽의 시작',
+    'achievement.nightmare_first_clear.desc': '나이트메어 모드 첫 클리어',
+    'achievement.nightmare_all_clear.name': '악몽 정복자',
+    'achievement.nightmare_all_clear.desc': '모든 스테이지 나이트메어 클리어',
+    'achievement.nightmare_no_damage.name': '무적의 존재',
+    'achievement.nightmare_no_damage.desc': '나이트메어 무피격 클리어',
+
     // ── 도전과제: 보상/상태 ──
     'achievement.reward.credits': '보상: 크레딧 {0}',
     'achievement.reward.dataCore': '보상: 데이터 코어 {0}',
@@ -870,6 +891,13 @@ const TRANSLATIONS = {
     'levelup.allMaxed': 'All Upgrades Maxed!',
     'levelup.skip': 'Skip',
 
+    // ── Difficulty ──
+    'difficulty.normal': 'Normal',
+    'difficulty.hard': 'Hard',
+    'difficulty.nightmare': 'Nightmare',
+    'difficulty.locked': 'Clear {0} first',
+    'difficulty.reward': 'Reward x{0} | DC +{1}',
+
     // ── Result ──
     'result.victory': 'RUN CLEAR!',
     'result.defeat': 'GAME OVER',
@@ -878,6 +906,8 @@ const TRANSLATIONS = {
     'result.level': 'Level Reached: {0}',
     'result.creditsEarned': 'Credits: +{0}',
     'result.dataCoreEarned': 'Data Cores: +{0}',
+    'result.creditMult': 'Credits: +{0} (x{1})',
+    'result.dataCores': 'Data Cores: +{0}',
     'result.bonusCredit': 'Clear Bonus: +{0}',
     'result.continue': 'Continue',
     'result.retry': 'Retry',
@@ -1406,6 +1436,18 @@ const TRANSLATIONS = {
     'achievement.playtime_24h.desc': 'Total play time: 24 hours',
     'achievement.enemy_collector.name': 'Enemy Collector',
     'achievement.enemy_collector.desc': 'Complete enemy collection',
+
+    // ── Achievements: Difficulty ──
+    'achievement.hard_first_clear.name': 'Hardcore Initiation',
+    'achievement.hard_first_clear.desc': 'Clear Hard mode for the first time',
+    'achievement.hard_all_clear.name': 'Hardcore Conquest',
+    'achievement.hard_all_clear.desc': 'Clear all stages on Hard',
+    'achievement.nightmare_first_clear.name': 'Nightmare Begins',
+    'achievement.nightmare_first_clear.desc': 'Clear Nightmare mode for the first time',
+    'achievement.nightmare_all_clear.name': 'Nightmare Conqueror',
+    'achievement.nightmare_all_clear.desc': 'Clear all stages on Nightmare',
+    'achievement.nightmare_no_damage.name': 'Invincible',
+    'achievement.nightmare_no_damage.desc': 'Clear Nightmare without taking damage',
 
     // ── Achievements: Reward/Status ──
     'achievement.reward.credits': 'Reward: {0} Credits',

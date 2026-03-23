@@ -12,10 +12,12 @@
  * - allUpgradesMaxed
  * - characterClear, characterClearCount, allCharacterClears
  * - maxLevel, stageClear, allStagesClear, totalPlayTime
+ * - hardClear, hardAllClear, nightmareClear, nightmareAllClear, nightmareNoDamage
  */
 
 import { ACHIEVEMENTS, getAchievementById } from '../data/achievements.js';
 import { SaveManager } from './SaveManager.js';
+import { STAGE_ORDER } from '../data/stages.js';
 
 // ── 상수 ──
 
@@ -65,6 +67,8 @@ export class AchievementManager {
    * @param {string} [runData.characterId] - 사용 캐릭터 ID
    * @param {string} [runData.stageId] - 플레이한 스테이지 ID
    * @param {boolean} [runData.victory] - 클리어 여부
+   * @param {string} [runData.difficulty] - 플레이한 난이도 ('normal' | 'hard' | 'nightmare')
+   * @param {boolean} [runData.tookDamage] - 런 중 피격 여부
    */
   static checkAll(stats, runData = {}) {
     for (const achievement of ACHIEVEMENTS) {
@@ -292,6 +296,23 @@ export class AchievementManager {
       case 'totalPlayTime':
         // totalPlayTime은 초 단위로 저장
         return (stats.totalPlayTime || 0) >= condition.value;
+
+      // ── 난이도 관련 ──
+      case 'hardClear':
+        return STAGE_ORDER.some(id => SaveManager.getStageClearCount(id, 'hard') >= condition.count);
+
+      case 'hardAllClear':
+        return STAGE_ORDER.every(id => SaveManager.getStageClearCount(id, 'hard') >= 1);
+
+      case 'nightmareClear':
+        return STAGE_ORDER.some(id => SaveManager.getStageClearCount(id, 'nightmare') >= condition.count);
+
+      case 'nightmareAllClear':
+        return STAGE_ORDER.every(id => SaveManager.getStageClearCount(id, 'nightmare') >= 1);
+
+      case 'nightmareNoDamage':
+        // 런 데이터에서 체크: 나이트메어 + 승리 + 무피격
+        return runData?.victory && runData?.difficulty === 'nightmare' && !runData?.tookDamage;
 
       default:
         return false;

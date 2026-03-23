@@ -9,12 +9,14 @@
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
-import { STAGES, STAGE_ORDER } from '../data/stages.js';
+import { STAGES, STAGE_ORDER, DIFFICULTY_MODES, DIFFICULTY_ORDER } from '../data/stages.js';
 
 // ── 레이아웃 상수 ──
 
 const CARD_W = 300;
 const CARD_H = 92;
+/** 선택된 스테이지 카드 확장 높이 (난이도 버튼 영역 +30px) */
+const CARD_H_EXPANDED = 136;
 const CARD_GAP = 10;
 const LIST_START_Y = 90;
 
@@ -44,15 +46,14 @@ export default class StageSelectScene extends Phaser.Scene {
     // 현재 선택된 스테이지
     this._selectedId = SaveManager.getSelectedStage() || 'stage_1';
 
+    // 현재 선택된 난이도 (SaveManager에서 복원)
+    this._selectedDifficulty = SaveManager.getSelectedDifficulty() || 'normal';
+
     // ── 스테이지 카드 생성 ──
     this._cardElements = [];
     this._container = this.add.container(0, 0);
 
-    STAGE_ORDER.forEach((stageId, i) => {
-      const stageData = STAGES[stageId];
-      const cardY = LIST_START_Y + i * (CARD_H + CARD_GAP) + CARD_H / 2;
-      this._createStageCard(centerX, cardY, stageData);
-    });
+    this._renderCards(centerX);
 
     // ── 하단 버튼 ──
     const btnY = GAME_HEIGHT - 60;
@@ -79,6 +80,27 @@ export default class StageSelectScene extends Phaser.Scene {
     this.scene.start('MenuScene');
   }
 
+  // ── 카드 렌더링 ──
+
+  /**
+   * 전체 스테이지 카드를 렌더링한다.
+   * 선택된 스테이지 카드는 확장(+30px)하여 난이도 버튼을 표시한다.
+   * @param {number} centerX - 화면 중심 X
+   * @private
+   */
+  _renderCards(centerX) {
+    let curY = LIST_START_Y;
+    STAGE_ORDER.forEach((stageId) => {
+      const stageData = STAGES[stageId];
+      const isSelected = this._selectedId === stageId;
+      const isUnlocked = this._isStageUnlocked(stageData);
+      const h = (isSelected && isUnlocked) ? CARD_H_EXPANDED : CARD_H;
+      const cardCenterY = curY + h / 2;
+      this._createStageCard(centerX, cardCenterY, stageData, h);
+      curY += h + CARD_GAP;
+    });
+  }
+
   // ── 스테이지 잠금 해제 판별 ──
 
   /**
@@ -91,8 +113,8 @@ export default class StageSelectScene extends Phaser.Scene {
     // 잠금 조건 없음 → 항상 해금
     if (!stageData.unlocksAfter) return true;
 
-    // 이전 스테이지 클리어 여부 확인
-    return SaveManager.isStageClear(stageData.unlocksAfter);
+    // 이전 스테이지 클리어 여부 확인 (normal 기준)
+    return SaveManager.isStageClear(stageData.unlocksAfter, 'normal');
   }
 
   // ── 스테이지 카드 ──
@@ -102,9 +124,10 @@ export default class StageSelectScene extends Phaser.Scene {
    * @param {number} x - 중심 X
    * @param {number} y - 중심 Y
    * @param {Object} stageData - 스테이지 데이터
+   * @param {number} cardH - 카드 높이 (선택 시 확장)
    * @private
    */
-  _createStageCard(x, y, stageData) {
+  _createStageCard(x, y, stageData, cardH) {
     const isUnlocked = this._isStageUnlocked(stageData);
     const clearCount = SaveManager.getStageClearCount(stageData.id);
     const isCleared = clearCount > 0;
@@ -113,11 +136,10 @@ export default class StageSelectScene extends Phaser.Scene {
     // 카드 배경
     const bg = this.add.graphics();
     bg.fillStyle(COLORS.UI_PANEL, isUnlocked ? 0.9 : 0.3);
-    bg.fillRoundedRect(x - CARD_W / 2, y - CARD_H / 2, CARD_W, CARD_H, 8);
+    bg.fillRoundedRect(x - CARD_W / 2, y - cardH / 2, CARD_W, cardH, 8);
 
     // 테두리 색상 결정
     if (isSelected && isUnlocked) {
-      // 선택됨
       if (isCleared) {
         bg.lineStyle(2, COLORS.NEON_CYAN, 1);
       } else {
@@ -128,20 +150,23 @@ export default class StageSelectScene extends Phaser.Scene {
     } else {
       bg.lineStyle(1, COLORS.UI_BORDER, 0.2);
     }
-    bg.strokeRoundedRect(x - CARD_W / 2, y - CARD_H / 2, CARD_W, CARD_H, 8);
+    bg.strokeRoundedRect(x - CARD_W / 2, y - cardH / 2, CARD_W, cardH, 8);
 
     this._container.add(bg);
+
+    // 콘텐츠 기준 Y (카드 상단 기준 — 확장 여부와 무관하게 상단 92px 영역에 콘텐츠 배치)
+    const contentCenterY = y - cardH / 2 + CARD_H / 2;
 
     // 액센트 컬러 바 (좌측)
     const accentBar = this.add.graphics();
     accentBar.fillStyle(stageData.accentColor, isUnlocked ? 0.8 : 0.2);
-    accentBar.fillRect(x - CARD_W / 2 + 4, y - CARD_H / 2 + 8, 4, CARD_H - 16);
+    accentBar.fillRect(x - CARD_W / 2 + 4, y - cardH / 2 + 8, 4, CARD_H - 16);
     this._container.add(accentBar);
 
     if (isUnlocked) {
       // 스테이지 이름
       const nameColor = isSelected ? UI_COLORS.neonCyan : UI_COLORS.textPrimary;
-      const nameText = this.add.text(x - CARD_W / 2 + 20, y - 28, t(stageData.nameKey), {
+      const nameText = this.add.text(x - CARD_W / 2 + 20, contentCenterY - 28, t(stageData.nameKey), {
         fontSize: '14px',
         fontFamily: 'Galmuri11, monospace',
         color: nameColor,
@@ -149,7 +174,7 @@ export default class StageSelectScene extends Phaser.Scene {
       this._container.add(nameText);
 
       // 설명
-      const descText = this.add.text(x - CARD_W / 2 + 20, y - 4, t(stageData.descKey), {
+      const descText = this.add.text(x - CARD_W / 2 + 20, contentCenterY - 4, t(stageData.descKey), {
         fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
@@ -159,7 +184,7 @@ export default class StageSelectScene extends Phaser.Scene {
 
       // 난이도 배수 표시
       const diffText = this.add.text(
-        x + CARD_W / 2 - 16, y - 28,
+        x + CARD_W / 2 - 16, contentCenterY - 28,
         `x${stageData.difficultyMult}`,
         {
           fontSize: '11px',
@@ -172,7 +197,7 @@ export default class StageSelectScene extends Phaser.Scene {
       // 클리어 횟수 표시
       if (isCleared) {
         const clearText = this.add.text(
-          x + CARD_W / 2 - 16, y + 16,
+          x + CARD_W / 2 - 16, contentCenterY + 16,
           t('stage.clearCount', clearCount),
           {
             fontSize: '10px',
@@ -184,7 +209,7 @@ export default class StageSelectScene extends Phaser.Scene {
       } else {
         // 첫 도전 표시 (깜빡임)
         const newText = this.add.text(
-          x + CARD_W / 2 - 16, y + 16,
+          x + CARD_W / 2 - 16, contentCenterY + 16,
           t('stage.new'),
           {
             fontSize: '10px',
@@ -194,7 +219,6 @@ export default class StageSelectScene extends Phaser.Scene {
         ).setOrigin(1, 0);
         this._container.add(newText);
 
-        // 깜빡임 효과
         this.tweens.add({
           targets: newText,
           alpha: { from: 1, to: 0.3 },
@@ -204,29 +228,36 @@ export default class StageSelectScene extends Phaser.Scene {
         });
       }
 
-      // 터치 영역
-      const zone = this.add.zone(x, y, CARD_W, CARD_H)
+      // ── 난이도 버튼 (선택된 스테이지에만 표시) ──
+      if (isSelected) {
+        this._createDifficultyButtons(x, y, cardH, stageData);
+      }
+
+      // 터치 영역 (상단 92px 영역만)
+      const zone = this.add.zone(x, contentCenterY, CARD_W, CARD_H)
         .setInteractive({ useHandCursor: true });
       this._container.add(zone);
 
       zone.on('pointerdown', () => {
-        this._selectedId = stageData.id;
-        // 전체 UI 재생성
-        this._container.removeAll(true);
-        STAGE_ORDER.forEach((sid, i) => {
-          const sd = STAGES[sid];
-          const cardY = LIST_START_Y + i * (CARD_H + CARD_GAP) + CARD_H / 2;
-          this._createStageCard(GAME_WIDTH / 2, cardY, sd);
-        });
+        if (this._selectedId !== stageData.id) {
+          this._selectedId = stageData.id;
+          // 해당 스테이지에서 선택 난이도가 해금 안 됐으면 normal로 초기화
+          if (!SaveManager.isDifficultyUnlocked(stageData.id, this._selectedDifficulty)) {
+            this._selectedDifficulty = 'normal';
+          }
+          // 전체 UI 재생성
+          this._container.removeAll(true);
+          this._renderCards(GAME_WIDTH / 2);
+        }
       });
     } else {
       // 잠금 상태: 반투명 + 잠금 아이콘 + 잠금 조건
-      const lockIcon = this.add.text(x - CARD_W / 2 + 20, y - 20, '\uD83D\uDD12', {
+      const lockIcon = this.add.text(x - CARD_W / 2 + 20, contentCenterY - 20, '\uD83D\uDD12', {
         fontSize: '20px',
       });
       this._container.add(lockIcon);
 
-      const lockName = this.add.text(x - CARD_W / 2 + 50, y - 18, t(stageData.nameKey), {
+      const lockName = this.add.text(x - CARD_W / 2 + 50, contentCenterY - 18, t(stageData.nameKey), {
         fontSize: '14px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
@@ -238,7 +269,7 @@ export default class StageSelectScene extends Phaser.Scene {
         ? t(STAGES[stageData.unlocksAfter].nameKey)
         : '';
       const condText = this.add.text(
-        x - CARD_W / 2 + 20, y + 10,
+        x - CARD_W / 2 + 20, contentCenterY + 10,
         t('stage.lockCondition', prevStageName),
         {
           fontSize: '10px',
@@ -247,6 +278,113 @@ export default class StageSelectScene extends Phaser.Scene {
         }
       ).setAlpha(0.4);
       this._container.add(condText);
+    }
+  }
+
+  // ── 난이도 버튼 ──
+
+  /**
+   * 선택된 스테이지 카드의 하단에 난이도 버튼 3개를 배치한다.
+   * @param {number} cardCenterX - 카드 중심 X
+   * @param {number} cardCenterY - 카드 중심 Y
+   * @param {number} cardH - 카드 높이
+   * @param {Object} stageData - 스테이지 데이터
+   * @private
+   */
+  _createDifficultyButtons(cardCenterX, cardCenterY, cardH, stageData) {
+    const btnW = 80;
+    const btnH = 36;
+    const btnGap = 10;
+    const cardBottom = cardCenterY + cardH / 2;
+    const btnY = cardBottom - 23;
+
+    // 버튼 X 좌표: 3개 중앙 정렬
+    const btnXPositions = [
+      cardCenterX - (btnW + btnGap),   // 일반
+      cardCenterX,                      // 하드
+      cardCenterX + (btnW + btnGap),   // 나이트메어
+    ];
+
+    DIFFICULTY_ORDER.forEach((diffId, i) => {
+      const mode = DIFFICULTY_MODES[diffId];
+      const isUnlocked = SaveManager.isDifficultyUnlocked(stageData.id, diffId);
+      const isActive = this._selectedDifficulty === diffId;
+      const bx = btnXPositions[i];
+
+      const btnBg = this.add.graphics();
+
+      if (!isUnlocked) {
+        // 잠금: 회색 배경
+        btnBg.fillStyle(0x333344, 0.8);
+        btnBg.fillRoundedRect(bx - btnW / 2, btnY - btnH / 2, btnW, btnH, 4);
+      } else if (isActive) {
+        // 해금 + 선택: 해당 난이도 color 배경
+        btnBg.fillStyle(mode.colorHex, 0.9);
+        btnBg.fillRoundedRect(bx - btnW / 2, btnY - btnH / 2, btnW, btnH, 4);
+      } else {
+        // 해금 + 미선택: 투명 배경 + 테두리
+        btnBg.fillStyle(0x000000, 0.1);
+        btnBg.fillRoundedRect(bx - btnW / 2, btnY - btnH / 2, btnW, btnH, 4);
+        btnBg.lineStyle(1, mode.colorHex, 0.8);
+        btnBg.strokeRoundedRect(bx - btnW / 2, btnY - btnH / 2, btnW, btnH, 4);
+      }
+      this._container.add(btnBg);
+
+      // 버튼 텍스트
+      let labelStr = t(mode.labelKey);
+      let labelColor = mode.color;
+
+      if (!isUnlocked) {
+        labelStr = '\uD83D\uDD12 ' + t(mode.labelKey);
+        labelColor = UI_COLORS.textSecondary;
+      } else if (isActive) {
+        labelColor = '#FFFFFF';
+        // 클리어 체크마크
+        if (SaveManager.isStageClear(stageData.id, diffId)) {
+          labelStr = t(mode.labelKey) + ' \u2713';
+        }
+      } else {
+        // 클리어 체크마크
+        if (SaveManager.isStageClear(stageData.id, diffId)) {
+          labelStr = t(mode.labelKey) + ' \u2713';
+        }
+      }
+
+      const btnText = this.add.text(bx, btnY, labelStr, {
+        fontSize: '10px',
+        fontFamily: 'Galmuri11, monospace',
+        color: labelColor,
+      }).setOrigin(0.5);
+      this._container.add(btnText);
+
+      // 인터랙션 (해금된 경우만)
+      if (isUnlocked) {
+        const zone = this.add.zone(bx, btnY, btnW, btnH)
+          .setInteractive({ useHandCursor: true });
+        this._container.add(zone);
+
+        zone.on('pointerdown', () => {
+          if (this._selectedDifficulty !== diffId) {
+            this._selectedDifficulty = diffId;
+            SaveManager.setSelectedDifficulty(diffId);
+            // 전체 UI 재생성
+            this._container.removeAll(true);
+            this._renderCards(GAME_WIDTH / 2);
+          }
+        });
+      }
+    });
+
+    // ── 보상 정보 텍스트 (선택된 난이도 기준) ──
+    const selMode = DIFFICULTY_MODES[this._selectedDifficulty];
+    if (selMode && this._selectedDifficulty !== 'normal') {
+      const rewardStr = t('difficulty.reward', selMode.creditMult, selMode.dcReward);
+      const rewardText = this.add.text(cardCenterX, btnY + btnH / 2 + 6, rewardStr, {
+        fontSize: '9px',
+        fontFamily: 'Galmuri11, monospace',
+        color: selMode.color,
+      }).setOrigin(0.5);
+      this._container.add(rewardText);
     }
   }
 

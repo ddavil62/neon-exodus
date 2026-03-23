@@ -12,7 +12,7 @@ import { AchievementManager } from '../managers/AchievementManager.js';
 import { MetaManager } from '../managers/MetaManager.js';
 import { AdManager } from '../managers/AdManager.js';
 import { getWeaponById } from '../data/weapons.js';
-import { STAGES } from '../data/stages.js';
+import { STAGES, DIFFICULTY_MODES, DC_REWARD_DEATH } from '../data/stages.js';
 
 // ── ResultScene 클래스 ──
 
@@ -77,6 +77,12 @@ export default class ResultScene extends Phaser.Scene {
 
     /** 런 종료 시 HP 비율 (0~1) */
     this.finalHpPercent = data.finalHpPercent !== undefined ? data.finalHpPercent : 1;
+
+    /** 플레이한 난이도 */
+    this.difficulty = data.difficulty || 'normal';
+
+    /** 피격 여부 */
+    this.tookDamage = data.tookDamage || false;
   }
 
   /**
@@ -85,8 +91,18 @@ export default class ResultScene extends Phaser.Scene {
   create() {
     const centerX = GAME_WIDTH / 2;
 
-    // ── SaveManager 크레딧/통계 저장 ──
-    SaveManager.addCredits(this.creditsEarned);
+    // ── SaveManager 크레딧/통계 저장 (난이도 배율 적용) ──
+    const creditMult = DIFFICULTY_MODES[this.difficulty]?.creditMult || 1.0;
+    /** @type {number} 난이도 배율 적용 후 크레딧 */
+    this._adjustedCredits = Math.floor(this.creditsEarned * creditMult);
+    const adjustedCredits = this._adjustedCredits;
+    SaveManager.addCredits(adjustedCredits);
+
+    // 데이터코어 보상
+    const dcReward = this.victory
+      ? (DIFFICULTY_MODES[this.difficulty]?.dcReward || 3)
+      : DC_REWARD_DEATH;
+    SaveManager.addDataCores(dcReward);
 
     // 통계 갱신
     SaveManager.updateStats('totalRuns', 1);
@@ -139,6 +155,8 @@ export default class ResultScene extends Phaser.Scene {
       characterId: this.characterId,
       stageId: this.stageId,
       victory: this.victory,
+      difficulty: this.difficulty,
+      tookDamage: this.tookDamage,
     });
 
     // ── 배경 ──
@@ -248,10 +266,14 @@ export default class ResultScene extends Phaser.Scene {
     divider.lineStyle(1, COLORS.UI_BORDER, 0.5);
     divider.lineBetween(centerX - 100, rewardY - 4, centerX + 100, rewardY - 4);
 
-    // 획득 크레딧
+    // 획득 크레딧 (난이도 배율 적용 시 배율 표시)
+    const creditDisplayStr = creditMult > 1.0
+      ? t('result.creditMult', adjustedCredits, creditMult)
+      : t('result.creditsEarned', adjustedCredits);
+
     this._creditText = this.add.text(
       centerX, rewardY + 8,
-      t('result.creditsEarned', this.creditsEarned),
+      creditDisplayStr,
       {
         fontSize: '14px',
         fontFamily: 'Galmuri11, monospace',
@@ -266,12 +288,30 @@ export default class ResultScene extends Phaser.Scene {
       delay: 800,
     });
 
+    // 데이터코어 보상 표시
+    const dcText = this.add.text(
+      centerX, rewardY + 26,
+      t('result.dataCores', dcReward),
+      {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonCyan,
+      }
+    ).setOrigin(0.5).setAlpha(0);
+
+    this.tweens.add({
+      targets: dcText,
+      alpha: 1,
+      duration: 500,
+      delay: 900,
+    });
+
     // 클리어 보너스 (승리 시) -- 크레딧 옆에 인라인 표시
     /** 보상 섹션 끝 Y 좌표 */
-    let rewardEndY = rewardY + Math.round(24 * contentScale);
+    let rewardEndY = rewardY + Math.round(42 * contentScale);
     if (this.victory) {
       const bonusText = this.add.text(
-        centerX, rewardY + 28,
+        centerX, rewardY + 44,
         t('result.bonusCredit', 100),
         {
           fontSize: '12px',
@@ -286,7 +326,7 @@ export default class ResultScene extends Phaser.Scene {
         duration: 500,
         delay: 1000,
       });
-      rewardEndY = rewardY + Math.round(44 * contentScale);
+      rewardEndY = rewardY + Math.round(60 * contentScale);
     }
 
     // ── 무기 해금 배너 (스테이지 클리어 시) ──
@@ -420,7 +460,7 @@ export default class ResultScene extends Phaser.Scene {
     });
 
     // 비활성 상태면 인터랙션 없음
-    if (limitReached || this.creditsEarned <= 0) return;
+    if (limitReached || (this._adjustedCredits || this.creditsEarned) <= 0) return;
 
     // 터치 영역
     const zone = this.add.zone(x, y, btnWidth, btnHeight)
@@ -446,12 +486,13 @@ export default class ResultScene extends Phaser.Scene {
       // 광고 시청
       const result = await AdManager.showRewarded(ADMOB_UNITS.creditDouble);
       if (result.rewarded) {
-        // 크레딧 2배 지급 (원래 지급분 + 동일량 추가)
-        SaveManager.addCredits(this.creditsEarned);
+        // 크레딧 2배 지급 (난이도 배율 적용 후 금액 + 동일량 추가)
+        const adCredits = this._adjustedCredits || this.creditsEarned;
+        SaveManager.addCredits(adCredits);
         AdManager.incrementDailyAdCount('creditDouble');
 
         // 크레딧 텍스트 갱신 (2배 금액)
-        const doubledCredits = this.creditsEarned * 2;
+        const doubledCredits = adCredits * 2;
         this._creditText.setText(t('result.creditsEarned', doubledCredits));
 
         // 버튼 비활성화
@@ -508,8 +549,8 @@ export default class ResultScene extends Phaser.Scene {
     const weaponSection = totalWeapons > 0
       ? (10 + 12 + 18 + displayCount * rowHeight + 4)
       : 10;
-    // 보상 구간: reward_gap + height
-    const rewardSection = this.victory ? (6 + 44) : (6 + 24);
+    // 보상 구간: reward_gap + height (DC 텍스트 추가로 높이 증가)
+    const rewardSection = this.victory ? (6 + 60) : (6 + 42);
     // 해금 배너 구간 (있을 때만)
     let bannerSection = 0;
     if (this.newWeaponUnlocked) {

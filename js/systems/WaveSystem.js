@@ -25,8 +25,9 @@ export default class WaveSystem {
    * @param {Phaser.Scene} scene - Phaser 씬 참조
    * @param {import('../entities/Player.js').default} player - 플레이어 참조
    * @param {Object} [stageData=null] - 스테이지 데이터 (난이도 배수, 보스/미니보스 오버라이드)
+   * @param {Object} [difficultyMode=null] - 난이도 모드 데이터 (DIFFICULTY_MODES의 항목)
    */
-  constructor(scene, player, stageData = null) {
+  constructor(scene, player, stageData = null, difficultyMode = null) {
     /** @type {Phaser.Scene} */
     this.scene = scene;
 
@@ -38,6 +39,15 @@ export default class WaveSystem {
 
     /** 스테이지 난이도 배수 (HP/데미지에 곱셈 적용) */
     this._stageDiffMult = stageData ? (stageData.difficultyMult || 1.0) : 1.0;
+
+    /** 난이도 모드 HP 배수 */
+    this._diffHpMult = difficultyMode ? difficultyMode.hpMult : 1.0;
+
+    /** 난이도 모드 공격력 배수 */
+    this._diffAtkMult = difficultyMode ? difficultyMode.atkMult : 1.0;
+
+    /** 난이도 모드 이동속도 배수 */
+    this._diffSpdMult = difficultyMode ? difficultyMode.spdMult : 1.0;
 
     /** 경과 시간 (초) */
     this.elapsedTime = 0;
@@ -139,11 +149,12 @@ export default class WaveSystem {
       this.currentBatchSize.max
     );
 
-    // 스케일링 계산 (스테이지 난이도 배수 + 엔들리스 모드 배수 적용)
+    // 스케일링 계산 (스테이지 난이도 배수 + 난이도 모드 배수 + 엔들리스 모드 배수 적용)
     const baseScale = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes);
-    const stageScale = baseScale * this._stageDiffMult;
-    const hpMultiplier = this._isEndless ? stageScale * this._hpMultiplier : stageScale;
-    const dmgMultiplier = this._isEndless ? stageScale * this._dmgMultiplier : stageScale;
+    const finalHpMult = this._stageDiffMult * this._diffHpMult;
+    const finalAtkMult = this._stageDiffMult * this._diffAtkMult;
+    const hpMultiplier = this._isEndless ? baseScale * finalHpMult * this._hpMultiplier : baseScale * finalHpMult;
+    const dmgMultiplier = this._isEndless ? baseScale * finalAtkMult * this._dmgMultiplier : baseScale * finalAtkMult;
 
     for (let i = 0; i < count; i++) {
       const pos = this.getSpawnPosition();
@@ -166,6 +177,12 @@ export default class WaveSystem {
     if (!enemy) return null;
 
     enemy.init(typeId, hpMultiplier, dmgMultiplier);
+
+    // 난이도 모드 이속 배수 적용 (스테이지 배율과 별도)
+    if (this._diffSpdMult !== 1.0) {
+      enemy.speed = Math.floor(enemy.speed * this._diffSpdMult);
+    }
+
     return enemy;
   }
 
@@ -176,8 +193,8 @@ export default class WaveSystem {
   spawnMiniBoss(bossData) {
     const pos = this.getSpawnPosition();
     const elapsedMinutes = this.elapsedTime / 60;
-    const hpMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult;
-    const dmgMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult;
+    const hpMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult * this._diffHpMult;
+    const dmgMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes) * this._stageDiffMult * this._diffAtkMult;
 
     // waves.js는 enemyId 필드 사용
     const typeId = bossData.enemyId || bossData.typeId;
@@ -195,9 +212,9 @@ export default class WaveSystem {
   spawnBoss(bossData) {
     const pos = this.getSpawnPosition();
     const elapsedMinutes = this.elapsedTime / 60;
-    // 보스는 스케일링 덜 적용 (이미 기본 스탯이 높으므로), 스테이지 난이도는 적용
-    const hpMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult;
-    const dmgMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult;
+    // 보스는 스케일링 덜 적용 (이미 기본 스탯이 높으므로), 스테이지/난이도 모드 배율은 적용
+    const hpMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult * this._diffHpMult;
+    const dmgMult = BASE_DIFFICULTY * (1 + ENEMY_SCALE_PER_MINUTE * elapsedMinutes * 0.5) * this._stageDiffMult * this._diffAtkMult;
 
     // waves.js는 enemyId 필드 사용
     const typeId = bossData.enemyId || bossData.typeId;

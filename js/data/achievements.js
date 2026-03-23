@@ -821,6 +821,48 @@ export const ACHIEVEMENTS = [
     condition: { type: 'enemyCollectionComplete' },
     reward: { type: 'dataCore', amount: 1 },
   },
+
+  // ── 난이도 업적 (5종) ──
+  {
+    id: 'hard_first_clear',
+    nameKey: 'achievement.hard_first_clear.name',
+    descKey: 'achievement.hard_first_clear.desc',
+    category: 'clear',
+    condition: { type: 'hardClear', count: 1 },
+    reward: { type: 'credits', amount: 200 },
+  },
+  {
+    id: 'hard_all_clear',
+    nameKey: 'achievement.hard_all_clear.name',
+    descKey: 'achievement.hard_all_clear.desc',
+    category: 'clear',
+    condition: { type: 'hardAllClear' },
+    reward: { type: 'dataCore', amount: 3 },
+  },
+  {
+    id: 'nightmare_first_clear',
+    nameKey: 'achievement.nightmare_first_clear.name',
+    descKey: 'achievement.nightmare_first_clear.desc',
+    category: 'clear',
+    condition: { type: 'nightmareClear', count: 1 },
+    reward: { type: 'credits', amount: 500 },
+  },
+  {
+    id: 'nightmare_all_clear',
+    nameKey: 'achievement.nightmare_all_clear.name',
+    descKey: 'achievement.nightmare_all_clear.desc',
+    category: 'clear',
+    condition: { type: 'nightmareAllClear' },
+    reward: { type: 'dataCore', amount: 5 },
+  },
+  {
+    id: 'nightmare_no_damage',
+    nameKey: 'achievement.nightmare_no_damage.name',
+    descKey: 'achievement.nightmare_no_damage.desc',
+    category: 'clear',
+    condition: { type: 'nightmareNoDamage' },
+    reward: { type: 'dataCore', amount: 10 },
+  },
 ];
 
 /**

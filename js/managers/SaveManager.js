@@ -26,7 +26,8 @@ const DEFAULT_SAVE = {
   droneUnlocked: false,     // 메타 드론 동반자 해금 여부
   droneUpgrades: {},        // { droneUpgradeId: level }
   cutscenesSeen: {},        // { cutsceneId: true }
-  stageClears: {},          // { stageId: 클리어 횟수 }
+  stageClears: {},          // { stageId: { normal: n, hard: n, nightmare: n } }
+  selectedDifficulty: 'normal',  // 선택된 난이도
   unlockedWeapons: [],      // 스테이지 해금 무기 ID 배열
   selectedStage: 'stage_1', // 선택된 스테이지 ID
   characterClears: {},      // { characterId: 클리어 횟수 }
@@ -334,34 +335,93 @@ export class SaveManager {
   // ── 스테이지 ──
 
   /**
-   * 스테이지 클리어를 등록한다. 클리어 횟수를 1 증가시킨다.
+   * 스테이지 클리어를 등록한다. 해당 난이도의 클리어 횟수를 1 증가시킨다.
    * @param {string} stageId - 스테이지 ID
+   * @param {string} [difficulty='normal'] - 난이도 ('normal' | 'hard' | 'nightmare')
    */
-  static clearStage(stageId) {
+  static clearStage(stageId, difficulty = 'normal') {
     const data = SaveManager.getData();
     if (!data.stageClears) data.stageClears = {};
-    data.stageClears[stageId] = (data.stageClears[stageId] || 0) + 1;
+    if (!data.stageClears[stageId]) {
+      data.stageClears[stageId] = { normal: 0, hard: 0, nightmare: 0 };
+    }
+    // 구버전 호환: 숫자면 객체로 변환
+    if (typeof data.stageClears[stageId] === 'number') {
+      const old = data.stageClears[stageId];
+      data.stageClears[stageId] = { normal: old, hard: 0, nightmare: 0 };
+    }
+    data.stageClears[stageId][difficulty] = (data.stageClears[stageId][difficulty] || 0) + 1;
     SaveManager.save();
   }
 
   /**
    * 스테이지 클리어 여부를 반환한다.
    * @param {string} stageId - 스테이지 ID
+   * @param {string} [difficulty='normal'] - 난이도 ('normal' | 'hard' | 'nightmare')
    * @returns {boolean} 클리어 여부
    */
-  static isStageClear(stageId) {
+  static isStageClear(stageId, difficulty = 'normal') {
     const data = SaveManager.getData();
-    return (data.stageClears && data.stageClears[stageId] > 0) || false;
+    if (!data.stageClears || !data.stageClears[stageId]) return false;
+    const entry = data.stageClears[stageId];
+    // 구버전 호환: 숫자면 normal 기준
+    if (typeof entry === 'number') return difficulty === 'normal' ? entry > 0 : false;
+    return (entry[difficulty] || 0) > 0;
   }
 
   /**
    * 스테이지 클리어 횟수를 반환한다.
+   * difficulty가 null이면 전 난이도 합산값을 반환한다.
    * @param {string} stageId - 스테이지 ID
+   * @param {string|null} [difficulty=null] - 난이도 (null이면 전 난이도 합산)
    * @returns {number} 클리어 횟수
    */
-  static getStageClearCount(stageId) {
+  static getStageClearCount(stageId, difficulty = null) {
     const data = SaveManager.getData();
-    return (data.stageClears && data.stageClears[stageId]) || 0;
+    if (!data.stageClears || !data.stageClears[stageId]) return 0;
+    const entry = data.stageClears[stageId];
+    // 구버전 호환: 숫자면 그대로 반환
+    if (typeof entry === 'number') {
+      return difficulty === null || difficulty === 'normal' ? entry : 0;
+    }
+    if (difficulty === null) {
+      return (entry.normal || 0) + (entry.hard || 0) + (entry.nightmare || 0);
+    }
+    return entry[difficulty] || 0;
+  }
+
+  // ── 난이도 ──
+
+  /**
+   * 현재 선택된 난이도를 반환한다.
+   * @returns {string} 난이도 문자열 ('normal' | 'hard' | 'nightmare')
+   */
+  static getSelectedDifficulty() {
+    return SaveManager.getData().selectedDifficulty || 'normal';
+  }
+
+  /**
+   * 선택된 난이도를 저장한다.
+   * @param {string} diff - 난이도 문자열 ('normal' | 'hard' | 'nightmare')
+   */
+  static setSelectedDifficulty(diff) {
+    const data = SaveManager.getData();
+    data.selectedDifficulty = diff;
+    SaveManager.save();
+  }
+
+  /**
+   * 해당 스테이지에서 특정 난이도가 해금되었는지 확인한다.
+   * normal은 항상 해금, hard는 normal 클리어 시, nightmare는 hard 클리어 시 해금.
+   * @param {string} stageId - 스테이지 ID
+   * @param {string} difficulty - 난이도 ('normal' | 'hard' | 'nightmare')
+   * @returns {boolean} 해금 여부
+   */
+  static isDifficultyUnlocked(stageId, difficulty) {
+    if (difficulty === 'normal') return true;
+    if (difficulty === 'hard') return SaveManager.isStageClear(stageId, 'normal');
+    if (difficulty === 'nightmare') return SaveManager.isStageClear(stageId, 'hard');
+    return false;
   }
 
   /**
@@ -675,6 +735,25 @@ export class SaveManager {
       data.droneUnlocked = !!hasStage2;
       if (!data.droneUpgrades) data.droneUpgrades = {};
       data.version = 10;
+    }
+
+    // v10 → v11: 난이도 모드 — stageClears 구조 변환 + selectedDifficulty 추가
+    if (data.version < 11) {
+      // stageClears 구조 변환: { stage_1: 3 } → { stage_1: { normal: 3, hard: 0, nightmare: 0 } }
+      if (data.stageClears) {
+        const old = data.stageClears;
+        const converted = {};
+        for (const [stageId, count] of Object.entries(old)) {
+          if (typeof count === 'number') {
+            converted[stageId] = { normal: count, hard: 0, nightmare: 0 };
+          } else {
+            converted[stageId] = count; // 이미 변환됨
+          }
+        }
+        data.stageClears = converted;
+      }
+      if (!data.selectedDifficulty) data.selectedDifficulty = 'normal';
+      data.version = 11;
     }
 
     data.version = SAVE_DATA_VERSION;

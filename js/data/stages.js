@@ -140,6 +140,24 @@ export const STAGES = {
 /** 스테이지 진행 순서 */
 export const STAGE_ORDER = ['stage_1', 'stage_2', 'stage_3', 'stage_4'];
 
+// ── 난이도 모드 정의 ──
+
+/**
+ * 난이도 모드별 배율 및 보상 데이터.
+ * @type {Object.<string, {id: string, labelKey: string, hpMult: number, atkMult: number, spdMult: number, creditMult: number, dcReward: number, color: string, colorHex: number}>}
+ */
+export const DIFFICULTY_MODES = {
+  normal:    { id: 'normal',    labelKey: 'difficulty.normal',    hpMult: 1.0, atkMult: 1.0, spdMult: 1.0, creditMult: 1.0, dcReward: 3, color: '#4FC3F7', colorHex: 0x4FC3F7 },
+  hard:      { id: 'hard',      labelKey: 'difficulty.hard',      hpMult: 1.8, atkMult: 1.5, spdMult: 1.1, creditMult: 1.5, dcReward: 5, color: '#FF8A65', colorHex: 0xFF8A65 },
+  nightmare: { id: 'nightmare', labelKey: 'difficulty.nightmare', hpMult: 3.0, atkMult: 2.0, spdMult: 1.2, creditMult: 2.5, dcReward: 8, color: '#EF5350', colorHex: 0xEF5350 },
+};
+
+/** 난이도 진행 순서 */
+export const DIFFICULTY_ORDER = ['normal', 'hard', 'nightmare'];
+
+/** 사망 시 데이터코어 보상 */
+export const DC_REWARD_DEATH = 1;
+
 /**
  * 스테이지 ID로 스테이지 데이터를 조회한다.
  * @param {string} stageId - 스테이지 ID

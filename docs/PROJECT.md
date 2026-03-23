@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-23 (무기/패시브 인포 모달 추가)
+> 최종 업데이트: 2026-03-24 (난이도 모드 시스템 추가)
 
 ## 프로젝트 개요
 
@@ -83,7 +83,7 @@ neon-exodus/
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
-│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v10, 드론 해금/업그레이드/컷신 포함)
+│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v11, 난이도 모드/드론 해금/업그레이드/컷신 포함)
 │   │   ├── HapticManager.js       # 햅틱 진동 관리 (Capacitor, enabled 플래그)
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
@@ -229,19 +229,19 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 래핑(WRAP_RADIUS), 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 385키, `t()` 함수로 참조 |
-| 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
-| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수, 장식 오브젝트 타입(decoTypes)/틴트(decoTint), 파괴 데코 드롭 테이블(decoDropTable) |
+| 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, 난이도 3단계 선택 버튼(일반/하드/나이트메어), stageId/difficulty 전달 |
+| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수, 장식 오브젝트 타입(decoTypes)/틴트(decoTint), 파괴 데코 드롭 테이블(decoDropTable), DIFFICULTY_MODES(3단계 난이도 배율/보상), DC_REWARD_DEATH |
 | 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 무기/패시브 인포 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴, 배경 장식 오브젝트 배치(_initDecos)/래핑(_wrapDecos)/파괴 가능 데코(_onProjectileHitDeco, _spawnDecoDrop) |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기 |
 | 메타 드론 | `js/systems/DroneCompanionSystem.js` | 영구 메타 드론 동반자 (스테이지 2 해금, 메타 업그레이드 전용, projectilePool 공유) |
-| 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
+| 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링, 난이도 모드 배율(HP/ATK/SPD) 적용 |
 | 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 10종 + BGM 2곡, BGM/SFX enabled 토글 |
 | 설정 | `js/scenes/SettingsScene.js` | BGM/SFX/햅틱 ON/OFF 토글 UI, SaveManager 연동 |
 | 햅틱 | `js/managers/HapticManager.js` | Capacitor Haptics 래퍼, enabled 플래그 제어 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 9종 (기존 6종 + consumableCollect + empBlast + decoBreak), empRing/empBurst 진화 분기 |
-| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v7), 크레딧/통계/도감/스테이지 클리어/무기 해금/설정/캐릭터 클리어/미니보스 킬 관리 |
+| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v11), 크레딧/통계/도감/스테이지 클리어(난이도별)/무기 해금/설정/캐릭터 클리어/미니보스 킬/난이도 선택 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 100개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
@@ -761,8 +761,9 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 데이터 팬텀 | 16000 | 15분 | S3 | 텔레포트 + 분신 + 광역 EMP | 런 클리어 보상 |
 | 오메가 코어 | 30000 | 15분 | S4 | 회전 레이저 + 잡몹 소환 + 광역 EMP (200px, 30dmg) | 런 클리어 보상 |
 
-- 시간 경과에 따라 HP/데미지 스케일링: `BASE_DIFFICULTY(1.5) * (1 + 0.1111 * t분)` (t=0: 1.5배, t=15: 4.0배)
+- 시간 경과에 따라 HP/데미지 스케일링: `BASE_DIFFICULTY(1.2) * (1 + 0.1111 * t분)` (t=0: 1.2배, t=15: 4.0배)
 - 보스는 0.5 감쇄 적용: `BASE_DIFFICULTY * (1 + 0.1111 * t * 0.5)`
+- 난이도 모드 배율 적용: HP/ATK에 `stageDiffMult * diffHpMult/diffAtkMult` 곱셈, 이속은 `diffSpdMult` 독립 적용
 
 #### 보스/미니보스 등장 연출
 | 연출 대상 | 카메라 플래시 | 카메라 흔들림 | SFX |
@@ -963,9 +964,9 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 ### 메타 시스템
 
 #### 재화
-- **크레딧**: 적 드랍 (10% 확률, 1개), 보스 보상, 런 완료 보너스
-- **데이터 코어**: 보스 처치, 도전과제 달성
-- ResultScene에서 SaveManager.addCredits()로 영구 저장
+- **크레딧**: 적 드랍 (10% 확률, 1개), 보스 보상, 런 완료 보너스. 난이도별 배율 적용 (Normal x1.0, Hard x1.5, Nightmare x2.5)
+- **데이터 코어**: 난이도별 런 보상 (클리어 시 Normal 3/Hard 5/Nightmare 8, 사망 시 1), 도전과제 달성
+- ResultScene에서 크레딧 배율 적용 후 SaveManager.addCredits(), 데이터코어는 SaveManager.addDataCores()로 영구 저장
 
 #### 영구 업그레이드 (22종)
 - 기본 스탯 8종 (공격력/최대 체력/체력 회복/방어력/이동속도/쿨다운 감소/투사체 속도/효과 범위, 각 최대 Lv10)
@@ -1016,19 +1017,28 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/data/characters.js`, `js/scenes/CharacterScene.js`
 - 구현 일자: 2026-03-09
 
-#### 도전과제 (100종, 7카테고리)
+#### 도전과제 (105종, 7카테고리)
 
 | 카테고리 | 수 | 주요 condition 타입 |
 |---------|---|-------------------|
 | kill (킬) | 20 | totalKills, maxKillsInRun, totalBossKills, totalMinibossKills |
 | survive (생존) | 15 | surviveMinutes, totalSurviveMinutes, lowHpClear, noDamageSurvive, noDamageRun |
-| clear (클리어) | 15 | totalClears, consecutiveClears, totalRuns |
+| clear (클리어) | 20 | totalClears, consecutiveClears, totalRuns, hardClear, hardAllClear, nightmareClear, nightmareAllClear, nightmareNoDamage |
 | weapon (무기) | 20 | fillWeaponSlots, weaponEvolution, specificEvolution, allEvolutionsSeen, weaponCollectionComplete, passiveCollectionComplete |
 | character (캐릭터) | 12 | characterClear, characterClearCount, allCharacterClears |
 | growth (성장) | 8 | maxLevel, allUpgradesMaxed |
 | explore (탐험) | 10 | stageClear, allStagesClear, totalPlayTime, enemyCollectionComplete |
 
-- AchievementManager: 27개 condition type 처리 (`_checkCondition` switch문)
+##### 난이도 업적 (5종)
+| ID | 이름 | 조건 | 보상 |
+|---|---|---|---|
+| hard_first_clear | 하드코어 입문 | 하드 모드 아무 스테이지 1회 클리어 | 200 크레딧 |
+| hard_all_clear | 하드코어 정복 | 모든 스테이지 하드 클리어 | 3 데이터코어 |
+| nightmare_first_clear | 악몽의 시작 | 나이트메어 모드 아무 스테이지 1회 클리어 | 500 크레딧 |
+| nightmare_all_clear | 악몽 정복자 | 모든 스테이지 나이트메어 클리어 | 5 데이터코어 |
+| nightmare_no_damage | 무적의 존재 | 나이트메어 무피격 클리어 | 10 데이터코어 |
+
+- AchievementManager: 32개 condition type 처리 (`_checkCondition` switch문)
 - 보상 타입 5종: credits, dataCore, dataCoreAndTitle, characterHint, hiddenCharacterUnlock
 - AchievementScene: 100개 도전과제를 세로 스크롤 리스트로 표시 (CARD_H=86, CARD_GAP=6)
 - 각 항목에 달성 여부 아이콘, 제목, 설명, 진행률 (현재값/목표값), 보상 정보 표시
@@ -1148,6 +1158,57 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/systems/VFXSystem.js`
 - 구현 일자: 2026-03-09
 - 스펙 문서: `.claude/specs/2026-03-09-neon-exodus-phase4.md`
+
+### 난이도 모드 시스템
+
+각 스테이지에 Normal / Hard / Nightmare 3단계 난이도를 제공한다. 높은 난이도일수록 적이 강해지지만 보상이 증가한다.
+
+#### 난이도별 배율 및 보상 (소스 코드 검증)
+
+| 난이도 | HP 배율 | ATK 배율 | SPD 배율 | 크레딧 배율 | 클리어 DC | 사망 DC | 색상 |
+|---|---|---|---|---|---|---|---|
+| Normal | 1.0 | 1.0 | 1.0 | 1.0 | 3 | 1 | #4FC3F7 (시안) |
+| Hard | 1.8 | 1.5 | 1.1 | 1.5 | 5 | 1 | #FF8A65 (주황) |
+| Nightmare | 3.0 | 2.0 | 1.2 | 2.5 | 8 | 1 | #EF5350 (빨강) |
+
+#### 해금 조건
+- Normal: 항상 해금
+- Hard: 해당 스테이지 Normal 클리어 필요
+- Nightmare: 해당 스테이지 Hard 클리어 필요
+- 해금은 스테이지별 독립 (stage_1 Hard 해금이 stage_2 Hard에 영향하지 않음)
+
+#### 배율 적용 방식 (WaveSystem)
+- HP/ATK: `stageDiffMult * diffHpMult/diffAtkMult`로 곱셈 적용 (시간 스케일링 위에 추가)
+- 이속: `diffSpdMult`를 spawnEnemy() 내부에서 독립 적용 (스테이지 배율과 별도)
+- 미니보스/보스도 동일하게 난이도 배율 적용
+
+#### StageSelectScene UI
+- 선택된 스테이지 카드만 92px -> 136px로 확장 (하단에 난이도 버튼 영역)
+- 난이도 버튼 3개 인라인 배치 (각 36px 높이, 모바일 터치 타겟 확보)
+- 버튼 상태: 해금+선택(난이도 색상 배경+흰색 텍스트), 해금+미선택(테두리만), 잠금(회색 배경+자물쇠)
+- 보상 정보: 선택된 난이도 아래에 "보상 x1.5 | DC +5" 형식 표시
+
+#### GameScene HUD 난이도 배지
+- Normal 모드: 배지 미표시 (UI 공간 절약)
+- Hard/Nightmare: 좌상단(y=44)에 난이도 색상 배경 + 흰색 텍스트 배지 표시
+- y=44 위치는 HP/XP 바 아래로 기존 HUD와 겹침 방지
+
+#### 세이브 데이터 (v11)
+- `stageClears` 구조 변경: `{ stage_1: 3 }` -> `{ stage_1: { normal: 3, hard: 0, nightmare: 0 } }`
+- `selectedDifficulty` 필드 추가 (기본값: 'normal')
+- v10->v11 마이그레이션: 기존 숫자를 normal 클리어 횟수로 변환
+
+#### SaveManager API 변경
+- `clearStage(stageId, difficulty='normal')`: 난이도별 독립 기록
+- `isStageClear(stageId, difficulty='normal')`: 난이도별 클리어 확인
+- `getStageClearCount(stageId, difficulty=null)`: null이면 전 난이도 합산
+- `getSelectedDifficulty()`: 현재 선택된 난이도 반환
+- `setSelectedDifficulty(diff)`: 난이도 저장
+- `isDifficultyUnlocked(stageId, difficulty)`: 해금 여부 확인
+
+- 관련 파일: `js/data/stages.js`, `js/config.js`, `js/managers/SaveManager.js`, `js/scenes/StageSelectScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`, `js/scenes/CharacterScene.js`, `js/systems/WaveSystem.js`, `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/i18n.js`
+- 구현 일자: 2026-03-24
+- 스펙 문서: `.claude/specs/2026-03-23-difficulty-mode.md`
 
 ### 엔들리스 모드
 
@@ -1411,6 +1472,9 @@ HUD 인벤토리의 무기 또는 패시브 아이콘을 탭하면 해당 아이
 
 #### 결과 화면
 - 승리/패배/엔들리스 분기, 생존 시간/처치 수/도달 레벨, 보상 표시
+- 난이도별 보상 표시: 크레딧 배율 표시 (예: "+150 (x1.5)"), 데이터코어 보상 표시 (예: "데이터코어: +5")
+- 크레딧 최종 계산: `Math.floor(creditsEarned * creditMult)`, 난이도별 creditMult 적용
+- 데이터코어: 클리어 시 dcReward (3/5/8), 사망 시 DC_REWARD_DEATH (1)
 - 엔들리스 모드: "ENDLESS OVER!" + 경과 분 표시
 - 재도전/메인 메뉴 버튼, 등장 애니메이션
 - 무기별 결과 리포트 (아래 참조)
@@ -1436,7 +1500,7 @@ HUD 인벤토리의 무기 또는 패시브 아이콘을 탭하면 해당 아이
 |---|---|---|
 | CollectionScene | 60 | 아이템 설명 11px 2줄 수용 |
 | CharacterScene | 88 | 캐릭터 설명 11px 3줄 수용 |
-| StageSelectScene | 92 | 스테이지 설명 11px 2줄 + 하단 요소 여백 |
+| StageSelectScene | 92 (선택 시 136) | 기본 92px, 선택된 카드는 136px로 확장하여 난이도 버튼 3개(각 36px 높이) + 보상 정보 표시 |
 | AchievementScene | 86 | 도전과제 설명 10px + 보상 행 9px 수용 |
 
 - 관련 파일: `js/scenes/GameScene.js`, `js/scenes/UpgradeScene.js`, `js/scenes/CollectionScene.js`, `js/scenes/CharacterScene.js`, `js/scenes/ResultScene.js`, `js/scenes/StageSelectScene.js`, `js/scenes/AchievementScene.js`, `js/scenes/LevelUpScene.js`
@@ -1468,7 +1532,7 @@ HUD 인벤토리의 무기 또는 패시브 아이콘을 탭하면 해당 아이
 
 ### 세이브/매니저 시스템
 
-- SaveManager: 로컬스토리지 기반, 세이브 버전 v7. 크레딧/통계/도감/자동사냥/설정/캐릭터 클리어/미니보스 킬 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled), v6->v7(characterClears, totalMinibossKills).
+- SaveManager: 로컬스토리지 기반, 세이브 버전 v11. 크레딧/통계/도감/자동사냥/설정/캐릭터 클리어/미니보스 킬/난이도별 스테이지 클리어/난이도 선택 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled), v6->v7(characterClears, totalMinibossKills), v7->v8(cutscenesSeen), v8->v9(upgradeUnlocked), v9->v10(droneUnlocked, droneUpgrades), v10->v11(stageClears 구조 변환 숫자->객체, selectedDifficulty).
 - MetaManager: 영구 업그레이드 구매/다운그레이드/적용 계산. canDowngrade(), getDowngradeRefund(), downgradeUpgrade() 메서드 제공. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
 - AchievementManager: 도전과제 조건 검사/보상 지급. ResultScene에서 checkAll() 호출.
 - IAPManager: `@capgo/native-purchases` v8 기반 Google Play 인앱결제 구매/복원/가격조회. 네이티브 환경에서 실제 결제 다이얼로그 표시, 취소 시 실패 메시지 미표시. 웹 환경 Mock 모드 지원. BootScene에서 초기화 및 구매 복원.
@@ -1683,6 +1747,24 @@ HUD 인벤토리의 무기 또는 패시브 아이콘을 탭하면 해당 아이
 - [x] 게임 일시정지/재개: `isPaused`, `physics.pause()/resume()`, `_modalOpen` 플래그
 - [x] popupElements 배열 + forEach destroy 패턴 (기존 모달과 동일)
 - [x] i18n 3키 추가 (weapon.infoModal.level, weapon.infoModal.evolved, passive.infoModal.level, ko/en 총 385키)
+
+### 난이도 모드 시스템 -- 완료 (2026-03-24)
+- [x] `DIFFICULTY_MODES` 데이터 정의 (normal/hard/nightmare 배율/색상/DC보상)
+- [x] `DIFFICULTY_ORDER`, `DC_REWARD_DEATH` 상수 추가
+- [x] `config.js` SAVE_DATA_VERSION 10 -> 11
+- [x] SaveManager v10->v11 마이그레이션 (stageClears 숫자->객체 변환, selectedDifficulty 추가)
+- [x] SaveManager API 변경: clearStage/isStageClear/getStageClearCount에 difficulty 파라미터 추가
+- [x] SaveManager 신규 메서드 3개: getSelectedDifficulty, setSelectedDifficulty, isDifficultyUnlocked
+- [x] StageSelectScene 선택 카드 확장(92->136px), 난이도 버튼 3개(각 36px), 보상 정보 표시
+- [x] GameScene HUD 난이도 배지 (Hard/Nightmare만 표시, y=44 HP 바 아래)
+- [x] WaveSystem에 difficultyMode 파라미터 추가, HP/ATK/SPD 배율 적용
+- [x] CharacterScene -> GameScene 전환 시 difficulty 전달
+- [x] ResultScene 크레딧 배율 적용 + 데이터코어 보상 지급/표시
+- [x] 난이도 업적 5개 추가 (hard_first_clear, hard_all_clear, nightmare_first_clear, nightmare_all_clear, nightmare_no_damage)
+- [x] AchievementManager 난이도 업적 체크 로직 5개 추가
+- [x] i18n 난이도/업적 관련 키 약 15개 추가
+- [x] 스펙 대비 변경: CARD_H_EXPANDED 122->136px (모바일 터치), 버튼 높이 22->36px, HUD 배지 Y 8->44px (겹침 방지)
+- [x] Playwright 30/30 테스트 전체 통과
 
 ### 아트 Phase 2 (DALL-E 보스 픽셀아트) -- 대체됨 (2026-03-10 글로우 벡터로 전면 교체)
 - [x] *(대체됨)* DALL-E 3 보스/미니보스 스프라이트시트 -> 글로우 벡터 정적 이미지로 전면 교체

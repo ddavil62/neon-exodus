@@ -49,7 +49,7 @@ import { IAPManager } from '../managers/IAPManager.js';
 import AutoPilotSystem from '../systems/AutoPilotSystem.js';
 import DroneCompanionSystem from '../systems/DroneCompanionSystem.js';
 import { getPassiveById } from '../data/passives.js';
-import { STAGES } from '../data/stages.js';
+import { STAGES, DIFFICULTY_MODES } from '../data/stages.js';
 import WeaponDropItem from '../entities/WeaponDropItem.js';
 import { impactHaptic, setHapticEnabled, isHapticEnabled } from '../managers/HapticManager.js';
 
@@ -98,7 +98,7 @@ export default class GameScene extends Phaser.Scene {
 
   /**
    * 씬 초기화 데이터를 수신한다.
-   * @param {{ characterId?: string, stageId?: string }} data - 캐릭터/스테이지 선택 정보
+   * @param {{ characterId?: string, stageId?: string, difficulty?: string }} data - 캐릭터/스테이지/난이도 선택 정보
    */
   init(data) {
     /** 선택된 캐릭터 ID (기본: agent) */
@@ -109,6 +109,12 @@ export default class GameScene extends Phaser.Scene {
 
     /** 현재 스테이지 데이터 */
     this.stageData = STAGES[this.stageId] || STAGES.stage_1;
+
+    /** 선택된 난이도 ('normal' | 'hard' | 'nightmare') */
+    this.difficulty = data?.difficulty || 'normal';
+
+    /** 난이도 모드 데이터 */
+    this.difficultyMode = DIFFICULTY_MODES[this.difficulty] || DIFFICULTY_MODES.normal;
   }
 
   /**
@@ -257,7 +263,7 @@ export default class GameScene extends Phaser.Scene {
       this.droneCompanion.init();
     }
 
-    this.waveSystem = new WaveSystem(this, this.player, this.stageData);
+    this.waveSystem = new WaveSystem(this, this.player, this.stageData, this.difficultyMode);
 
     // ── 충돌 설정 ──
     // 투사체 ↔ 적
@@ -606,6 +612,8 @@ export default class GameScene extends Phaser.Scene {
       newWeaponUnlocked: unlockWeaponId,
       maxNoDamageStreak: this._maxNoDamageStreak,
       totalHitsTaken: this._totalHitsTaken,
+      difficulty: this.difficulty,
+      tookDamage: this._totalHitsTaken > 0,
     };
 
     // 물리 엔진 즉시 정지 (딜레이 중 추가 충돌 방지)
@@ -1685,7 +1693,7 @@ export default class GameScene extends Phaser.Scene {
   _onStageClear() {
     if (!this.stageData) return;
 
-    SaveManager.clearStage(this.stageId);
+    SaveManager.clearStage(this.stageId, this.difficulty);
 
     // 스테이지 고유 무기 영구 해금
     if (this.stageData.unlockWeaponId) {
@@ -2037,6 +2045,25 @@ export default class GameScene extends Phaser.Scene {
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
+
+    // ── 난이도 배지 (normal 제외) ──
+    if (this.difficulty !== 'normal') {
+      const mode = this.difficultyMode;
+      const badgeX = 8;
+      const badgeY = 44;
+      const badgeW = 70;
+      const badgeH = 18;
+
+      this._diffBadgeBg = this.add.graphics().setDepth(200).setScrollFactor(0);
+      this._diffBadgeBg.fillStyle(mode.colorHex, 0.8);
+      this._diffBadgeBg.fillRoundedRect(badgeX, badgeY, badgeW, badgeH, 4);
+
+      this._diffBadgeText = this.add.text(badgeX + badgeW / 2, badgeY + badgeH / 2, t(mode.labelKey), {
+        fontSize: '10px',
+        fontFamily: 'Galmuri11, monospace',
+        color: '#FFFFFF',
+      }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
+    }
 
     // 인벤토리 HUD 컨테이너 초기화
     this._inventoryHUD = { weapons: [], passives: [] };
@@ -2666,6 +2693,8 @@ export default class GameScene extends Phaser.Scene {
         newWeaponUnlocked: quitUnlockWeaponId,
         maxNoDamageStreak: this._maxNoDamageStreak,
         totalHitsTaken: this._totalHitsTaken,
+        difficulty: this.difficulty,
+        tookDamage: this._totalHitsTaken > 0,
       };
 
       this._cleanup();

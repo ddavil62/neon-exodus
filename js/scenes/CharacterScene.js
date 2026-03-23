@@ -8,6 +8,7 @@
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
+import { DIFFICULTY_MODES } from '../data/stages.js';
 import { CHARACTERS, getCharacterById } from '../data/characters.js';
 import SoundSystem from '../systems/SoundSystem.js';
 
@@ -125,6 +126,7 @@ export default class CharacterScene extends Phaser.Scene {
       const stageNum = this._stageId.replace('stage_', '');
       const introId = `stage_${stageNum}_intro`;
 
+      const selectedDifficulty = SaveManager.getSelectedDifficulty();
       if (!SaveManager.isCutsceneViewed(introId)) {
         this.scene.start('CutsceneScene', {
           cutsceneId: introId,
@@ -132,6 +134,7 @@ export default class CharacterScene extends Phaser.Scene {
           nextSceneData: {
             characterId: this._selectedId,
             stageId: this._stageId,
+            difficulty: selectedDifficulty,
           },
           characterId: this._selectedId,
         });
@@ -139,6 +142,7 @@ export default class CharacterScene extends Phaser.Scene {
         this.scene.start('GameScene', {
           characterId: this._selectedId,
           stageId: this._stageId,
+          difficulty: selectedDifficulty,
         });
       }
     });
