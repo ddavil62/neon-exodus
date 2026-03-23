@@ -279,13 +279,13 @@ export default class WaveSystem {
   }
 
   /**
-   * 엔들리스 스케일을 적용한다. 매 분 HP +15%, 데미지 +12% 누적.
+   * 엔들리스 스케일을 적용한다. 매 분 HP +30%, 데미지 +24% 누적.
    * 엔들리스 진입 시 HP ×2.5, DMG ×2.5 적용 후 분당 복리 증가.
    * @param {number} minutes - 엔들리스 경과 분
    */
   applyEndlessScale(minutes) {
-    this._hpMultiplier *= 1.15;
-    this._dmgMultiplier *= 1.12;
+    this._hpMultiplier *= 1.30;
+    this._dmgMultiplier *= 1.24;
   }
 
   /**
