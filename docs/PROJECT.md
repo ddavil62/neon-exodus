@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-23 (도감 업적 탭 제거 및 도전과제 보상 정보 추가)
+> 최종 업데이트: 2026-03-23 (무기/패시브 인포 모달 추가)
 
 ## 프로젝트 개요
 
@@ -58,7 +58,7 @@ neon-exodus/
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑/파괴 가능 데코)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, 무기/패시브 인포 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑/파괴 가능 데코)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (5탭 카드 그리드: 기본/성장/특수/드론/한계돌파)
@@ -228,10 +228,10 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `js/config.js` | 해상도, 월드, 래핑(WRAP_RADIUS), 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
-| 다국어 | `js/i18n.js` | ko/en 382키, `t()` 함수로 참조 |
+| 다국어 | `js/i18n.js` | ko/en 385키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
 | 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수, 장식 오브젝트 타입(decoTypes)/틴트(decoTint), 파괴 데코 드롭 테이블(decoDropTable) |
-| 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴, 배경 장식 오브젝트 배치(_initDecos)/래핑(_wrapDecos)/파괴 가능 데코(_onProjectileHitDeco, _spawnDecoDrop) |
+| 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 무기/패시브 인포 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴, 배경 장식 오브젝트 배치(_initDecos)/래핑(_wrapDecos)/파괴 가능 데코(_onProjectileHitDeco, _spawnDecoDrop) |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기 |
@@ -1367,13 +1367,38 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - 각 슬롯: 반투명 검정 둥근 사각형 배경(무기 55%, 패시브 50%) + 이모지 아이콘 + 우하단 레벨 숫자
 - 무기 아이콘: WEAPON_ICON_MAP 상수로 매핑 (10종 + fallback), 진화 무기는 `w._evolvedId`로 진화 아이콘 자동 교체
 - 패시브 아이콘: `getPassiveById(pid).icon` 필드 활용
-- depth: bg=105, icon=106, level=107 (기존 HUD 100~102 위)
+- depth: bg=105, icon=106, level=107, hitZone=108 (기존 HUD 100~102 위)
 - setScrollFactor(0)으로 카메라 고정
 - 갱신 시점: `_createHUD()` 초기화 시 1회 + `levelupDone` 이벤트 핸들러에서 `_tryEvolutionCheck()` 이후
 - 빈 슬롯 표시 없음 (보유 아이템만 순회)
+- 각 슬롯에 투명 hitZone(depth 108) 추가: 탭(pointerup) 시 인포 모달 표시
 - 관련 파일: `js/scenes/GameScene.js`
-- 구현 일자: 2026-03-09
+- 구현 일자: 2026-03-09 (인포 모달 추가: 2026-03-23)
 - 스펙 문서: `.claude/specs/2026-03-09-ingame-inventory-ui.md`
+
+#### 무기/패시브 인포 모달
+HUD 인벤토리의 무기 또는 패시브 아이콘을 탭하면 해당 아이템의 상세 정보를 표시하는 모달.
+
+**무기 인포 모달** (`_showWeaponInfoModal(w)`):
+- 패널: 250x160px (진화 무기: 250x180px), depth 350~353
+- 표시: 아이콘(22px) + 이름(16px) + 레벨(12px, xpYellow) + 설명(11px, textSecondary, wordWrap 220px)
+- 진화 무기: NEON_ORANGE 테두리, "진화 무기" 뱃지(11px, neonOrange), `getEvolvedWeaponById()` 조회
+- 일반 무기: NEON_CYAN 테두리, `getWeaponById()` 조회
+
+**패시브 인포 모달** (`_showPassiveInfoModal(pid, plevel)`):
+- 패널: 250x210px, NEON_CYAN 테두리, depth 350~353
+- 표시: 아이콘(22px) + 이름(16px, neonCyan) + 레벨(12px, xpYellow) + 효과 설명(12px, textPrimary) + 상세(11px, textSecondary)
+- 효과값: `effectPerLevel * plevel` 계산, 퍼센트 기반 패시브(`effectPerLevel < 1` 및 desc에 `%` 포함)는 자동으로 `*100` 변환
+
+**공통**:
+- 가드 조건: `_modalOpen || _levelUpActive || isPaused || isGameOver` 시 열기 차단 (4중 가드)
+- 게임 일시정지: `isPaused=true`, `physics.pause()`. 닫기 시 `isPaused=false`, `physics.resume()`
+- 닫기 버튼: 120x36px, pointerdown/pointerup/pointerout 인터랙션
+- 반투명 오버레이(0x000000, 0.6) + popupElements 배열 일괄 destroy 패턴
+- 기존 진화 모달/엔들리스 모달과 동일한 depth 350~353 대역
+- 관련 파일: `js/scenes/GameScene.js`
+- 구현 일자: 2026-03-23
+- 목적 정의서: `.claude/specs/2026-03-23-weapon-info-modal-purpose.md`
 
 #### 일시정지 오버레이
 - 반투명 배경, 계속/포기 버튼
@@ -1645,6 +1670,19 @@ HUD 하단에 보유 무기/패시브를 상시 표시하는 2행 인벤토리. 
 - [x] 진화 무기 아이콘 자동 교체 (w._evolvedId 기반)
 - [x] setScrollFactor(0) + depth 105~107로 카메라 고정
 - [x] 이벤트 기반 갱신 (매 프레임 갱신 없음)
+
+### 무기/패시브 인포 모달 -- 완료 (2026-03-23)
+- [x] `getWeaponById`, `getEvolvedWeaponById` import 추가
+- [x] `_refreshInventoryHUD()` 무기/패시브 슬롯에 hitZone(depth 108) 추가 (pointerup -> 인포 모달)
+- [x] 슬롯 객체에 hitZone 필드 추가: `{ bg, icon, level, hitZone }`, destroy 시 hitZone 포함 정리
+- [x] `_showWeaponInfoModal(w)` 신규 메서드: 무기 이름/설명/레벨 모달 (250x160px, 진화: 250x180px)
+- [x] `_showPassiveInfoModal(pid, plevel)` 신규 메서드: 패시브 이름/설명/상세/레벨 모달 (250x210px)
+- [x] 진화 무기 분기: `w._evolvedId` -> `getEvolvedWeaponById()` 조회, NEON_ORANGE 테두리 + "진화 무기" 뱃지
+- [x] 패시브 효과값 퍼센트 변환: `effectPerLevel < 1 && desc에 % 포함` 시 `*100` 변환
+- [x] 4중 가드 조건: `_modalOpen || _levelUpActive || isPaused || isGameOver`
+- [x] 게임 일시정지/재개: `isPaused`, `physics.pause()/resume()`, `_modalOpen` 플래그
+- [x] popupElements 배열 + forEach destroy 패턴 (기존 모달과 동일)
+- [x] i18n 3키 추가 (weapon.infoModal.level, weapon.infoModal.evolved, passive.infoModal.level, ko/en 총 385키)
 
 ### 아트 Phase 2 (DALL-E 보스 픽셀아트) -- 대체됨 (2026-03-10 글로우 벡터로 전면 교체)
 - [x] *(대체됨)* DALL-E 3 보스/미니보스 스프라이트시트 -> 글로우 벡터 정적 이미지로 전면 교체

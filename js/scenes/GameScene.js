@@ -40,7 +40,7 @@ import Consumable from '../entities/Consumable.js';
 import { CONSUMABLE_MAP } from '../data/consumables.js';
 import { MetaManager } from '../managers/MetaManager.js';
 import { SaveManager } from '../managers/SaveManager.js';
-import { WEAPON_EVOLUTIONS } from '../data/weapons.js';
+import { WEAPON_EVOLUTIONS, getWeaponById, getEvolvedWeaponById } from '../data/weapons.js';
 import { getCharacterById } from '../data/characters.js';
 import SoundSystem from '../systems/SoundSystem.js';
 import VFXSystem from '../systems/VFXSystem.js';
@@ -2118,11 +2118,13 @@ export default class GameScene extends Phaser.Scene {
       if (slot.bg && slot.bg.destroy) slot.bg.destroy();
       if (slot.icon && slot.icon.destroy) slot.icon.destroy();
       if (slot.level && slot.level.destroy) slot.level.destroy();
+      if (slot.hitZone && slot.hitZone.destroy) slot.hitZone.destroy();
     });
     inv.passives.forEach((slot) => {
       if (slot.bg && slot.bg.destroy) slot.bg.destroy();
       if (slot.icon && slot.icon.destroy) slot.icon.destroy();
       if (slot.level && slot.level.destroy) slot.level.destroy();
+      if (slot.hitZone && slot.hitZone.destroy) slot.hitZone.destroy();
     });
     inv.weapons = [];
     inv.passives = [];
@@ -2175,7 +2177,15 @@ export default class GameScene extends Phaser.Scene {
         }
       ).setOrigin(1, 1).setScrollFactor(0).setDepth(107);
 
-      inv.weapons.push({ bg, icon, level });
+      // 터치 영역: 슬롯 전체를 덮는 투명 히트존
+      const hitZone = this.add.zone(cx, weaponY, weaponSize, weaponSize)
+        .setScrollFactor(0).setDepth(108)
+        .setInteractive({ useHandCursor: true });
+      hitZone.on('pointerup', () => {
+        this._showWeaponInfoModal(w);
+      });
+
+      inv.weapons.push({ bg, icon, level, hitZone });
     });
 
     // ── 패시브 행 (Y = GAME_HEIGHT - 46 = 594) ──
@@ -2218,7 +2228,316 @@ export default class GameScene extends Phaser.Scene {
         }
       ).setOrigin(1, 1).setScrollFactor(0).setDepth(107);
 
-      inv.passives.push({ bg, icon, level });
+      // 터치 영역: 슬롯 전체를 덮는 투명 히트존
+      const hitZone = this.add.zone(cx, passiveY, passiveSize, passiveSize)
+        .setScrollFactor(0).setDepth(108)
+        .setInteractive({ useHandCursor: true });
+      hitZone.on('pointerup', () => {
+        this._showPassiveInfoModal(pid, plevel);
+      });
+
+      inv.passives.push({ bg, icon, level, hitZone });
+    });
+  }
+
+  // ── 무기 정보 모달 ──
+
+  /**
+   * 무기 아이콘 탭 시 해당 무기의 이름, 설명, 현재 레벨을 표시하는 정보 모달을 연다.
+   * 진화된 무기인 경우 진화 무기 이름/설명으로 표시한다.
+   * @param {Object} w - weaponSystem.weapons 배열의 무기 인스턴스
+   * @private
+   */
+  _showWeaponInfoModal(w) {
+    // 이미 모달이 열려 있거나, 레벨업 중이거나, 일시정지/게임오버 상태이면 차단
+    if (this._modalOpen || this._levelUpActive || this.isPaused || this.isGameOver) return;
+
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
+
+    // 게임 일시정지
+    this.isPaused = true;
+    this.physics.pause();
+    this._modalOpen = true;
+
+    // 모달 요소를 저장할 배열 (정리 시 사용)
+    const popupElements = [];
+
+    // 진화 여부에 따라 표시할 데이터 결정
+    const isEvolved = !!w._evolvedId;
+    let nameStr, descStr;
+
+    if (isEvolved) {
+      const evolvedData = getEvolvedWeaponById(w._evolvedId);
+      nameStr = evolvedData ? t(evolvedData.nameKey) : w._evolvedId;
+      descStr = evolvedData ? t(evolvedData.descKey) : '';
+    } else {
+      const weaponData = getWeaponById(w.id);
+      nameStr = weaponData ? t(weaponData.nameKey) : w.id;
+      descStr = weaponData ? t(weaponData.descKey) : '';
+    }
+
+    // 반투명 검정 오버레이
+    const overlay = this.add.rectangle(
+      centerX, centerY, GAME_WIDTH, GAME_HEIGHT,
+      0x000000, 0.6
+    ).setScrollFactor(0).setDepth(350);
+    popupElements.push(overlay);
+
+    // 중앙 패널 배경 + 테두리
+    const panelW = 250;
+    const panelH = isEvolved ? 180 : 160;
+    const panelX = centerX - panelW / 2;
+    const panelY = centerY - panelH / 2;
+
+    const panelBg = this.add.graphics().setScrollFactor(0).setDepth(351);
+    panelBg.fillStyle(COLORS.UI_PANEL, 0.95);
+    panelBg.fillRoundedRect(panelX, panelY, panelW, panelH, 8);
+    const borderColor = isEvolved ? COLORS.NEON_ORANGE : COLORS.NEON_CYAN;
+    panelBg.lineStyle(2, borderColor, 1);
+    panelBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 8);
+    popupElements.push(panelBg);
+
+    // 아이콘 + 이름 행 (패널 상단)
+    const iconKey = w._evolvedId || w.id;
+    const emoji = WEAPON_ICON_MAP[iconKey] || WEAPON_ICON_FALLBACK;
+    const headerY = centerY - panelH / 2 + 28;
+
+    const iconText = this.add.text(centerX - 50, headerY, emoji, {
+      fontSize: '22px',
+      fontFamily: 'Galmuri11, monospace',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(iconText);
+
+    const nameColor = isEvolved ? UI_COLORS.neonOrange : UI_COLORS.neonCyan;
+    const nameText = this.add.text(centerX + 10, headerY, nameStr, {
+      fontSize: '16px',
+      fontFamily: 'Galmuri11, monospace',
+      color: nameColor,
+      stroke: '#000000',
+      strokeThickness: 1,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(nameText);
+
+    // 레벨 표시
+    const levelY = headerY + 24;
+    const levelStr = t('weapon.infoModal.level', w.level);
+    const levelText = this.add.text(centerX, levelY, levelStr, {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.xpYellow,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(levelText);
+
+    // 진화 무기 뱃지 표시
+    let badgeY = levelY;
+    if (isEvolved) {
+      badgeY = levelY + 18;
+      const evolvedBadge = this.add.text(centerX, badgeY, t('weapon.infoModal.evolved'), {
+        fontSize: '11px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonOrange,
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+      popupElements.push(evolvedBadge);
+    }
+
+    // 설명 텍스트
+    const descY = (isEvolved ? badgeY : levelY) + 22;
+    const descText = this.add.text(centerX, descY, descStr, {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+      wordWrap: { width: 220 },
+      align: 'center',
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(352);
+    popupElements.push(descText);
+
+    // 닫기 버튼
+    const btnW = 120;
+    const btnH = 36;
+    const btnY = centerY + panelH / 2 - 26;
+
+    const btnBg = this.add.graphics().setScrollFactor(0).setDepth(352);
+    btnBg.fillStyle(borderColor, 0.8);
+    btnBg.fillRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+    popupElements.push(btnBg);
+
+    const btnText = this.add.text(centerX, btnY, t('ui.close'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(353);
+    popupElements.push(btnText);
+
+    // 닫기 버튼 인터랙션 Zone
+    const btnZone = this.add.zone(centerX, btnY, btnW, btnH)
+      .setScrollFactor(0).setDepth(353)
+      .setInteractive({ useHandCursor: true });
+
+    btnZone.on('pointerdown', () => {
+      btnText.setAlpha(0.6);
+    });
+    btnZone.on('pointerup', () => {
+      // 모든 모달 요소 제거
+      popupElements.forEach((el) => {
+        if (el && el.destroy) el.destroy();
+      });
+      btnZone.destroy();
+
+      // 게임 재개
+      this.isPaused = false;
+      this.physics.resume();
+      this._modalOpen = false;
+    });
+    btnZone.on('pointerout', () => {
+      btnText.setAlpha(1);
+    });
+  }
+
+  // ── 패시브 정보 모달 ──
+
+  /**
+   * 패시브 아이콘 탭 시 해당 패시브의 이름, 설명, 상세 효과, 현재 레벨을 표시하는 정보 모달을 연다.
+   * @param {string} pid - 패시브 ID
+   * @param {number} plevel - 현재 패시브 레벨
+   * @private
+   */
+  _showPassiveInfoModal(pid, plevel) {
+    // 이미 모달이 열려 있거나, 레벨업 중이거나, 일시정지/게임오버 상태이면 차단
+    if (this._modalOpen || this._levelUpActive || this.isPaused || this.isGameOver) return;
+
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
+
+    // 패시브 데이터 조회
+    const passiveData = getPassiveById(pid);
+    if (!passiveData) return;
+
+    // 게임 일시정지
+    this.isPaused = true;
+    this.physics.pause();
+    this._modalOpen = true;
+
+    // 모달 요소를 저장할 배열 (정리 시 사용)
+    const popupElements = [];
+
+    const nameStr = t(passiveData.nameKey);
+    // 비율 기반 패시브(effectPerLevel < 1, desc에 % 포함)는 *100으로 퍼센트 변환
+    const rawVal = passiveData.effectPerLevel * plevel;
+    const isPercent = passiveData.effectPerLevel < 1 && t(passiveData.descKey, '{0}').includes('%');
+    const displayVal = isPercent ? Math.round(rawVal * 100) : Math.round(rawVal * 100) / 100;
+    const descStr = t(passiveData.descKey, displayVal);
+    const detailStr = t(passiveData.detailKey);
+
+    // 반투명 검정 오버레이
+    const overlay = this.add.rectangle(
+      centerX, centerY, GAME_WIDTH, GAME_HEIGHT,
+      0x000000, 0.6
+    ).setScrollFactor(0).setDepth(350);
+    popupElements.push(overlay);
+
+    // 중앙 패널 배경 + 테두리 (네온 시안)
+    const panelW = 250;
+    const panelH = 210;
+    const panelX = centerX - panelW / 2;
+    const panelY = centerY - panelH / 2;
+
+    const panelBg = this.add.graphics().setScrollFactor(0).setDepth(351);
+    panelBg.fillStyle(COLORS.UI_PANEL, 0.95);
+    panelBg.fillRoundedRect(panelX, panelY, panelW, panelH, 8);
+    panelBg.lineStyle(2, COLORS.NEON_CYAN, 1);
+    panelBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 8);
+    popupElements.push(panelBg);
+
+    // 아이콘 + 이름 행
+    const headerY = centerY - panelH / 2 + 28;
+
+    const iconText = this.add.text(centerX - 50, headerY, passiveData.icon || '?', {
+      fontSize: '22px',
+      fontFamily: 'Galmuri11, monospace',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(iconText);
+
+    const nameText = this.add.text(centerX + 10, headerY, nameStr, {
+      fontSize: '16px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+      stroke: '#000000',
+      strokeThickness: 1,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(nameText);
+
+    // 레벨 표시
+    const levelY = headerY + 24;
+    const levelStr = t('passive.infoModal.level', plevel);
+    const levelText = this.add.text(centerX, levelY, levelStr, {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.xpYellow,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(levelText);
+
+    // 설명 텍스트 (현재 효과)
+    const descY = levelY + 22;
+    const descTextEl = this.add.text(centerX, descY, descStr, {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+      wordWrap: { width: 220 },
+      align: 'center',
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(352);
+    popupElements.push(descTextEl);
+
+    // 상세 효과 텍스트
+    const detailY = descY + 36;
+    const detailText = this.add.text(centerX, detailY, detailStr, {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+      wordWrap: { width: 220 },
+      align: 'center',
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(352);
+    popupElements.push(detailText);
+
+    // 닫기 버튼
+    const btnW = 120;
+    const btnH = 36;
+    const btnY = centerY + panelH / 2 - 26;
+
+    const btnBg = this.add.graphics().setScrollFactor(0).setDepth(352);
+    btnBg.fillStyle(COLORS.NEON_CYAN, 0.8);
+    btnBg.fillRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+    popupElements.push(btnBg);
+
+    const btnText = this.add.text(centerX, btnY, t('ui.close'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(353);
+    popupElements.push(btnText);
+
+    // 닫기 버튼 인터랙션 Zone
+    const btnZone = this.add.zone(centerX, btnY, btnW, btnH)
+      .setScrollFactor(0).setDepth(353)
+      .setInteractive({ useHandCursor: true });
+
+    btnZone.on('pointerdown', () => {
+      btnText.setAlpha(0.6);
+    });
+    btnZone.on('pointerup', () => {
+      // 모든 모달 요소 제거
+      popupElements.forEach((el) => {
+        if (el && el.destroy) el.destroy();
+      });
+      btnZone.destroy();
+
+      // 게임 재개
+      this.isPaused = false;
+      this.physics.resume();
+      this._modalOpen = false;
+    });
+    btnZone.on('pointerout', () => {
+      btnText.setAlpha(1);
     });
   }
 

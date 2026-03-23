@@ -219,6 +219,11 @@ const TRANSLATIONS = {
     'weapon.evolution.deathBlossom.name': '데스 블룸',
     'weapon.evolution.deathBlossom.desc': '낫 8개 고속 회전 + 강화 저주. 리퍼 필드의 진화.',
 
+    // ── 무기/패시브 정보 모달 ──
+    'weapon.infoModal.level': 'Lv.{0}',
+    'weapon.infoModal.evolved': '진화 무기',
+    'passive.infoModal.level': 'Lv.{0}',
+
     // ── 게임 상태 메시지 (Phase 3) ──
     'game.evolved': '{0} EVOLVED!',
 
@@ -1025,6 +1030,11 @@ const TRANSLATIONS = {
     'weapon.evolution.eventHorizon.desc': 'Massive black hole consumes enemies. Vortex Cannon evolution.',
     'weapon.evolution.deathBlossom.name': 'Death Blossom',
     'weapon.evolution.deathBlossom.desc': '8 blades, high-speed spin + enhanced curse. Reaper Field evolution.',
+
+    // ── Weapon/Passive Info Modal ──
+    'weapon.infoModal.level': 'Lv.{0}',
+    'weapon.infoModal.evolved': 'Evolved',
+    'passive.infoModal.level': 'Lv.{0}',
 
     // ── Game State Messages (Phase 3) ──
     'game.evolved': '{0} EVOLVED!',
