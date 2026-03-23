@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-24 (스킬 롱탭 설명 툴팁 추가)
+> 최종 업데이트: 2026-03-24 (메인 메뉴 레이아웃 개편 Phase 1)
 
 ## 프로젝트 개요
 
@@ -54,7 +54,7 @@ neon-exodus/
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
 │   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종 + 장식 오브젝트 16종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 배경 타일 128x128 4종 프로시저럴 패턴(_generateBackgroundTile + _regenerateTileTexture), 장식 오브젝트 16종 프로시저럴 폴백(_generateDecoTextures), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
-│   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 일일 미션, 도감, 설정, 자동 사냥 구매)
+│   │   ├── MenuScene.js           # 메인 메뉴 (2열 그리드: 캐릭터/업그레이드/도전과제/일일미션, 보조 행: 도감/자동사냥/설정, CTA 출격)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브, 스킬 롱탭 설명 툴팁)
@@ -216,14 +216,17 @@ neon-exodus/
 
 ```
 BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ GameScene ↔ LevelUpScene
-               │                                                    ↓
-               ├── UpgradeScene                               ← ResultScene
+               │              ↑                                      ↓
+               ├── CharacterScene (직접 이동)                   ← ResultScene
+               ├── UpgradeScene
                ├── AchievementScene
                ├── DailyMissionScene
                ├── CollectionScene
                └── SettingsScene
 ```
 
+- MenuScene에서 "출격" CTA -> 프롤로그 미시청 시 CutsceneScene, 아니면 StageSelectScene
+- MenuScene에서 "캐릭터" 그리드 버튼 -> CharacterScene (직접 이동)
 - StageSelectScene에서 선택한 stageId를 CharacterScene에 전달
 - CharacterScene에서 { characterId, stageId }를 GameScene에 전달
 - ESC 키: StageSelectScene -> MenuScene 뒤로가기
@@ -1019,7 +1022,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 메딕 | `medic` | blaster | hpRegenMultiplier x2.0, maxHp -30% | totalSurviveMinutes >= 500 | 4 |
 | ??? (Weapon Master) | `hidden` | blaster | 무기 슬롯 +2, 무기 등장 확률 x2 | sniper+engineer+berserker 모두 해금 | 4 |
 
-- CharacterScene: MenuScene에서 출격 버튼 클릭 시 이동. 캐릭터 목록을 세로 스크롤로 표시
+- CharacterScene: MenuScene "캐릭터" 그리드 버튼 또는 StageSelectScene에서 이동. 캐릭터 목록을 세로 스크롤로 표시
 - 잠금 캐릭터는 alpha 0.4, 선택 캐릭터는 neonCyan 테두리 하이라이트
 - 선택 후 출격 버튼으로 GameScene 시작 (characterId 전달)
 - GameScene.init()에서 characterId 수신, Player 생성 시 전달 -> 캐릭터별 고유 스프라이트/애니메이션 적용
@@ -1136,7 +1139,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 보상 행: 카드 하단(y+14)에 보상 타입별 텍스트 표시 (색상: `UI_COLORS.xpYellow` `#FFDD00`, fontSize 9px, 완료 시 alpha 1.0 / 미완료 시 alpha 0.7)
 - `_getRewardText(reward)` 헬퍼: credits, dataCore, dataCoreAndTitle(병기), characterHint, hiddenCharacterUnlock 5종 처리. null/unknown 타입은 빈 문자열 반환
 - 달성 항목: neonGreen alpha 0.15 배경 + 체크 마크
-- MenuScene 도전과제 버튼으로 진입
+- MenuScene 2열 그리드 (0,1) "도전과제" 버튼으로 진입
 - GameScene 추적 스탯: `_totalHitsTaken`, `_noDamageStreakStart`, `_maxNoDamageStreak`, `totalMinibossKills`
 - ResultScene: `lowHpClear`(HP 10% 이하 클리어), `noDamageRun`(피격 0회 클리어), `characterId` 전달, `characterClears` 기록
 - 관련 파일: `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/scenes/AchievementScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`
@@ -1184,7 +1187,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 전체 완료 보너스 패널 (Y=420, 320x60px, neonGreen 테두리)
 - streak 정보 (Y=490)
 - 뒤로가기 버튼 (Y=560)
-- MenuScene에서 "일일 미션" 버튼으로 진입 (도전과제 버튼 아래, 미완료 시 `(!)` 표시)
+- MenuScene 2열 그리드 (1,1) "일일 미션" 버튼으로 진입 (미완료 시 `(!)` 표시)
 
 ##### 세이브 데이터 (v13)
 - `dailyMissions` 필드 추가: `{ date, seed, missions[], bonusClaimed, streak, totalCompleted, charsUsedToday[] }`
@@ -1201,7 +1204,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 발견된 항목은 이름, 설명, 스탯 표시. 진화 무기도 별도 항목으로 포함 (진화 조건 표시)
 - **진화 탭**: 11개 진화 레시피를 카드 형태로 나열. 조합식(`[무기명] Lv8 + [패시브명] Lv5`)은 발견 여부 무관하게 항상 공개. 미발견 진화 무기 이름은 `★ ???`로 마스킹, 발견 시 `★ [실제이름]` 표시. 미발견 카드는 배경 alpha 0.5로 시각적 구분. CARD_H=56, CARD_W=320
 - 자동 등록: WeaponSystem.addWeapon()에서 weaponsSeen, LevelUpScene._addPassive()에서 passivesSeen, GameScene.onEnemyKilled()에서 enemiesSeen, evolveWeapon()에서 진화 무기 weaponsSeen 등록
-- MenuScene 도감 버튼으로 진입
+- MenuScene 보조 행 "도감" 버튼으로 진입
 - 관련 파일: `js/scenes/CollectionScene.js`
 - 구현 일자: 2026-03-09 (진화 탭 추가: 2026-03-11, 업적 탭 제거: 2026-03-23)
 - 스펙 문서: `.claude/specs/2026-03-11-evolution-recipe-ui.md`, `.claude/specs/2026-03-23-achievement-dedup.md`
@@ -1270,10 +1273,37 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 진입: MenuScene "설정" 버튼 탭 -> scene.start('SettingsScene')
 - 복귀: 뒤로가기 버튼, ESC 키, Android 하드웨어 백버튼 -> scene.start('MenuScene')
 
-#### MenuScene 버튼 Y좌표 (일일 미션 버튼 추가 후)
-- 동적 Y 배치 (nextY 방식, 시작 Y=265, BTN_GAP=44)
-- 출격 -> 업그레이드(해금 시) -> 도전과제 -> 일일 미션 -> 도감 -> 자동사냥 -> 설정
-- 크레딧 텍스트: y=568, 데이터코어 텍스트: y=585
+#### MenuScene 레이아웃 (2열 그리드 + CTA + 보조 버튼, Phase 1 개편)
+
+```
+360x640 뷰포트
+├── 타이틀: (180, 52), 36px, neonCyan
+├── 부제: (180, 88), 14px, textSecondary
+│
+├── 2열 그리드 (156x52px, 4개 메인 버튼)
+│   ├── [캐릭터]: (96, 370)
+│   ├── [업그레이드]: (264, 370) -- 미해금 시 비활성
+│   ├── [도전과제]: (96, 434)
+│   └── [일일미션]: (264, 434) -- 미완료 시 (!) 표시
+│
+├── 보조 버튼 행 (96x36px / 120x36px)
+│   ├── 자동사냥 해금 시: [도감]: (120, 498), [설정]: (240, 498) + "자동사냥 ON" 텍스트
+│   └── 자동사냥 미해금 시: [도감]: (56, 498), [자동사냥 구매]: (180, 498) 120x36 오렌지, [설정]: (304, 498)
+│
+├── CTA 출격 (310x56px, 네온 글로우 318x64)
+│   └── [출격]: (180, 560), 20px, neonCyan, magenta stroke
+│
+├── 리소스 (한 줄)
+│   ├── 크레딧: (60, 604), 11px, neonOrange
+│   └── 데이터코어: (300, 604), 11px, neonMagenta
+│
+└── 언어 토글: (330, 628)
+```
+
+- `_createButton(x, y, label, options)` options 객체 패턴으로 다양한 크기/스타일 지원
+- 그리드 버튼: btnPrimary 배경, NEON_CYAN 테두리 1px, radius 8
+- 보조 버튼: btnSecondary 배경, UI_BORDER 테두리 1px, radius 6
+- CTA 버튼: btnPrimary 배경 alpha 0.9, NEON_CYAN 테두리 2px, radius 10, glowColor NEON_CYAN alpha 0.15
 
 #### 초기화 (BootScene)
 - SoundSystem.init(settings) 호출 후, settings.bgmEnabled === false 시 setBgmEnabled(false) 호출

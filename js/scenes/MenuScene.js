@@ -1,7 +1,8 @@
 /**
  * @fileoverview 메인 메뉴 씬.
  *
- * 게임 타이틀, 시작 버튼, 업그레이드/도감 버튼(비활성), 언어 토글을 제공한다.
+ * 게임 타이틀, 2열 그리드 메인 버튼, 보조 버튼 행, CTA 출격 버튼,
+ * 리소스 표시, 언어 토글을 제공한다.
  * 네온 사이버펑크 분위기의 텍스트와 UI를 렌더링한다.
  */
 
@@ -21,6 +22,7 @@ export default class MenuScene extends Phaser.Scene {
 
   /**
    * 메뉴 UI를 생성한다.
+   * 2열 그리드 + CTA + 보조 버튼 레이아웃으로 시각적 계층을 제공한다.
    */
   create() {
     const centerX = GAME_WIDTH / 2;
@@ -39,8 +41,8 @@ export default class MenuScene extends Phaser.Scene {
         .setDepth(-1);
     }
 
-    // ── 타이틀 ──
-    this.add.text(centerX, 150, t('menu.title'), {
+    // ── 타이틀 영역 ──
+    this.add.text(centerX, 52, t('menu.title'), {
       fontSize: '36px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonCyan,
@@ -49,99 +51,225 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // 부제
-    this.add.text(centerX, 195, t('menu.subtitle'), {
+    this.add.text(centerX, 88, t('menu.subtitle'), {
       fontSize: '14px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textSecondary,
     }).setOrigin(0.5);
 
-    // ── 메뉴 버튼 (동적 Y 배치) ──
-    let nextY = 265;
-    const BTN_GAP = 44;
+    // ── 2열 그리드 (메인 버튼 4개) ──
+    // 좌표: col0=96, col1=264, row0=370, row1=434
 
-    // 출격 버튼 (프롤로그 미시청 시 컷신 → StageSelectScene)
-    this._createButton(centerX, nextY, t('menu.start'), UI_COLORS.btnPrimary, () => {
-      SoundSystem.resume();
-      if (!SaveManager.isCutsceneViewed('prologue')) {
-        this.scene.start('CutsceneScene', {
-          cutsceneId: 'prologue',
-          nextScene: 'StageSelectScene',
-          nextSceneData: {},
-        });
-      } else {
-        this.scene.start('StageSelectScene');
-      }
+    // 캐릭터 버튼 (0,0)
+    this._createButton(96, 370, t('menu.character'), {
+      width: 156,
+      height: 52,
+      fontSize: '14px',
+      bgColor: UI_COLORS.btnPrimary,
+      borderColor: COLORS.NEON_CYAN,
+      borderAlpha: 0.5,
+      borderWidth: 1,
+      textColor: UI_COLORS.textPrimary,
+      radius: 8,
+      callback: () => {
+        this.scene.start('CharacterScene');
+      },
     });
-    nextY += BTN_GAP;
 
-    // 업그레이드 버튼 (연구소 해금 후에만 표시)
-    if (SaveManager.isUpgradeUnlocked()) {
-      this._createButton(centerX, nextY, t('menu.upgrade'), UI_COLORS.btnPrimary, () => {
+    // 업그레이드 버튼 (1,0) — 조건부 비활성
+    const upgradeUnlocked = SaveManager.isUpgradeUnlocked();
+    this._createButton(264, 370, t('menu.upgrade'), {
+      width: 156,
+      height: 52,
+      fontSize: '14px',
+      bgColor: upgradeUnlocked ? UI_COLORS.btnPrimary : UI_COLORS.btnDisabled,
+      borderColor: COLORS.NEON_CYAN,
+      borderAlpha: 0.5,
+      borderWidth: 1,
+      textColor: upgradeUnlocked ? UI_COLORS.textPrimary : UI_COLORS.textSecondary,
+      radius: 8,
+      disabled: !upgradeUnlocked,
+      callback: () => {
         this.scene.start('UpgradeScene');
-      });
-      nextY += BTN_GAP;
-    }
-
-    // 도전과제 버튼
-    this._createButton(centerX, nextY, t('menu.achievements'), UI_COLORS.btnPrimary, () => {
-      this.scene.start('AchievementScene');
+      },
     });
-    nextY += BTN_GAP;
 
-    // 일일 미션 버튼 (미완료 미션이 있으면 알림 표시)
+    // 도전과제 버튼 (0,1)
+    this._createButton(96, 434, t('menu.achievements'), {
+      width: 156,
+      height: 52,
+      fontSize: '14px',
+      bgColor: UI_COLORS.btnPrimary,
+      borderColor: COLORS.NEON_CYAN,
+      borderAlpha: 0.5,
+      borderWidth: 1,
+      textColor: UI_COLORS.textPrimary,
+      radius: 8,
+      callback: () => {
+        this.scene.start('AchievementScene');
+      },
+    });
+
+    // 일일 미션 버튼 (1,1) — 미완료 시 (!) 표시
     DailyMissionManager.init();
     const dailyLabel = DailyMissionManager.hasUnclaimedMissions()
       ? `${t('menu.dailyMission')} (!)`
       : t('menu.dailyMission');
-    this._createButton(centerX, nextY, dailyLabel, UI_COLORS.btnPrimary, () => {
-      this.scene.start('DailyMissionScene');
+    this._createButton(264, 434, dailyLabel, {
+      width: 156,
+      height: 52,
+      fontSize: '14px',
+      bgColor: UI_COLORS.btnPrimary,
+      borderColor: COLORS.NEON_CYAN,
+      borderAlpha: 0.5,
+      borderWidth: 1,
+      textColor: UI_COLORS.textPrimary,
+      radius: 8,
+      callback: () => {
+        this.scene.start('DailyMissionScene');
+      },
     });
-    nextY += BTN_GAP;
 
-    // 도감 버튼
-    this._createButton(centerX, nextY, t('menu.collection'), UI_COLORS.btnPrimary, () => {
-      this.scene.start('CollectionScene');
-    });
-    nextY += BTN_GAP;
+    // ── 보조 버튼 행 ──
+    const autoHuntUnlocked = IAPManager.isAutoHuntUnlocked();
 
-    // 자동 사냥 구매 버튼 (미해금 시 표시)
-    if (!IAPManager.isAutoHuntUnlocked()) {
-      const price = IAPManager.getLocalizedPrice();
-      const btnLabel = `${t('autoHunt.purchase')} (${price})`;
-      this._createButton(centerX, nextY, btnLabel, COLORS.NEON_ORANGE, () => {
-        this._showAutoHuntPurchase();
+    if (autoHuntUnlocked) {
+      // 자동사냥 해금됨: 도감/설정 2개만 + 자동사냥 ON 텍스트
+      this._createButton(120, 498, t('menu.collection'), {
+        width: 96,
+        height: 36,
+        fontSize: '12px',
+        bgColor: UI_COLORS.btnSecondary,
+        borderColor: COLORS.UI_BORDER,
+        borderAlpha: 0.5,
+        borderWidth: 1,
+        textColor: UI_COLORS.textSecondary,
+        radius: 6,
+        callback: () => {
+          this.scene.start('CollectionScene');
+        },
       });
-    } else {
-      this.add.text(centerX, nextY, t('autoHunt.on'), {
+
+      // 자동사냥 ON 텍스트 (버튼 없이)
+      this.add.text(centerX, 498, t('autoHunt.on'), {
         fontSize: '12px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonGreen,
       }).setOrigin(0.5);
-    }
-    nextY += BTN_GAP;
 
-    // 설정 버튼
-    this._createButton(centerX, nextY, t('menu.settings'), UI_COLORS.btnSecondary, () => {
-      this.scene.start('SettingsScene');
+      this._createButton(240, 498, t('menu.settings'), {
+        width: 96,
+        height: 36,
+        fontSize: '12px',
+        bgColor: UI_COLORS.btnSecondary,
+        borderColor: COLORS.UI_BORDER,
+        borderAlpha: 0.5,
+        borderWidth: 1,
+        textColor: UI_COLORS.textSecondary,
+        radius: 6,
+        callback: () => {
+          this.scene.start('SettingsScene');
+        },
+      });
+    } else {
+      // 자동사냥 미해금: 3개 버튼 (도감, 자동사냥 구매, 설정)
+      this._createButton(56, 498, t('menu.collection'), {
+        width: 96,
+        height: 36,
+        fontSize: '12px',
+        bgColor: UI_COLORS.btnSecondary,
+        borderColor: COLORS.UI_BORDER,
+        borderAlpha: 0.5,
+        borderWidth: 1,
+        textColor: UI_COLORS.textSecondary,
+        radius: 6,
+        callback: () => {
+          this.scene.start('CollectionScene');
+        },
+      });
+
+      // 자동사냥 구매 버튼
+      const price = IAPManager.getLocalizedPrice();
+      const btnLabel = `${t('autoHunt.purchase')} (${price})`;
+      this._createButton(180, 498, btnLabel, {
+        width: 120,
+        height: 36,
+        fontSize: '12px',
+        bgColor: COLORS.NEON_ORANGE,
+        borderColor: COLORS.UI_BORDER,
+        borderAlpha: 0.5,
+        borderWidth: 1,
+        textColor: UI_COLORS.textPrimary,
+        radius: 6,
+        callback: () => {
+          this._showAutoHuntPurchase();
+        },
+      });
+
+      this._createButton(304, 498, t('menu.settings'), {
+        width: 96,
+        height: 36,
+        fontSize: '12px',
+        bgColor: UI_COLORS.btnSecondary,
+        borderColor: COLORS.UI_BORDER,
+        borderAlpha: 0.5,
+        borderWidth: 1,
+        textColor: UI_COLORS.textSecondary,
+        radius: 6,
+        callback: () => {
+          this.scene.start('SettingsScene');
+        },
+      });
+    }
+
+    // ── CTA 출격 버튼 ──
+    this._createButton(centerX, 560, t('menu.start'), {
+      width: 310,
+      height: 56,
+      fontSize: '20px',
+      bgColor: UI_COLORS.btnPrimary,
+      bgAlpha: 0.9,
+      borderColor: COLORS.NEON_CYAN,
+      borderAlpha: 0.8,
+      borderWidth: 2,
+      textColor: UI_COLORS.neonCyan,
+      textStroke: UI_COLORS.neonMagenta,
+      textStrokeThickness: 1,
+      radius: 10,
+      glowColor: COLORS.NEON_CYAN,
+      glowPadding: 4,
+      callback: () => {
+        SoundSystem.resume();
+        if (!SaveManager.isCutsceneViewed('prologue')) {
+          this.scene.start('CutsceneScene', {
+            cutsceneId: 'prologue',
+            nextScene: 'StageSelectScene',
+            nextSceneData: {},
+          });
+        } else {
+          this.scene.start('StageSelectScene');
+        }
+      },
     });
 
-    // ── 하단: 크레딧/데이터코어 보유량 ──
+    // ── 하단: 크레딧/데이터코어 보유량 (한 줄로 표시) ──
     /** @type {Phaser.GameObjects.Text} 크레딧 표시 텍스트 */
     this._creditText = this.add.text(
-      centerX, GAME_HEIGHT - 72,
+      60, 604,
       t('menu.credits', SaveManager.getCredits()),
       {
-        fontSize: '12px',
+        fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonOrange,
       }
     ).setOrigin(0.5);
 
+    /** @type {Phaser.GameObjects.Text} 데이터코어 표시 텍스트 */
     this._dataCoreText = this.add.text(
-      centerX, GAME_HEIGHT - 55,
+      300, 604,
       t('menu.dataCores', SaveManager.getDataCores()),
       {
-        fontSize: '12px',
+        fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonMagenta,
       }
@@ -152,11 +280,11 @@ export default class MenuScene extends Phaser.Scene {
     this.events.on('resume', this._refreshCredits, this);
 
     // ── 언어 토글 버튼 ──
-    const langBtn = this.add.text(GAME_WIDTH - 40, GAME_HEIGHT - 30, t('menu.lang'), {
+    const langBtn = this.add.text(GAME_WIDTH - 30, GAME_HEIGHT - 12, t('menu.lang'), {
       fontSize: '14px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
-      backgroundColor: '#1A1A2E',
+      backgroundColor: UI_COLORS.panelBgStr,
       padding: { x: 8, y: 4 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
@@ -192,7 +320,7 @@ export default class MenuScene extends Phaser.Scene {
           fontSize: '16px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.neonGreen,
-          stroke: '#000000',
+          stroke: UI_COLORS.strokeBlack,
           strokeThickness: 2,
         }
       ).setOrigin(0.5).setDepth(500);
@@ -211,7 +339,7 @@ export default class MenuScene extends Phaser.Scene {
           fontSize: '14px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.hpRed,
-          stroke: '#000000',
+          stroke: UI_COLORS.strokeBlack,
           strokeThickness: 2,
         }
       ).setOrigin(0.5).setDepth(500);
@@ -253,39 +381,91 @@ export default class MenuScene extends Phaser.Scene {
 
   /**
    * 버튼(사각형 배경 + 텍스트)을 생성한다.
+   * options 객체 패턴으로 다양한 크기/스타일의 버튼을 유연하게 생성한다.
    * @param {number} x - 중심 X 좌표
    * @param {number} y - 중심 Y 좌표
    * @param {string} label - 버튼 텍스트
-   * @param {number} bgColor - 배경 색상
-   * @param {Function|null} callback - 클릭 콜백 (null이면 비활성)
-   * @param {boolean} [disabled=false] - 비활성 상태
+   * @param {Object} [options={}] - 버튼 옵션
+   * @param {number} [options.width=156] - 버튼 너비
+   * @param {number} [options.height=52] - 버튼 높이
+   * @param {string} [options.fontSize='14px'] - 폰트 크기
+   * @param {number} [options.bgColor=UI_COLORS.btnPrimary] - 배경 색상
+   * @param {number} [options.bgAlpha=0.8] - 배경 투명도
+   * @param {number} [options.borderColor=COLORS.NEON_CYAN] - 테두리 색상
+   * @param {number} [options.borderAlpha=0.5] - 테두리 투명도
+   * @param {number} [options.borderWidth=1] - 테두리 두께
+   * @param {string} [options.textColor=UI_COLORS.textPrimary] - 텍스트 색상
+   * @param {string} [options.textStroke=null] - 텍스트 스트로크 색상
+   * @param {number} [options.textStrokeThickness=0] - 텍스트 스트로크 두께
+   * @param {number} [options.radius=8] - 모서리 반경
+   * @param {boolean} [options.disabled=false] - 비활성 상태
+   * @param {Function|null} [options.callback=null] - 클릭 콜백
+   * @param {number|null} [options.glowColor=null] - CTA용 글로우 색상
+   * @param {number} [options.glowPadding=4] - 글로우 패딩
    * @private
    */
-  _createButton(x, y, label, bgColor, callback, disabled = false) {
-    const btnWidth = 200;
-    const btnHeight = 44;
+  _createButton(x, y, label, options = {}) {
+    const {
+      width = 156,
+      height = 52,
+      fontSize = '14px',
+      bgColor = UI_COLORS.btnPrimary,
+      bgAlpha = 0.8,
+      borderColor = COLORS.NEON_CYAN,
+      borderAlpha = 0.5,
+      borderWidth = 1,
+      textColor = UI_COLORS.textPrimary,
+      textStroke = null,
+      textStrokeThickness = 0,
+      radius = 8,
+      disabled = false,
+      callback = null,
+      glowColor = null,
+      glowPadding = 4,
+    } = options;
 
-    // 배경 사각형
     const bg = this.add.graphics();
-    bg.fillStyle(bgColor, disabled ? 0.4 : 0.8);
-    bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6);
 
-    if (!disabled) {
-      bg.lineStyle(1, COLORS.NEON_CYAN, 0.5);
-      bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6);
+    // 글로우 효과 (CTA 버튼용)
+    if (glowColor !== null) {
+      const glowW = width + glowPadding * 2;
+      const glowH = height + glowPadding * 2;
+      bg.fillStyle(glowColor, 0.15);
+      bg.fillRoundedRect(
+        x - glowW / 2, y - glowH / 2,
+        glowW, glowH, radius + 2
+      );
     }
 
-    // 텍스트
-    const text = this.add.text(x, y, label, {
-      fontSize: '16px',
+    // 배경 사각형
+    bg.fillStyle(bgColor, disabled ? 0.4 : bgAlpha);
+    bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, radius);
+
+    // 테두리 (비활성 시 생략)
+    if (!disabled) {
+      bg.lineStyle(borderWidth, borderColor, borderAlpha);
+      bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, radius);
+    }
+
+    // 텍스트 스타일 구성
+    const textStyle = {
+      fontSize,
       fontFamily: 'Galmuri11, monospace',
-      color: disabled ? UI_COLORS.textSecondary : UI_COLORS.textPrimary,
-    }).setOrigin(0.5);
+      color: disabled ? UI_COLORS.textSecondary : textColor,
+    };
+
+    // 텍스트 스트로크 (CTA 버튼용)
+    if (textStroke) {
+      textStyle.stroke = textStroke;
+      textStyle.strokeThickness = textStrokeThickness;
+    }
+
+    const text = this.add.text(x, y, label, textStyle).setOrigin(0.5);
 
     if (disabled) return;
 
     // 터치 영역 (투명 Zone)
-    const zone = this.add.zone(x, y, btnWidth, btnHeight).setInteractive({ useHandCursor: true });
+    const zone = this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true });
 
     zone.on('pointerover', () => {
       text.setAlpha(0.8);

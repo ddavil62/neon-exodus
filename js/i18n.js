@@ -20,6 +20,7 @@ const TRANSLATIONS = {
     'menu.dataCores': '데이터 코어: {0}',
     'menu.selectCharacter': '캐릭터 선택',
     'menu.locked': '잠김',
+    'menu.character': '캐릭터',
     'menu.characterUnlocked': '🔓 {0} 해금!',
 
     // ── HUD ──
@@ -1124,6 +1125,7 @@ const TRANSLATIONS = {
     'menu.dataCores': 'Data Cores: {0}',
     'menu.selectCharacter': 'Select Character',
     'menu.locked': 'Locked',
+    'menu.character': 'Character',
     'menu.characterUnlocked': '🔓 {0} Unlocked!',
 
     // ── HUD ──

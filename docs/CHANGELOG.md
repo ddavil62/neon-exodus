@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-03-24 -- 메인 메뉴 레이아웃 개편 (Phase 1)
+
+### 변경
+- `js/scenes/MenuScene.js`: 수직 리스트(200x44px 동일 크기 7개 버튼) -> 4계층 레이아웃으로 전면 재구성
+  - 2열 그리드 (156x52px): 캐릭터(96,370), 업그레이드(264,370), 도전과제(96,434), 일일미션(264,434)
+  - 보조 행 (96x36px / 120x36px): 도감, 자동사냥(조건부), 설정
+  - CTA (310x56px): 출격 -- 네온 글로우 효과(318x64, alpha 0.15)
+  - 타이틀 Y=150->52, 부제 Y=195->88 (상단으로 이동)
+  - 리소스 표시: 2줄 -> 1줄 (크레딧 (60,604) + 데이터코어 (300,604))
+- `js/scenes/MenuScene.js`: `_createButton(x, y, label, bgColor, callback)` -> `_createButton(x, y, label, options)` options 객체 패턴 리팩토링 (width, height, fontSize, bgColor, bgAlpha, borderColor, borderAlpha, borderWidth, textColor, textStroke, textStrokeThickness, radius, disabled, callback, glowColor, glowPadding)
+- `js/scenes/MenuScene.js`: 업그레이드 미해금 시 버튼 숨김 -> 비활성 표시(btnDisabled, alpha 0.4, textSecondary, 테두리 없음)로 변경
+
+### 추가
+- `js/scenes/MenuScene.js`: 캐릭터 버튼 추가 -> CharacterScene 직접 연결
+- `js/config.js`: `UI_COLORS.strokeBlack` ('#000000') 추가
+- `js/i18n.js`: `menu.character` 키 추가 (ko: '캐릭터', en: 'Character')
+
+### 수정
+- `js/scenes/MenuScene.js`: 캐릭터 버튼 씬 키 `CharacterSelectScene` -> `CharacterScene` (QA 발견 버그 수정)
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-24-menu-layout-overhaul-purpose.md`
+- 스펙: `.claude/specs/2026-03-24-menu-layout-overhaul.md`
+- 구현 리포트: `.claude/specs/2026-03-24-menu-layout-overhaul-report.md`
+- QA: `.claude/specs/2026-03-24-menu-layout-overhaul-qa.md`
+- QA 초기 FAIL (캐릭터 버튼 씬 키 `CharacterSelectScene` -> `CharacterScene` 불일치) -> 수정 후 PASS
+- 변경 파일: `js/scenes/MenuScene.js`, `js/config.js`, `js/i18n.js` 총 3개
+- 스펙 대비 차이:
+  - 보조 버튼 3-btn 모드 좌표: 도감 스펙(70,498)->구현(56,498), 설정 스펙(290,498)->구현(304,498) -- 시각적으로 더 균등한 여백 제공
+  - 언어 토글 Y: 스펙 624 -> 구현 628 (GAME_HEIGHT-12=628)
+
 ## 2026-03-24 -- 스킬 롱탭 설명 툴팁
 
 ### 추가

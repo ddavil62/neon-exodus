@@ -230,6 +230,7 @@ export const UI_COLORS = {
   btnDisabled:   0x333344,
   textMuted:     '#BBBBBB',
   panelBgStr:    '#1A1A2E',
+  strokeBlack:   '#000000',
 };
 
 // ── 배경 타일 설정 ──
