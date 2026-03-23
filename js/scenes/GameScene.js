@@ -305,6 +305,17 @@ export default class GameScene extends Phaser.Scene {
       this
     );
 
+    // 투사체 ↔ 파괴 가능 데코
+    if (this._destructibleDecoGroup) {
+      this.physics.add.overlap(
+        this.weaponSystem.projectilePool.group,
+        this._destructibleDecoGroup,
+        this._onProjectileHitDeco,
+        null,
+        this
+      );
+    }
+
     // ── 게임 상태 ──
     /** 런 경과 시간 (초) */
     this.runTime = 0;
@@ -1412,15 +1423,35 @@ export default class GameScene extends Phaser.Scene {
   /**
    * 배경 장식 오브젝트를 플레이어 주변에 랜덤 배치한다.
    * 스테이지별 decoTypes 스프라이트를 사용하며, decoTint로 색조를 맞춘다.
-   * Depth 1~2, alpha 0.25~0.45, 물리 충돌 없음.
+   * 일부 데코는 파괴 가능(Destructible)으로 생성되어 투사체와 충돌한다.
    * @private
    */
   _initDecos() {
-    /** @type {Phaser.GameObjects.Image[]} */
+    /** @type {Phaser.GameObjects.Image[]} 전체 데코 배열 (일반 + 파괴 가능) */
     this._decos = [];
+
+    // 파괴 가능 데코 마커 텍스처 — 12x12, 흰색 비대칭 3점 배치
+    if (!this.textures.exists('_deco_sparkle')) {
+      const g = this.make.graphics({ add: false });
+      g.fillStyle(0xFFFFFF, 1);
+      g.fillCircle(6, 6, 3);   // 중심 코어
+      g.fillCircle(10, 2, 2);  // 우상단 위성
+      g.fillCircle(2, 10, 2);  // 좌하단 위성
+      g.generateTexture('_deco_sparkle', 12, 12);
+      g.destroy();
+    }
 
     const decoTypes = this.stageData.decoTypes || [];
     if (decoTypes.length === 0) return;
+
+    const dropTable = this.stageData.decoDropTable;
+    const destructibleRatio = dropTable ? dropTable.destructibleRatio : 0;
+
+    // 파괴 가능 데코 물리 그룹
+    this._destructibleDecoGroup = this.physics.add.group({
+      immovable: true,
+      allowGravity: false,
+    });
 
     const decoCount = Phaser.Math.Between(18, 28);
     const px = this.player ? this.player.x : PLAYER_START_X;
@@ -1430,17 +1461,41 @@ export default class GameScene extends Phaser.Scene {
       const texKey = decoTypes[Phaser.Math.Between(0, decoTypes.length - 1)];
       const x = px + Phaser.Math.Between(-800, 800);
       const y = py + Phaser.Math.Between(-800, 800);
-      const img = this.add.image(x, y, texKey);
-      img.setDepth(Phaser.Math.Between(1, 2));
-      img.setAlpha(Phaser.Math.FloatBetween(0.35, 0.55));
-      img.setAngle(Phaser.Math.Between(0, 359));
-      this._decos.push(img);
+      const isDestructible = Math.random() < destructibleRatio;
+
+      if (isDestructible) {
+        // 파괴 가능 데코: Physics.Arcade.Image로 생성
+        const img = this.physics.add.image(x, y, texKey);
+        img.body.setImmovable(true);
+        img.body.setAllowGravity(false);
+        img._isDestructible = true;
+        img._isDestroyed = false;
+        img.setDepth(Phaser.Math.Between(1, 2));
+        img.setAlpha(Phaser.Math.FloatBetween(0.55, 0.70));
+        img.setAngle(Phaser.Math.Between(0, 359));
+
+        // sparkle 아이콘 오버레이 — 파괴 가능 표시
+        const icon = this.add.image(x, y, '_deco_sparkle');
+        icon.setDepth(3).setScrollFactor(1).setAlpha(0.6);
+        img._sparkleIcon = icon;
+
+        this._destructibleDecoGroup.add(img);
+        this._decos.push(img);
+      } else {
+        // 일반 데코: 물리 없음
+        const img = this.add.image(x, y, texKey);
+        img.setDepth(Phaser.Math.Between(1, 2));
+        img.setAlpha(Phaser.Math.FloatBetween(0.35, 0.55));
+        img.setAngle(Phaser.Math.Between(0, 359));
+        this._decos.push(img);
+      }
     }
   }
 
   /**
    * 배경 장식 오브젝트를 WRAP_RADIUS 기반으로 래핑한다.
    * 플레이어에서 WRAP_RADIUS 밖으로 벗어난 데코를 반대편으로 이동시킨다.
+   * 파괴된 데코는 래핑 시 재활성화된다.
    * @private
    */
   _wrapDecos() {
@@ -1454,8 +1509,85 @@ export default class GameScene extends Phaser.Scene {
       const dx = deco.x - px;
       const dy = deco.y - py;
       if (dx * dx + dy * dy > r2) {
-        deco.setPosition(px - dx, py - dy);
+        // 래핑 위치 계산
+        const newX = px - dx;
+        const newY = py - dy;
+        deco.setPosition(newX, newY);
+
+        // 파괴된 데코 재활성화
+        if (deco._isDestructible && deco._isDestroyed) {
+          deco._isDestroyed = false;
+          deco.setVisible(true).setActive(true);
+          deco.body.enable = true;
+
+          // sparkle 아이콘 재생성
+          const icon = this.add.image(newX, newY, '_deco_sparkle');
+          icon.setDepth(3).setScrollFactor(1).setAlpha(0.6);
+          deco._sparkleIcon = icon;
+        } else if (deco._isDestructible && !deco._isDestroyed && deco._sparkleIcon) {
+          // 파괴되지 않은 destructible 데코: sparkle 아이콘 위치도 함께 이동
+          deco._sparkleIcon.setPosition(newX, newY);
+        }
       }
+    }
+  }
+
+  /**
+   * 투사체가 파괴 가능 데코에 충돌했을 때 호출된다.
+   * 데코를 비활성화하고, VFX/SFX 재생 후 드롭 아이템을 스폰한다.
+   * 투사체는 관통(pierce 소모 없음)한다.
+   * @param {Phaser.Physics.Arcade.Sprite} projectile - 충돌한 투사체
+   * @param {Phaser.Physics.Arcade.Image} deco - 충돌한 파괴 가능 데코
+   * @private
+   */
+  _onProjectileHitDeco(projectile, deco) {
+    if (deco._isDestroyed) return;
+
+    deco._isDestroyed = true;
+    deco.body.enable = false;
+    deco.setVisible(false).setActive(false);
+
+    // sparkle 아이콘 오버레이 제거
+    if (deco._sparkleIcon) {
+      deco._sparkleIcon.destroy();
+      deco._sparkleIcon = null;
+    }
+
+    // 파괴 VFX + SFX
+    VFXSystem.decoBreak(this, deco.x, deco.y, this.stageData.accentColor);
+    SoundSystem.play('deco_break');
+
+    // 드롭 아이템 스폰
+    this._spawnDecoDrop(deco.x, deco.y);
+  }
+
+  /**
+   * 파괴된 데코 위치에서 드롭 테이블 기반으로 아이템 1개를 스폰한다.
+   * weighted random으로 드롭 항목을 선택한다.
+   * @param {number} x - 스폰 X 좌표
+   * @param {number} y - 스폰 Y 좌표
+   * @private
+   */
+  _spawnDecoDrop(x, y) {
+    const table = this.stageData.decoDropTable;
+    if (!table || !table.drops || table.drops.length === 0) return;
+
+    // weighted random 선택
+    const totalWeight = table.drops.reduce((sum, d) => sum + d.weight, 0);
+    let roll = Math.random() * totalWeight;
+    let selected = table.drops[0];
+    for (const drop of table.drops) {
+      roll -= drop.weight;
+      if (roll <= 0) {
+        selected = drop;
+        break;
+      }
+    }
+
+    if (selected.type === 'xp') {
+      this.spawnXPGem(x, y, selected.gem);
+    } else if (selected.type === 'consumable') {
+      this.spawnConsumable(x, y, selected.id);
     }
   }
 
@@ -2444,12 +2576,20 @@ export default class GameScene extends Phaser.Scene {
       this._playerGlowCircle = null;
     }
 
-    // 배경 장식 오브젝트 정리
+    // 배경 장식 오브젝트 정리 (sparkle 아이콘 포함)
     if (this._decos) {
       for (const deco of this._decos) {
+        if (deco && deco._sparkleIcon) {
+          deco._sparkleIcon.destroy();
+          deco._sparkleIcon = null;
+        }
         if (deco && deco.destroy) deco.destroy();
       }
       this._decos = null;
+    }
+    if (this._destructibleDecoGroup) {
+      this._destructibleDecoGroup.destroy(true);
+      this._destructibleDecoGroup = null;
     }
 
     // destroy 후 참조를 null로 설정하여 use-after-destroy 방지

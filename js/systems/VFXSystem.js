@@ -2,7 +2,7 @@
  * @fileoverview Phaser Particles 기반 VFX 시스템.
  *
  * BootScene에서 생성한 4x4 흰색 particle 텍스처를 활용하여
- * 6종의 시각 효과를 1회 버스트(explode) 방식으로 표시한다.
+ * 7종의 시각 효과를 1회 버스트(explode) 방식으로 표시한다.
  * 추가 에셋 로드 없이 동작한다.
  */
 
@@ -179,6 +179,27 @@ export default class VFXSystem {
       ease: 'Quad.easeOut',
       onComplete: () => ring.destroy(),
     });
+  }
+
+  /**
+   * 파괴 가능 데코 파괴 이펙트. 스테이지 악센트 색상+화이트, 12입자, 350ms.
+   * @param {Phaser.Scene} scene - 씬 참조
+   * @param {number} x - X 좌표
+   * @param {number} y - Y 좌표
+   * @param {number} [accentColor=0xFFFFFF] - 스테이지 악센트 색상
+   */
+  static decoBreak(scene, x, y, accentColor = 0xFFFFFF) {
+    const emitter = scene.add.particles(x, y, 'particle', {
+      speed: { min: 40, max: 120 },
+      scale: { start: 1.2, end: 0 },
+      lifespan: 350,
+      tint: [accentColor, 0xFFFFFF],
+      quantity: 12,
+      emitting: false,
+    });
+    emitter.setDepth(20);
+    emitter.explode(12);
+    scene.time.delayedCall(400, () => emitter.destroy());
   }
 
   /**

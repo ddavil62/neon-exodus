@@ -25,6 +25,16 @@ export const STAGES = {
     spawnTableOverride: null,
     decoTypes: ['deco_s1_lamppost', 'deco_s1_car', 'deco_s1_manhole', 'deco_s1_debris'],
     decoTint: 0x7777BB,
+    /** 파괴 가능 데코 드롭 테이블 */
+    decoDropTable: {
+      destructibleRatio: 0.4,
+      drops: [
+        { type: 'xp', gem: 'small', weight: 60 },
+        { type: 'xp', gem: 'medium', weight: 20 },
+        { type: 'consumable', id: 'nano_repair', weight: 10 },
+        { type: 'consumable', id: 'credit_chip', weight: 10 },
+      ],
+    },
   },
   stage_2: {
     id: 'stage_2',
@@ -46,6 +56,16 @@ export const STAGES = {
     spawnTableOverride: { earlySpawnBoost: { enemyId: 'repair_bot', fromMinute: 1 } },
     decoTypes: ['deco_s2_drum', 'deco_s2_pipe', 'deco_s2_crane', 'deco_s2_sign'],
     decoTint: 0x8B6633,
+    /** 파괴 가능 데코 드롭 테이블 */
+    decoDropTable: {
+      destructibleRatio: 0.4,
+      drops: [
+        { type: 'xp', gem: 'small', weight: 60 },
+        { type: 'xp', gem: 'medium', weight: 20 },
+        { type: 'consumable', id: 'nano_repair', weight: 10 },
+        { type: 'consumable', id: 'credit_chip', weight: 10 },
+      ],
+    },
   },
   stage_3: {
     id: 'stage_3',
@@ -67,6 +87,16 @@ export const STAGES = {
     spawnTableOverride: { earlySpawnBoost: { enemyId: 'teleport_drone', fromMinute: 5 } },
     decoTypes: ['deco_s3_rack', 'deco_s3_cable', 'deco_s3_fan', 'deco_s3_terminal'],
     decoTint: 0x6644AA,
+    /** 파괴 가능 데코 드롭 테이블 */
+    decoDropTable: {
+      destructibleRatio: 0.4,
+      drops: [
+        { type: 'xp', gem: 'small', weight: 60 },
+        { type: 'xp', gem: 'medium', weight: 20 },
+        { type: 'consumable', id: 'nano_repair', weight: 10 },
+        { type: 'consumable', id: 'credit_chip', weight: 10 },
+      ],
+    },
   },
   stage_4: {
     id: 'stage_4',
@@ -94,6 +124,16 @@ export const STAGES = {
     },
     decoTypes: ['deco_s4_node', 'deco_s4_pillar', 'deco_s4_core', 'deco_s4_shard'],
     decoTint: 0x448844,
+    /** 파괴 가능 데코 드롭 테이블 */
+    decoDropTable: {
+      destructibleRatio: 0.4,
+      drops: [
+        { type: 'xp', gem: 'small', weight: 60 },
+        { type: 'xp', gem: 'medium', weight: 20 },
+        { type: 'consumable', id: 'nano_repair', weight: 10 },
+        { type: 'consumable', id: 'credit_chip', weight: 10 },
+      ],
+    },
   },
 };
 

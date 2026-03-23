@@ -2,7 +2,7 @@
  * @fileoverview AudioContext 기반 프로그래매틱 SFX/BGM 시스템.
  *
  * 외부 오디오 파일 없이 오실레이터로 모든 사운드를 합성한다.
- * SFX 9종 + BGM 2곡(game, menu)을 지원한다.
+ * SFX 10종 + BGM 2곡(game, menu)을 지원한다.
  * 모바일 AudioContext unlock 패턴(resume)을 포함한다.
  */
 
@@ -158,6 +158,9 @@ export default class SoundSystem {
         break;
       case 'xp_collect':
         SoundSystem._playXpCollect(ctx, now, vol);
+        break;
+      case 'deco_break':
+        SoundSystem._playDecoBreak(ctx, now, vol);
         break;
     }
   }
@@ -433,6 +436,34 @@ export default class SoundSystem {
     osc.connect(gain).connect(ctx.destination);
     osc.start(now);
     osc.stop(now + 0.06);
+  }
+
+  /**
+   * 데코 파괴 SFX: 300Hz 노이즈 버스트, gain 0.2, 0.08초.
+   * @private
+   */
+  static _playDecoBreak(ctx, now, vol) {
+    const bufferSize = Math.floor(ctx.sampleRate * 0.08);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(320, now);
+    filter.Q.setValueAtTime(1.5, now);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.2 * vol, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.08);
+
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.08);
   }
 
   // ── BGM 구현 ──

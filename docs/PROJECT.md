@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-23 (배경 리디자인 - 타일 + 장식 오브젝트)
+> 최종 업데이트: 2026-03-23 (파괴 가능 배경 장식 오브젝트)
 
 ## 프로젝트 개요
 
@@ -58,7 +58,7 @@ neon-exodus/
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
-│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑)
+│   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑/파괴 가능 데코)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (5탭 카드 그리드: 기본/성장/특수/드론/한계돌파)
@@ -78,8 +78,8 @@ neon-exodus/
 │   │   ├── WeaponSystem.js        # 무기 관리, 자동 발사 (10종 타입: projectile/beam/orbital/chain/homing/aoe/melee/cloud/gravity/rotating_blade)
 │   │   ├── DroneCompanionSystem.js # 메타 드론 동반자 시스템 (영구 해금, 메타 업그레이드 전용)
 │   │   ├── WaveSystem.js          # 적 스폰 웨이브 관리, 엔들리스 모드 스케일링
-│   │   ├── SoundSystem.js         # AudioContext 프로그래매틱 SFX 9종 + BGM 2곡
-│   │   ├── VFXSystem.js           # Phaser Particles 기반 VFX 6종
+│   │   ├── SoundSystem.js         # AudioContext 프로그래매틱 SFX 10종 + BGM 2곡
+│   │   ├── VFXSystem.js           # Phaser Particles 기반 VFX 7종
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
@@ -93,7 +93,7 @@ neon-exodus/
 │       ├── weapons.js             # 무기 10종 (기본 6종 + 스테이지 해금 4종 각 Lv1~8) + 진화 무기 10종 (drone/hivemind 제거)
 │       ├── droneUpgrades.js      # 메타 드론 업그레이드 5종 데이터 (기본 스탯 + costFormula)
 │       ├── enemies.js             # 잡몹 10종 + 미니보스 2종 + 보스 6종
-│       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER, decoTypes, decoTint)
+│       ├── stages.js              # 스테이지 4종 정의 (STAGES, STAGE_ORDER, decoTypes, decoTint, decoDropTable)
 │       ├── passives.js            # 패시브 아이템 11종
 │       ├── waves.js               # 스폰 테이블 6구간 + 미니보스/보스 스케줄
 │       ├── upgrades.js            # 영구 업그레이드 22종
@@ -230,17 +230,17 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 게임 설정 | `js/config.js` | 해상도, 월드, 래핑(WRAP_RADIUS), 밸런스 상수(BASE_DIFFICULTY, ENEMY_SCALE_PER_MINUTE 등), SPRITE_SCALE=1 일괄 관리 |
 | 다국어 | `js/i18n.js` | ko/en 382키, `t()` 함수로 참조 |
 | 스테이지 선택 | `js/scenes/StageSelectScene.js` | 4개 스테이지 카드, 잠금/해금/클리어 상태 분기, stageId 전달 |
-| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수, 장식 오브젝트 타입(decoTypes)/틴트(decoTint) |
-| 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴, 배경 장식 오브젝트 배치(_initDecos)/래핑(_wrapDecos) |
+| 스테이지 데이터 | `js/data/stages.js` | 4개 스테이지 정의, 난이도 배수, 장식 오브젝트 타입(decoTypes)/틴트(decoTint), 파괴 데코 드롭 테이블(decoDropTable) |
+| 게임 씬 | `js/scenes/GameScene.js` | 무한 월드/카메라, 시스템 연동, 엔티티 래핑(_wrapEntities), HUD, 인벤토리 HUD, 일시정지, 진화 모달/엔들리스 모달, 소모성 아이템 풀/수집/효과, 무기 드롭 맵 배치, 플레이어 글로우 서클 생성/동기화/파괴, 배경 장식 오브젝트 배치(_initDecos)/래핑(_wrapDecos)/파괴 가능 데코(_onProjectileHitDeco, _spawnDecoDrop) |
 | 플레이어 | `js/entities/Player.js` | 조이스틱 이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP/레벨업, 메타 업그레이드 반영, 오버클럭/쉴드 버프 관리, 발밑 글로우 서클 펄스/피격 플래시 |
 | 적 시스템 | `js/entities/Enemy.js` + `EnemyTypes.js` | 15종 적 행동 패턴, 소모성 아이템 드롭, 적 탄환 3레이어 글로우 + 트레일 |
 | 무기 | `js/systems/WeaponSystem.js` | 자동 발사(투사체/빔/오비탈/체인/호밍/범위/근접/구름/중력/회전낫), 치명타 판정, 무기 진화, 진화 전용 이펙트 분기 |
 | 메타 드론 | `js/systems/DroneCompanionSystem.js` | 영구 메타 드론 동반자 (스테이지 2 해금, 메타 업그레이드 전용, projectilePool 공유) |
 | 스폰 | `js/systems/WaveSystem.js` | 시간대별 스폰, 미니보스/보스 스케줄, 엔들리스 모드 스케일링 |
-| 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 9종 + BGM 2곡, BGM/SFX enabled 토글 |
+| 사운드 | `js/systems/SoundSystem.js` | AudioContext 프로그래매틱 SFX 10종 + BGM 2곡, BGM/SFX enabled 토글 |
 | 설정 | `js/scenes/SettingsScene.js` | BGM/SFX/햅틱 ON/OFF 토글 UI, SaveManager 연동 |
 | 햅틱 | `js/managers/HapticManager.js` | Capacitor Haptics 래퍼, enabled 플래그 제어 |
-| VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 8종 (기존 6종 + consumableCollect + empBlast), empRing/empBurst 진화 분기 |
+| VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 9종 (기존 6종 + consumableCollect + empBlast + decoBreak), empRing/empBurst 진화 분기 |
 | 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v7), 크레딧/통계/도감/스테이지 클리어/무기 해금/설정/캐릭터 클리어/미니보스 킬 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
@@ -858,16 +858,41 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | S4 더 코어 | deco_s4_node, deco_s4_pillar, deco_s4_core, deco_s4_shard | 0x1E4E1E |
 
 - BootScene.preload()에서 PNG 로딩, _generateDecoTextures()에서 프로시저럴 폴백
-- stages.js에 decoTypes(텍스처 키 배열), decoTint(틴트 색상) 필드 추가
+- stages.js에 decoTypes(텍스처 키 배열), decoTint(틴트 색상), decoDropTable(파괴 가능 데코 드롭 설정) 필드 추가
 
 #### 배치 시스템 (GameScene)
 
-- **_initDecos()**: create() 시 플레이어 주변 800px 반경에 15~25개 랜덤 배치
-  - Depth 1~2 (배경 타일 위, 모든 엔티티 아래)
-  - alpha 0.15~0.25, decoTint 적용, 0~359도 랜덤 회전
-  - Phaser.GameObjects.Image 정적 배치, 물리 충돌 없음
+- **_initDecos()**: create() 시 플레이어 주변 800px 반경에 18~28개 랜덤 배치
+  - 파괴 가능 여부를 `destructibleRatio`(0.4) 확률로 랜덤 결정
+  - **일반 데코**: Phaser.GameObjects.Image 정적 배치, 물리 충돌 없음, alpha 0.35~0.55
+  - **파괴 가능 데코**: Physics.Arcade.Image, immovable/allowGravity false, alpha 0.55~0.70, sparkle 아이콘 오버레이(12x12, depth 3, alpha 0.6)
+  - sparkle 텍스처(`_deco_sparkle`): 12x12 프로시저럴 생성 (흰색 3점 비대칭 배치)
+  - Depth 1~2 (배경 타일 위, 모든 엔티티 아래), 0~359도 랜덤 회전
+- **_onProjectileHitDeco()**: 투사체-파괴 가능 데코 overlap 충돌 콜백
+  - 이중 파괴 방어 (`_isDestroyed` 가드)
+  - 데코 비활성화 + sparkle 아이콘 destroy + VFXSystem.decoBreak() + SoundSystem deco_break + _spawnDecoDrop()
+  - 투사체는 관통 (소멸/pierce 소모 없음)
+- **_spawnDecoDrop()**: decoDropTable 기반 weighted random으로 아이템 1개 드롭
+  - XP 보석: spawnXPGem() 경로, 소모성 아이템: spawnConsumable() 경로
+  - 드롭 테이블 null/빈 배열 안전 처리
 - **_wrapDecos()**: update()에서 _wrapEntities() 직후 호출, WRAP_RADIUS 기반 래핑
-- **_cleanup()**: 씬 전환 시 데코 오브젝트 정리
+  - 파괴된 데코: 래핑 위치 이동 후 재활성화 (body.enable=true, sparkle 재생성)
+  - 활성 파괴 가능 데코: sparkle 아이콘 위치 동기화
+- **_cleanup()**: 씬 전환 시 데코 오브젝트 + sparkle 아이콘 + _destructibleDecoGroup 정리
+
+#### 파괴 가능 데코 드롭 테이블 (decoDropTable)
+
+4개 스테이지 공통 설정:
+| 항목 | 값 |
+|------|-----|
+| destructibleRatio | 0.4 (전체 데코 중 40%) |
+| XP 보석 (small) | weight 60 |
+| XP 보석 (medium) | weight 20 |
+| 나노 수리킷 (nano_repair) | weight 10 |
+| 크레딧 칩 (credit_chip) | weight 10 |
+
+- 드롭 수량: 파괴당 1개 (weighted random 단일 선택)
+- maxOnField 제한 미적용 (적 드롭과 독립)
 
 #### Depth 구조
 
@@ -875,14 +900,16 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 |-------|------|
 | -10 | bgTile (타일 배경) |
 | 1~2 | 장식 오브젝트 |
+| 3 | sparkle 아이콘 오버레이 (파괴 가능 데코 표시) |
 | 5 | 소모품 |
 | 7~9 | VFX, 글로우, 무기 |
 | 10 | 플레이어 |
 | 11+ | 적 |
+| 20 | decoBreak VFX 파티클 |
 
-- 관련 파일: `js/scenes/BootScene.js`, `js/scenes/GameScene.js`, `js/data/stages.js`, `scripts/generate-bg-assets.js`
-- 구현 일자: 2026-03-23
-- 스펙 문서: `.claude/specs/2026-03-23-neon-exodus-bg-redesign.md`
+- 관련 파일: `js/scenes/BootScene.js`, `js/scenes/GameScene.js`, `js/data/stages.js`, `js/systems/VFXSystem.js`, `js/systems/SoundSystem.js`, `scripts/generate-bg-assets.js`
+- 구현 일자: 2026-03-23 (배경 기반: 2026-03-23, 파괴 가능 데코: 2026-03-23)
+- 스펙 문서: `.claude/specs/2026-03-23-neon-exodus-bg-redesign.md`, `.claude/specs/2026-03-23-destructible-decos.md`
 
 ### 스폰 시스템
 
@@ -1026,7 +1053,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 
 ### 사운드 시스템
 
-#### SFX (9종)
+#### SFX (10종)
 | sfxId | 실행 시점 | 파라미터 |
 |---|---|---|
 | shoot | 투사체 발사 | 880Hz->440Hz 사인파, 0.08초 |
@@ -1038,6 +1065,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | emp_blast | EMP 폭발 | 200Hz->20Hz 노이즈, 0.5초 |
 | revive | 부활 | G4->C5->G5 상승, 0.15초씩 |
 | xp_collect | XP 수집 | 1200Hz 사인파, gain 0.1, 0.03초 |
+| deco_break | 데코 파괴 | 320Hz bandpass 노이즈 버스트, Q 1.5, gain 0.2, 0.08초 |
 
 #### BGM (2곡)
 | bgmId | 설명 | 파라미터 |
