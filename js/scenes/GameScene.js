@@ -2271,12 +2271,17 @@ export default class GameScene extends Phaser.Scene {
       ).setOrigin(1, 1).setScrollFactor(0).setDepth(107);
 
       // 터치 영역: 슬롯 전체를 덮는 투명 히트존
+      // pointerdown+pointerup 양쪽 모두 히트존 안에서 발생해야 팝업 표시
       const hitZone = this.add.zone(cx, weaponY, weaponSize, weaponSize)
         .setScrollFactor(0).setDepth(108)
         .setInteractive({ useHandCursor: true });
+      let weaponPressed = false;
+      hitZone.on('pointerdown', () => { weaponPressed = true; });
       hitZone.on('pointerup', () => {
-        this._showWeaponInfoModal(w);
+        if (weaponPressed) this._showWeaponInfoModal(w);
+        weaponPressed = false;
       });
+      hitZone.on('pointerout', () => { weaponPressed = false; });
 
       inv.weapons.push({ bg, icon, level, hitZone });
     });
@@ -2322,12 +2327,17 @@ export default class GameScene extends Phaser.Scene {
       ).setOrigin(1, 1).setScrollFactor(0).setDepth(107);
 
       // 터치 영역: 슬롯 전체를 덮는 투명 히트존
+      // pointerdown+pointerup 양쪽 모두 히트존 안에서 발생해야 팝업 표시
       const hitZone = this.add.zone(cx, passiveY, passiveSize, passiveSize)
         .setScrollFactor(0).setDepth(108)
         .setInteractive({ useHandCursor: true });
+      let passivePressed = false;
+      hitZone.on('pointerdown', () => { passivePressed = true; });
       hitZone.on('pointerup', () => {
-        this._showPassiveInfoModal(pid, plevel);
+        if (passivePressed) this._showPassiveInfoModal(pid, plevel);
+        passivePressed = false;
       });
+      hitZone.on('pointerout', () => { passivePressed = false; });
 
       inv.passives.push({ bg, icon, level, hitZone });
     });
