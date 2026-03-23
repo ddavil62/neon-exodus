@@ -13,6 +13,8 @@ import { MetaManager } from '../managers/MetaManager.js';
 import { AdManager } from '../managers/AdManager.js';
 import { getWeaponById } from '../data/weapons.js';
 import { STAGES, DIFFICULTY_MODES, DC_REWARD_DEATH } from '../data/stages.js';
+import { CHARACTERS } from '../data/characters.js';
+import { CHARACTER_COLORS, getXpForNextLevel, MAX_CHAR_LEVEL } from '../data/characterSkills.js';
 
 // ── ResultScene 클래스 ──
 
@@ -384,6 +386,13 @@ export default class ResultScene extends Phaser.Scene {
     // ── 입력 잠금 플래그 (광고 로딩 중 다른 버튼 차단) ──
     /** @type {boolean} 광고 로딩 중 입력 잠금 여부 */
     this._inputLocked = false;
+
+    // ── 경험치 분배 UI (DC > 0일 때 딜레이 후 표시) ──
+    if (dcReward > 0) {
+      this.time.delayedCall(1500, () => {
+        this._showXPDistributionUI(dcReward);
+      });
+    }
 
     // ── ESC 키로 메뉴 복귀 ──
     this.input.keyboard.on('keydown-ESC', () => {
@@ -760,6 +769,234 @@ export default class ResultScene extends Phaser.Scene {
     });
 
     return bannerY + bannerHeight / 2 + Math.round(20 * scale);
+  }
+
+  // ── 경험치 분배 UI ──
+
+  /**
+   * 캐릭터 경험치 분배 팝업을 표시한다.
+   * 해금된 캐릭터 리스트를 보여주고, 탭하여 DC를 부여한다.
+   * @param {number} dcReward - 획득 데이터코어 수
+   * @private
+   */
+  _showXPDistributionUI(dcReward) {
+    const centerX = GAME_WIDTH / 2;
+    const panelW = 300;
+    const panelH = 420;
+    const panelX = centerX - panelW / 2;
+    const panelY = 130;
+
+    // 반투명 오버레이
+    this._xpOverlay = this.add.graphics().setDepth(300);
+    this._xpOverlay.fillStyle(0x000000, 0.7);
+    this._xpOverlay.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    // 패널 배경
+    this._xpPanel = this.add.graphics().setDepth(301);
+    this._xpPanel.fillStyle(COLORS.UI_PANEL, 0.95);
+    this._xpPanel.fillRoundedRect(panelX, panelY, panelW, panelH, 10);
+    this._xpPanel.lineStyle(2, COLORS.NEON_CYAN, 0.6);
+    this._xpPanel.strokeRoundedRect(panelX, panelY, panelW, panelH, 10);
+
+    // 제목
+    this.add.text(centerX, panelY + 20, t('charLevel.title'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setOrigin(0.5).setDepth(302);
+
+    // 획득 DC 표시
+    this.add.text(centerX, panelY + 42, t('charLevel.acquired', dcReward), {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonOrange,
+    }).setOrigin(0.5).setDepth(302);
+
+    // 안내 텍스트
+    this._xpPrompt = this.add.text(centerX, panelY + 60, t('charLevel.selectPrompt'), {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+    }).setOrigin(0.5).setDepth(302);
+
+    // 캐릭터 카드 리스트
+    const CARD_W = 280;
+    const CARD_H = 48;
+    const CARD_GAP = 6;
+    const listStartY = panelY + 80;
+    const allChars = ['agent', 'sniper', 'engineer', 'berserker', 'medic', 'hidden'];
+
+    /** @type {boolean} 경험치가 이미 분배되었는지 */
+    this._xpDistributed = false;
+
+    /** @type {Array} 카드 UI 요소 배열 */
+    this._xpCards = [];
+
+    allChars.forEach((charId, i) => {
+      const isUnlocked = SaveManager.isCharacterUnlocked(charId);
+      const prog = SaveManager.getCharacterProgression(charId);
+      const cardX = centerX;
+      const cardY = listStartY + i * (CARD_H + CARD_GAP) + CARD_H / 2;
+
+      // 카드 배경
+      const bg = this.add.graphics().setDepth(302);
+      const charColor = CHARACTER_COLORS[charId] || COLORS.UI_BORDER;
+
+      if (isUnlocked) {
+        bg.fillStyle(COLORS.UI_PANEL, 0.9);
+        bg.fillRoundedRect(cardX - CARD_W / 2, cardY - CARD_H / 2, CARD_W, CARD_H, 6);
+        bg.lineStyle(1, charColor, 0.5);
+        bg.strokeRoundedRect(cardX - CARD_W / 2, cardY - CARD_H / 2, CARD_W, CARD_H, 6);
+      } else {
+        bg.fillStyle(0x222233, 0.5);
+        bg.fillRoundedRect(cardX - CARD_W / 2, cardY - CARD_H / 2, CARD_W, CARD_H, 6);
+      }
+
+      // 캐릭터명
+      const charData = CHARACTERS.find(c => c.id === charId);
+      const nameStr = charData ? t(charData.nameKey) : charId;
+
+      if (!isUnlocked) {
+        // 잠금 상태
+        this.add.text(cardX - CARD_W / 2 + 12, cardY, `\uD83D\uDD12 ${nameStr}`, {
+          fontSize: '12px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.textSecondary,
+        }).setOrigin(0, 0.5).setDepth(303).setAlpha(0.5);
+        return;
+      }
+
+      // 이름 + 레벨
+      const lvStr = prog.level >= MAX_CHAR_LEVEL ? t('charLevel.maxLevel') : `Lv.${prog.level}`;
+      this.add.text(cardX - CARD_W / 2 + 12, cardY - 10, `${nameStr}  ${lvStr}`, {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: '#FFFFFF',
+      }).setOrigin(0, 0.5).setDepth(303);
+
+      // XP 프로그레스 바
+      const barX = cardX - CARD_W / 2 + 12;
+      const barY = cardY + 6;
+      const barW = CARD_W - 70;
+      const barH = 6;
+      const needed = getXpForNextLevel(prog.level);
+      const xpRatio = needed > 0 ? Math.min(1, prog.xp / needed) : 1;
+
+      const barBg = this.add.graphics().setDepth(303);
+      barBg.fillStyle(0x333333, 0.8);
+      barBg.fillRect(barX, barY, barW, barH);
+
+      const barFill = this.add.graphics().setDepth(304);
+      barFill.fillStyle(charColor, 0.8);
+      barFill.fillRect(barX, barY, barW * xpRatio, barH);
+
+      // XP 텍스트
+      const xpStr = needed > 0 ? `${prog.xp}/${needed}` : 'MAX';
+      this.add.text(barX + barW + 6, barY - 1, xpStr, {
+        fontSize: '9px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.textSecondary,
+      }).setOrigin(0, 0).setDepth(303);
+
+      // 터치 영역
+      const zone = this.add.zone(cardX, cardY, CARD_W, CARD_H)
+        .setDepth(305).setInteractive({ useHandCursor: true });
+
+      this._xpCards.push({ charId, bg, barFill, zone, barX, barY, barW, barH });
+
+      zone.on('pointerdown', () => {
+        if (this._xpDistributed) return;
+        this._xpDistributed = true;
+
+        // XP 분배
+        const levelUps = SaveManager.addCharacterXP(charId, dcReward);
+
+        // 카드 하이라이트
+        bg.clear();
+        bg.fillStyle(charColor, 0.3);
+        bg.fillRoundedRect(cardX - CARD_W / 2, cardY - CARD_H / 2, CARD_W, CARD_H, 6);
+        bg.lineStyle(2, charColor, 0.9);
+        bg.strokeRoundedRect(cardX - CARD_W / 2, cardY - CARD_H / 2, CARD_W, CARD_H, 6);
+
+        // XP 바 업데이트
+        const newProg = SaveManager.getCharacterProgression(charId);
+        const newNeeded = getXpForNextLevel(newProg.level);
+        const newRatio = newNeeded > 0 ? Math.min(1, newProg.xp / newNeeded) : 1;
+        barFill.clear();
+        barFill.fillStyle(charColor, 0.8);
+        barFill.fillRect(barX, barY, barW * newRatio, barH);
+
+        // 레벨업 연출
+        if (levelUps > 0) {
+          const lvUpText = this.add.text(cardX, cardY - 28, t('charLevel.levelUp', newProg.level), {
+            fontSize: '14px',
+            fontFamily: 'Galmuri11, monospace',
+            color: UI_COLORS.neonGreen,
+            stroke: '#000000',
+            strokeThickness: 3,
+          }).setOrigin(0.5).setDepth(310).setAlpha(0);
+
+          this.tweens.add({
+            targets: lvUpText,
+            alpha: 1,
+            y: cardY - 30,
+            duration: 500,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+              this.tweens.add({
+                targets: lvUpText,
+                alpha: 0,
+                duration: 800,
+                delay: 1000,
+                onComplete: () => lvUpText.destroy(),
+              });
+            },
+          });
+
+          // SP 획득 알림
+          const spText = this.add.text(cardX, cardY - 6, t('charLevel.spGained', levelUps), {
+            fontSize: '11px',
+            fontFamily: 'Galmuri11, monospace',
+            color: UI_COLORS.xpYellow,
+            stroke: '#000000',
+            strokeThickness: 2,
+          }).setOrigin(0.5).setDepth(310).setAlpha(0);
+
+          this.tweens.add({
+            targets: spText,
+            alpha: 1,
+            duration: 400,
+            delay: 400,
+            onComplete: () => {
+              this.tweens.add({
+                targets: spText,
+                alpha: 0,
+                duration: 600,
+                delay: 1200,
+                onComplete: () => spText.destroy(),
+              });
+            },
+          });
+        }
+
+        // 안내 텍스트 업데이트
+        if (this._xpPrompt) {
+          this._xpPrompt.setText(`+${dcReward} DC -> ${nameStr}`);
+        }
+
+        // 다른 카드 비활성
+        this._xpCards.forEach(c => {
+          if (c.charId !== charId) c.zone.disableInteractive();
+        });
+
+        // 도전과제 재체크 (캐릭터 레벨 업적)
+        const savedStats = SaveManager.getStats();
+        AchievementManager.checkAll(savedStats, {
+          characterId: this.characterId,
+          victory: this.victory,
+        });
+      });
+    });
   }
 
   /**

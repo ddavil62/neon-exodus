@@ -13,11 +13,13 @@
  * - characterClear, characterClearCount, allCharacterClears
  * - maxLevel, stageClear, allStagesClear, totalPlayTime
  * - hardClear, hardAllClear, nightmareClear, nightmareAllClear, nightmareNoDamage
+ * - charLevel, firstUltimate, maxUltimate, allMaxLevel
  */
 
 import { ACHIEVEMENTS, getAchievementById } from '../data/achievements.js';
 import { SaveManager } from './SaveManager.js';
 import { STAGE_ORDER } from '../data/stages.js';
+import { MAX_CHAR_LEVEL } from '../data/characterSkills.js';
 
 // ── 상수 ──
 
@@ -313,6 +315,42 @@ export class AchievementManager {
       case 'nightmareNoDamage':
         // 런 데이터에서 체크: 나이트메어 + 승리 + 무피격
         return runData?.victory && runData?.difficulty === 'nightmare' && !runData?.tookDamage;
+
+      // ── 캐릭터 레벨/스킬 관련 ──
+      case 'charLevel': {
+        // 아무 캐릭터의 레벨이 value 이상이면 달성
+        for (const charId of ALL_CHARACTER_IDS) {
+          const prog = SaveManager.getCharacterProgression(charId);
+          if (prog && prog.level >= condition.value) return true;
+        }
+        return false;
+      }
+
+      case 'firstUltimate': {
+        // 아무 캐릭터의 R 스킬이 1 이상이면 달성
+        for (const charId of ALL_CHARACTER_IDS) {
+          const prog = SaveManager.getCharacterProgression(charId);
+          if (prog && prog.skills.R >= 1) return true;
+        }
+        return false;
+      }
+
+      case 'maxUltimate': {
+        // 아무 캐릭터의 R 스킬이 3 (최대)이면 달성
+        for (const charId of ALL_CHARACTER_IDS) {
+          const prog = SaveManager.getCharacterProgression(charId);
+          if (prog && prog.skills.R >= 3) return true;
+        }
+        return false;
+      }
+
+      case 'allMaxLevel': {
+        // 모든 캐릭터가 최대 레벨(18)이면 달성
+        return ALL_CHARACTER_IDS.every(charId => {
+          const prog = SaveManager.getCharacterProgression(charId);
+          return prog && prog.level >= MAX_CHAR_LEVEL;
+        });
+      }
 
       default:
         return false;

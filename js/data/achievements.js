@@ -822,6 +822,56 @@ export const ACHIEVEMENTS = [
     reward: { type: 'dataCore', amount: 1 },
   },
 
+  // ── 캐릭터 레벨 업적 (6종) ──
+  {
+    id: 'first_levelup',
+    nameKey: 'achievement.first_levelup.name',
+    descKey: 'achievement.first_levelup.desc',
+    category: 'character',
+    condition: { type: 'charLevel', value: 2 },
+    reward: { type: 'credits', amount: 100 },
+  },
+  {
+    id: 'char_level_10',
+    nameKey: 'achievement.char_level_10.name',
+    descKey: 'achievement.char_level_10.desc',
+    category: 'character',
+    condition: { type: 'charLevel', value: 10 },
+    reward: { type: 'dataCore', amount: 3 },
+  },
+  {
+    id: 'char_level_18',
+    nameKey: 'achievement.char_level_18.name',
+    descKey: 'achievement.char_level_18.desc',
+    category: 'character',
+    condition: { type: 'charLevel', value: 18 },
+    reward: { type: 'dataCore', amount: 5 },
+  },
+  {
+    id: 'first_ultimate',
+    nameKey: 'achievement.first_ultimate.name',
+    descKey: 'achievement.first_ultimate.desc',
+    category: 'character',
+    condition: { type: 'firstUltimate' },
+    reward: { type: 'credits', amount: 200 },
+  },
+  {
+    id: 'max_ultimate',
+    nameKey: 'achievement.max_ultimate.name',
+    descKey: 'achievement.max_ultimate.desc',
+    category: 'character',
+    condition: { type: 'maxUltimate' },
+    reward: { type: 'dataCore', amount: 3 },
+  },
+  {
+    id: 'all_max_level',
+    nameKey: 'achievement.all_max_level.name',
+    descKey: 'achievement.all_max_level.desc',
+    category: 'character',
+    condition: { type: 'allMaxLevel' },
+    reward: { type: 'dataCore', amount: 20 },
+  },
+
   // ── 난이도 업적 (5종) ──
   {
     id: 'hard_first_clear',

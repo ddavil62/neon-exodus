@@ -10,12 +10,14 @@ import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { DIFFICULTY_MODES } from '../data/stages.js';
 import { CHARACTERS, getCharacterById } from '../data/characters.js';
+import { CHARACTER_SKILLS, CHARACTER_COLORS, canInvestUlt, getXpForNextLevel, MAX_CHAR_LEVEL } from '../data/characterSkills.js';
 import SoundSystem from '../systems/SoundSystem.js';
 
 // ── 레이아웃 상수 ──
 
 const CARD_W = 300;
 const CARD_H = 88;
+const CARD_H_EXPANDED = 220;
 const CARD_GAP = 10;
 const LIST_START_Y = 100;
 
@@ -60,7 +62,13 @@ export default class CharacterScene extends Phaser.Scene {
 
     // ── 스크롤 컨테이너 (Phaser Container + Mask) ──
     const listHeight = GAME_HEIGHT - 200;
-    const contentHeight = visibleChars.length * (CARD_H + CARD_GAP);
+    // 선택된 캐릭터가 해금 상태면 확장 높이 적용
+    let contentHeight = 0;
+    visibleChars.forEach(cd => {
+      const unlocked = SaveManager.isCharacterUnlocked(cd.id) || !cd.unlockCondition;
+      const isSelected = this._selectedId === cd.id;
+      contentHeight += ((isSelected && unlocked) ? CARD_H_EXPANDED : CARD_H) + CARD_GAP;
+    });
 
     this._container = this.add.container(0, 0);
 
@@ -80,12 +88,16 @@ export default class CharacterScene extends Phaser.Scene {
     /** @type {Array<Object>} 이번 진입에서 새로 해금된 캐릭터 목록 */
     this._newlyUnlocked = [];
 
-    // ── 캐릭터 카드 생성 ──
+    // ── 캐릭터 카드 생성 (선택된 카드는 확장) ──
+    let accY = LIST_START_Y;
     visibleChars.forEach((charData, i) => {
       const isUnlocked = this._isCharUnlocked(charData, stats);
-      const cardY = LIST_START_Y + i * (CARD_H + CARD_GAP) + CARD_H / 2;
+      const isSelected = this._selectedId === charData.id;
+      const cardHeight = (isSelected && isUnlocked) ? CARD_H_EXPANDED : CARD_H;
+      const cardY = accY + cardHeight / 2;
 
       this._createCharCard(centerX, cardY, charData, isUnlocked);
+      accY += cardHeight + CARD_GAP;
     });
 
     // ── 신규 해금 알림 표시 ──
@@ -281,11 +293,13 @@ export default class CharacterScene extends Phaser.Scene {
    */
   _createCharCard(x, y, charData, isUnlocked) {
     const isSelected = this._selectedId === charData.id;
+    const cardHeight = (isSelected && isUnlocked) ? CARD_H_EXPANDED : CARD_H;
+    const prog = SaveManager.getCharacterProgression(charData.id);
 
     // 카드 배경
     const bg = this.add.graphics();
     bg.fillStyle(COLORS.UI_PANEL, isUnlocked ? 0.9 : 0.4);
-    bg.fillRoundedRect(x - CARD_W / 2, y - CARD_H / 2, CARD_W, CARD_H, 8);
+    bg.fillRoundedRect(x - CARD_W / 2, y - cardHeight / 2, CARD_W, cardHeight, 8);
 
     // 선택된 캐릭터 하이라이트
     if (isSelected && isUnlocked) {
@@ -295,58 +309,97 @@ export default class CharacterScene extends Phaser.Scene {
     } else {
       bg.lineStyle(1, COLORS.UI_BORDER, 0.2);
     }
-    bg.strokeRoundedRect(x - CARD_W / 2, y - CARD_H / 2, CARD_W, CARD_H, 8);
+    bg.strokeRoundedRect(x - CARD_W / 2, y - cardHeight / 2, CARD_W, cardHeight, 8);
 
     this._container.add(bg);
 
     if (isUnlocked) {
-      // 이름
-      const nameText = this.add.text(x - CARD_W / 2 + 16, y - 25, t(charData.nameKey), {
+      const topY = y - cardHeight / 2;
+
+      // 이름 + 레벨
+      const lvStr = prog.level >= MAX_CHAR_LEVEL ? t('charLevel.maxLevel') : `Lv.${prog.level}`;
+      const nameText = this.add.text(x - CARD_W / 2 + 16, topY + 12, `${t(charData.nameKey)}  ${lvStr}`, {
         fontSize: '14px',
         fontFamily: 'Galmuri11, monospace',
         color: isSelected ? UI_COLORS.neonCyan : UI_COLORS.textPrimary,
       });
       this._container.add(nameText);
 
-      // 고유 패시브 설명
-      const passiveText = this.add.text(x - CARD_W / 2 + 16, y, t(charData.passiveKey), {
-        fontSize: '11px',
-        fontFamily: 'Galmuri11, monospace',
-        color: UI_COLORS.textSecondary,
-        wordWrap: { width: CARD_W - 32 },
-      });
-      this._container.add(passiveText);
+      // XP 바 (작은 가로 바)
+      const xpBarX = x - CARD_W / 2 + 16;
+      const xpBarY = topY + 32;
+      const xpBarW = 160;
+      const xpBarH = 4;
+      const needed = getXpForNextLevel(prog.level);
+      const xpRatio = needed > 0 ? Math.min(1, prog.xp / needed) : 1;
 
-      // 설명
-      const descText = this.add.text(x - CARD_W / 2 + 16, y + 18, t(charData.descKey), {
-        fontSize: '11px',
+      const xpBarBg = this.add.graphics();
+      xpBarBg.fillStyle(0x333333, 0.6);
+      xpBarBg.fillRect(xpBarX, xpBarY, xpBarW, xpBarH);
+      this._container.add(xpBarBg);
+
+      const xpBarFill = this.add.graphics();
+      const charColor = CHARACTER_COLORS[charData.id] || COLORS.NEON_CYAN;
+      xpBarFill.fillStyle(charColor, 0.8);
+      xpBarFill.fillRect(xpBarX, xpBarY, xpBarW * xpRatio, xpBarH);
+      this._container.add(xpBarFill);
+
+      // XP 수치
+      const xpStr = needed > 0 ? `${prog.xp}/${needed}` : 'MAX';
+      const xpText = this.add.text(xpBarX + xpBarW + 8, xpBarY - 2, xpStr, {
+        fontSize: '9px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
-        wordWrap: { width: CARD_W - 32 },
-      }).setAlpha(0.7);
-      this._container.add(descText);
+      });
+      this._container.add(xpText);
+
+      // SP 배지 (미사용 SP가 있으면 강조)
+      if (prog.sp > 0) {
+        const spBadge = this.add.text(x + CARD_W / 2 - 16, topY + 12, t('charLevel.sp', prog.sp), {
+          fontSize: '11px',
+          fontFamily: 'Galmuri11, monospace',
+          color: '#FFD700',
+          backgroundColor: '#333300',
+          padding: { x: 4, y: 2 },
+        }).setOrigin(1, 0);
+        this._container.add(spBadge);
+      }
+
+      if (!isSelected) {
+        // 미선택: 간단 설명
+        const passiveText = this.add.text(x - CARD_W / 2 + 16, topY + 44, t(charData.passiveKey), {
+          fontSize: '11px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.textSecondary,
+          wordWrap: { width: CARD_W - 32 },
+        });
+        this._container.add(passiveText);
+
+        const descText = this.add.text(x - CARD_W / 2 + 16, topY + 62, t(charData.descKey), {
+          fontSize: '11px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.textSecondary,
+          wordWrap: { width: CARD_W - 32 },
+        }).setAlpha(0.7);
+        this._container.add(descText);
+      } else {
+        // 선택됨: 스킬 4행 표시
+        this._renderSkillRows(x, topY, charData.id, prog);
+      }
 
       // 터치 영역
-      const zone = this.add.zone(x, y, CARD_W, CARD_H)
+      const zone = this.add.zone(x, y, CARD_W, cardHeight)
         .setInteractive({ useHandCursor: true });
       this._container.add(zone);
 
       zone.on('pointerdown', () => {
         this._selectedId = charData.id;
         // 전체 UI 재생성
-        this._container.removeAll(true);
-        this._cardElements = [];
-        const stats = SaveManager.getStats();
-        const visibleChars = CHARACTERS.filter(c => c.phase <= 3);
-        visibleChars.forEach((cd, i) => {
-          const unlocked = this._isCharUnlocked(cd, stats);
-          const cardY = LIST_START_Y + i * (CARD_H + CARD_GAP) + CARD_H / 2;
-          this._createCharCard(GAME_WIDTH / 2, cardY, cd, unlocked);
-        });
+        this._rebuildCards();
       });
     } else {
       // 잠금 상태: 잠금 아이콘 + 가독성 확보된 텍스트
-      const lockIcon = this.add.text(x - CARD_W / 2 + 16, y - 16, '🔒', {
+      const lockIcon = this.add.text(x - CARD_W / 2 + 16, y - 16, '\uD83D\uDD12', {
         fontSize: '14px',
       });
       this._container.add(lockIcon);
@@ -365,6 +418,124 @@ export default class CharacterScene extends Phaser.Scene {
       }).setAlpha(0.5);
       this._container.add(condText);
     }
+  }
+
+  /**
+   * 선택된 카드의 스킬 4행을 렌더링한다.
+   * @param {number} x - 카드 중심 X
+   * @param {number} topY - 카드 상단 Y
+   * @param {string} charId - 캐릭터 ID
+   * @param {Object} prog - 캐릭터 진행 데이터
+   * @private
+   */
+  _renderSkillRows(x, topY, charId, prog) {
+    const skillDefs = CHARACTER_SKILLS[charId];
+    if (!skillDefs) return;
+
+    const slots = ['Q', 'W', 'E', 'R'];
+    const startY = topY + 50;
+    const rowH = 36;
+    const leftX = x - CARD_W / 2 + 12;
+
+    slots.forEach((slot, i) => {
+      const skill = skillDefs[slot];
+      if (!skill) return;
+
+      const rowY = startY + i * rowH;
+      const lv = prog.skills[slot] || 0;
+
+      // 슬롯 라벨
+      const label = this.add.text(leftX, rowY, `[${slot}]`, {
+        fontSize: '11px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonCyan,
+      });
+      this._container.add(label);
+
+      // 스킬명
+      const skillName = this.add.text(leftX + 30, rowY, t(skill.nameKey), {
+        fontSize: '11px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.textPrimary,
+      });
+      this._container.add(skillName);
+
+      // R 잠금 상태 체크
+      if (slot === 'R' && !canInvestUlt(prog.level, lv)) {
+        const gate = lv < 3 ? [6, 11, 16][lv] : 16;
+        const lockStr = t('skill.locked', gate);
+        const lockLabel = this.add.text(x + CARD_W / 2 - 16, rowY, lockStr, {
+          fontSize: '10px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.textSecondary,
+        }).setOrigin(1, 0).setAlpha(0.6);
+        this._container.add(lockLabel);
+        return;
+      }
+
+      // 레벨 표시
+      const lvText = this.add.text(x + CARD_W / 2 - 70, rowY, `${lv}/${skill.maxLevel}`, {
+        fontSize: '11px',
+        fontFamily: 'Galmuri11, monospace',
+        color: lv >= skill.maxLevel ? UI_COLORS.neonGreen : UI_COLORS.textPrimary,
+      }).setOrigin(1, 0);
+      this._container.add(lvText);
+
+      // [+1] 버튼
+      const canUpgrade = prog.sp >= 1 && lv < skill.maxLevel &&
+        (slot !== 'R' || canInvestUlt(prog.level, lv));
+
+      const btnX = x + CARD_W / 2 - 28;
+      const btnW = 36;
+      const btnH = 32;
+
+      const btnBg = this.add.graphics();
+      const btnColor = canUpgrade ? 0x00AAAA : 0x333344;
+      btnBg.fillStyle(btnColor, 0.8);
+      btnBg.fillRoundedRect(btnX - btnW / 2, rowY - 2, btnW, btnH, 4);
+      this._container.add(btnBg);
+
+      const btnLabel = this.add.text(btnX, rowY + btnH / 2 - 2, t('skill.upgrade'), {
+        fontSize: '10px',
+        fontFamily: 'Galmuri11, monospace',
+        color: canUpgrade ? '#FFFFFF' : '#666666',
+      }).setOrigin(0.5);
+      this._container.add(btnLabel);
+
+      if (canUpgrade) {
+        const btnZone = this.add.zone(btnX, rowY + btnH / 2 - 2, btnW, btnH)
+          .setInteractive({ useHandCursor: true });
+        this._container.add(btnZone);
+
+        btnZone.on('pointerdown', () => {
+          const success = SaveManager.allocateSkillPoint(charId, slot);
+          if (success) {
+            SoundSystem.play('levelup');
+            this._rebuildCards();
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * 카드 리스트를 전체 재생성한다.
+   * @private
+   */
+  _rebuildCards() {
+    this._container.removeAll(true);
+    this._cardElements = [];
+    const stats = SaveManager.getStats();
+    const visibleChars = CHARACTERS.filter(c => c.phase <= 3);
+    let accY = LIST_START_Y;
+    visibleChars.forEach((cd) => {
+      const unlocked = this._isCharUnlocked(cd, stats);
+      const isSelected = this._selectedId === cd.id;
+      const cardHeight = (isSelected && unlocked) ? CARD_H_EXPANDED : CARD_H;
+      const cardY = accY + cardHeight / 2;
+      this._createCharCard(GAME_WIDTH / 2, cardY, cd, unlocked);
+      accY += cardHeight + CARD_GAP;
+    });
   }
 
   // ── 버튼 ──

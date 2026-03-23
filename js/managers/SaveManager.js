@@ -5,6 +5,7 @@
  */
 
 import { SAVE_KEY, SAVE_DATA_VERSION } from '../config.js';
+import { MAX_CHAR_LEVEL, getXpForNextLevel, canInvestUlt, CHARACTER_SKILLS } from '../data/characterSkills.js';
 
 // ── 기본 세이브 데이터 구조 ──
 
@@ -31,6 +32,14 @@ const DEFAULT_SAVE = {
   unlockedWeapons: [],      // 스테이지 해금 무기 ID 배열
   selectedStage: 'stage_1', // 선택된 스테이지 ID
   characterClears: {},      // { characterId: 클리어 횟수 }
+  characterProgression: {   // 캐릭터 레벨 & 스킬 시스템
+    agent:     { xp: 0, level: 1, sp: 0, skills: { Q: 1, W: 0, E: 0, R: 0 } },
+    sniper:    { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
+    engineer:  { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
+    berserker: { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
+    medic:     { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
+    hidden:    { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
+  },
   stats: {
     totalKills: 0,
     totalRuns: 0,
@@ -210,6 +219,8 @@ export class SaveManager {
   static unlockCharacter(id) {
     const data = SaveManager.getData();
     data.characters[id] = true;
+    // 캐릭터 레벨/스킬 시스템 초기화
+    SaveManager.initCharacterOnUnlock(id);
     SaveManager.save();
   }
 
@@ -588,6 +599,112 @@ export class SaveManager {
     SaveManager.save();
   }
 
+  // ── 캐릭터 레벨 & 스킬 ──
+
+  /**
+   * 캐릭터의 레벨/XP/스킬 진행 데이터를 반환한다.
+   * @param {string} charId - 캐릭터 ID
+   * @returns {{ xp: number, level: number, sp: number, skills: { Q: number, W: number, E: number, R: number } }}
+   */
+  static getCharacterProgression(charId) {
+    const data = SaveManager.getData();
+    if (!data.characterProgression) data.characterProgression = {};
+    if (!data.characterProgression[charId]) {
+      data.characterProgression[charId] = { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } };
+    }
+    return data.characterProgression[charId];
+  }
+
+  /**
+   * 캐릭터에 XP(데이터코어)를 추가한다. 자동 레벨업 + SP 부여.
+   * @param {string} charId - 캐릭터 ID
+   * @param {number} amount - 추가할 XP 양
+   * @returns {number} 발생한 레벨업 횟수
+   */
+  static addCharacterXP(charId, amount) {
+    const prog = SaveManager.getCharacterProgression(charId);
+    if (prog.level <= 0) return 0; // 미해금 캐릭터
+    prog.xp += amount;
+    let levelUps = 0;
+
+    while (prog.level < MAX_CHAR_LEVEL) {
+      const needed = getXpForNextLevel(prog.level);
+      if (needed <= 0) break;
+      if (prog.xp >= needed) {
+        prog.xp -= needed;
+        prog.level++;
+        prog.sp++;
+        levelUps++;
+      } else {
+        break;
+      }
+    }
+
+    // 만렙이면 초과 XP 0으로 고정
+    if (prog.level >= MAX_CHAR_LEVEL) {
+      prog.xp = 0;
+    }
+
+    SaveManager.save();
+    return levelUps;
+  }
+
+  /**
+   * 스킬포인트 1개를 소비하여 해당 스킬을 1레벨 올린다.
+   * @param {string} charId - 캐릭터 ID
+   * @param {string} slot - 스킬 슬롯 ('Q' | 'W' | 'E' | 'R')
+   * @returns {boolean} 성공 여부
+   */
+  static allocateSkillPoint(charId, slot) {
+    const prog = SaveManager.getCharacterProgression(charId);
+    if (prog.sp < 1) return false;
+
+    const skillDef = CHARACTER_SKILLS[charId]?.[slot];
+    if (!skillDef) return false;
+
+    const currentLv = prog.skills[slot] || 0;
+    if (currentLv >= skillDef.maxLevel) return false;
+
+    // R 슬롯 게이트 체크
+    if (slot === 'R' && !canInvestUlt(prog.level, currentLv)) return false;
+
+    prog.skills[slot] = currentLv + 1;
+    prog.sp--;
+    SaveManager.save();
+    return true;
+  }
+
+  /**
+   * 미사용 스킬포인트를 반환한다.
+   * @param {string} charId - 캐릭터 ID
+   * @returns {number} 미사용 SP
+   */
+  static getAvailableSkillPoints(charId) {
+    return SaveManager.getCharacterProgression(charId).sp;
+  }
+
+  /**
+   * 특정 스킬의 현재 레벨을 반환한다.
+   * @param {string} charId - 캐릭터 ID
+   * @param {string} slot - 스킬 슬롯 ('Q' | 'W' | 'E' | 'R')
+   * @returns {number} 스킬 레벨
+   */
+  static getSkillLevel(charId, slot) {
+    return SaveManager.getCharacterProgression(charId).skills[slot] || 0;
+  }
+
+  /**
+   * 캐릭터 해금 시 레벨/스킬 시스템을 초기화한다 (level:1, Q:1).
+   * 이미 초기화된 경우(level>=1) 무시한다.
+   * @param {string} charId - 캐릭터 ID
+   */
+  static initCharacterOnUnlock(charId) {
+    const prog = SaveManager.getCharacterProgression(charId);
+    if (prog.level >= 1) return; // 이미 초기화됨
+    prog.level = 1;
+    prog.skills.Q = 1;
+  }
+
   // ── 초기화 ──
 
   /**
@@ -754,6 +871,22 @@ export class SaveManager {
       }
       if (!data.selectedDifficulty) data.selectedDifficulty = 'normal';
       data.version = 11;
+    }
+
+    // v11 -> v12: 캐릭터 레벨 & 스킬 시스템 — characterProgression 추가
+    if (data.version < 12) {
+      data.characterProgression = {};
+      const chars = ['agent', 'sniper', 'engineer', 'berserker', 'medic', 'hidden'];
+      chars.forEach(id => {
+        const isUnlocked = data.characters?.[id] === true;
+        data.characterProgression[id] = {
+          xp: 0,
+          level: isUnlocked ? 1 : 0,
+          sp: 0,
+          skills: { Q: isUnlocked ? 1 : 0, W: 0, E: 0, R: 0 },
+        };
+      });
+      data.version = 12;
     }
 
     data.version = SAVE_DATA_VERSION;

@@ -42,6 +42,7 @@ import { MetaManager } from '../managers/MetaManager.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { WEAPON_EVOLUTIONS, getWeaponById, getEvolvedWeaponById } from '../data/weapons.js';
 import { getCharacterById } from '../data/characters.js';
+import { CHARACTER_SKILLS, CHARACTER_COLORS, getXpForNextLevel, MAX_CHAR_LEVEL } from '../data/characterSkills.js';
 import SoundSystem from '../systems/SoundSystem.js';
 import VFXSystem from '../systems/VFXSystem.js';
 import { AdManager } from '../managers/AdManager.js';
@@ -189,30 +190,52 @@ export default class GameScene extends Phaser.Scene {
       invincibleLevel: SaveManager.getUpgradeLevel('vanish'),
     });
 
-    // ── 캐릭터 고유 패시브 적용 ──
+    // ── 캐릭터 스킬 시스템 적용 (uniquePassive 대체) ──
     const charData = getCharacterById(this.characterId);
+    const prog = SaveManager.getCharacterProgression(this.characterId);
+    const skillDefs = CHARACTER_SKILLS[this.characterId];
 
-    if (charData && charData.uniquePassive) {
-      const up = charData.uniquePassive;
+    /** 현재 캐릭터의 합산 스킬 이펙트 (Q/W/E 패시브) */
+    this._charSkillEffects = {};
 
-      if (up.stat === 'critDamageMultiplier') {
-        this.player.critDamageMultiplier = up.value;
-      } else if (up.stat === 'lowHpAttackBonus') {
-        this.player.lowHpAttackBonus = up.value;
-        this.player.hpThreshold = up.hpThreshold || 0.5;
-      } else if (up.stat === 'hpRegenMultiplier') {
-        // 메딕: HP 재생 x2, 최대 HP -30%
-        this.player.regenMultiplier = up.value;
-        this.player.maxHp *= (1 - (up.maxHpPenalty || 0));
-        this.player.currentHp = this.player.maxHp;
-      } else if (up.stat === 'weaponMaster') {
-        // 히든: 무기 슬롯 +2, 레벨업 무기 추천 가중치 x2
-        this.maxWeaponSlots += up.extraWeaponSlots;
-        this.player.weaponChoiceBias = up.weaponChoiceBias;
-      } else if (up.stat === 'droneDamageBonus') {
-        // 엔지니어: 드론 데미지 +30%
-        this.player.droneDamageBonus = up.value;
+    /** 레벨업 추가 선택지 (히든 E 스킬) */
+    this._extraLevelUpChoices = 0;
+
+    /** 궁극기 R 이펙트 데이터 (R lv>=1일 때 설정됨) */
+    this._ultEffect = null;
+
+    /** 궁극기 쿨다운 잔여 (초) */
+    this._ultCooldownRemaining = 0;
+
+    /** 궁극기 지속 시간 잔여 (초) */
+    this._ultDurationRemaining = 0;
+
+    /** 궁극기 활성 여부 */
+    this._ultActive = false;
+
+    /** 궁극기 최대 쿨다운 (초) */
+    this._ultMaxCooldown = 0;
+
+    if (prog && skillDefs) {
+      for (const slot of ['Q', 'W', 'E']) {
+        const lv = prog.skills[slot];
+        if (lv > 0 && skillDefs[slot]) {
+          const effect = skillDefs[slot].levels[lv - 1].effect;
+          Object.assign(this._charSkillEffects, effect);
+        }
       }
+      // R 스킬 이펙트 별도 저장 (액티브 궁극기)
+      const rLv = prog.skills.R;
+      if (rLv > 0 && skillDefs.R) {
+        const rEffect = skillDefs.R.levels[rLv - 1].effect;
+        this._ultEffect = rEffect;
+        // 궁극기 쿨다운 추출 (각 캐릭터별 R effect의 첫번째 키에서 cd 가져옴)
+        const rKey = Object.keys(rEffect)[0];
+        if (rEffect[rKey] && rEffect[rKey].cd) {
+          this._ultMaxCooldown = rEffect[rKey].cd;
+        }
+      }
+      this._applyPassiveSkillEffects(this._charSkillEffects);
     }
 
     // 캐릭터 시작 무기 결정
@@ -438,6 +461,20 @@ export default class GameScene extends Phaser.Scene {
     // 무한 월드 래핑 — 플레이어 기준 WRAP_RADIUS 밖 엔티티를 반대편으로 텔레포트
     this._wrapEntities();
     this._wrapDecos();  // 배경 장식 오브젝트 래핑
+
+    // 궁극기 타이머 갱신
+    const deltaSec = delta / 1000;
+    if (this._ultActive && this._ultDurationRemaining > 0) {
+      this._ultDurationRemaining -= deltaSec;
+      if (this._ultDurationRemaining <= 0) {
+        this._ultDurationRemaining = 0;
+        // 지속 효과 종료는 delayedCall에서 처리됨
+      }
+    }
+    if (this._ultCooldownRemaining > 0 && !this._ultActive) {
+      this._ultCooldownRemaining -= deltaSec;
+      if (this._ultCooldownRemaining < 0) this._ultCooldownRemaining = 0;
+    }
 
     // HUD 갱신
     this._updateHUD();
@@ -2072,6 +2109,9 @@ export default class GameScene extends Phaser.Scene {
 
     // 초기 렌더링 (씬 시작 시 보유 무기 표시)
     this._refreshInventoryHUD();
+
+    // ── R 궁극기 버튼 ──
+    this._createUltimateButton();
   }
 
   /**
@@ -2127,6 +2167,9 @@ export default class GameScene extends Phaser.Scene {
 
     // 킬수
     hud.killText.setText(t('hud.kills', this.killCount));
+
+    // 궁극기 HUD 갱신
+    this._updateUltimateHUD();
   }
 
   /**
@@ -2948,5 +2991,378 @@ export default class GameScene extends Phaser.Scene {
     this.xpGemPool = null;
     this.consumablePool = null;
     this.player = null;
+  }
+
+  // ── 캐릭터 스킬 시스템 ──
+
+  /**
+   * Q/W/E 패시브 스킬 이펙트를 플레이어/게임 시스템에 반영한다.
+   * @param {Object} effects - 합산된 이펙트 객체
+   * @private
+   */
+  _applyPassiveSkillEffects(effects) {
+    if (!effects || !this.player) return;
+
+    // 공격 속도 보너스
+    if (effects.atkSpeed) {
+      this.player.atkSpeedBonus = effects.atkSpeed;
+    }
+
+    // 최대 HP 배수
+    if (effects.maxHpMult) {
+      this.player.maxHp = Math.floor(this.player.maxHp * (1 + effects.maxHpMult));
+      this.player.currentHp = this.player.maxHp;
+    }
+
+    // XP 획득 배수 (기존 xpMultiplier에 가산)
+    if (effects.xpMult) {
+      this.player.xpMultiplier += effects.xpMult;
+    }
+
+    // 크리티컬 확률
+    if (effects.critChance) {
+      this.player.critChance += effects.critChance;
+    }
+
+    // 크리티컬 관통
+    if (effects.critPierce) {
+      this.player.critPierce = effects.critPierce;
+    }
+
+    // 회피 확률
+    if (effects.dodgeChance) {
+      this.player.dodgeChance = effects.dodgeChance;
+    }
+
+    // 드론 데미지 보너스
+    if (effects.droneDmg) {
+      this.player.droneDamageBonus = effects.droneDmg;
+    }
+
+    // 자동 회복 설정
+    if (effects.autoHeal) {
+      this._autoHealConfig = effects.autoHeal;
+    }
+
+    // 포탑 설정
+    if (effects.turret) {
+      this._turretConfig = effects.turret;
+    }
+
+    // 저체력 공격 보너스 (버서커)
+    if (effects.lowHpAtk) {
+      this.player.lowHpAttackBonus = effects.lowHpAtk;
+      this.player.hpThreshold = effects.hpThreshold || 0.5;
+    }
+
+    // 생명력 흡수 (버서커)
+    if (effects.lifeSteal) {
+      this.player.lifeStealConfig = effects.lifeSteal;
+    }
+
+    // 이동 속도 보너스 (버서커)
+    if (effects.moveSpeed) {
+      this.player.speedBonus += effects.moveSpeed;
+    }
+
+    // HP 재생 배수 (메딕)
+    if (effects.regenMult) {
+      this.player.regenMultiplier = effects.regenMult;
+    }
+
+    // 최대 HP 페널티 (메딕, maxHpMult 이후 적용)
+    if (effects.maxHpPenalty && effects.maxHpPenalty > 0) {
+      this.player.maxHp = Math.floor(this.player.maxHp * (1 - effects.maxHpPenalty));
+      this.player.currentHp = this.player.maxHp;
+    }
+
+    // 치유 필드 설정 (메딕)
+    if (effects.healAura) {
+      this._healAuraConfig = effects.healAura;
+    }
+
+    // 독성 주사 설정 (메딕)
+    if (effects.poison) {
+      this._poisonConfig = effects.poison;
+    }
+
+    // 전체 무기 데미지 보너스 (히든)
+    if (effects.weaponDmg) {
+      this.player.weaponDamageBonus += effects.weaponDmg;
+    }
+
+    // 진화 보너스 설정 (히든)
+    if (effects.evoBonus) {
+      this._evoBonusConfig = effects.evoBonus;
+    }
+
+    // 드롭률 보너스 (히든)
+    if (effects.dropRate) {
+      this.player.dropRateBonus += effects.dropRate;
+    }
+
+    // 레벨업 추가 선택지 (히든)
+    if (effects.extraChoices) {
+      this._extraLevelUpChoices += effects.extraChoices;
+    }
+
+    // 접촉 데미지 (버서커 E Lv.5)
+    if (effects.contactDmg) {
+      this.player.contactDamage = effects.contactDmg;
+    }
+
+    // 이동 속도 보너스 (버서커 Q Lv.5)
+    if (effects.spdBonus) {
+      this.player.speedBonus += effects.spdBonus;
+    }
+
+    // 크리티컬 데미지 보너스 (스나이퍼 W Lv.5)
+    if (effects.critDmgBonus) {
+      this.player.critDamageMultiplier += effects.critDmgBonus;
+    }
+
+    // 관통 데미지 감쇠 무시 (스나이퍼 W Lv.3+)
+    if (effects.noPierceDecay) {
+      this.player.noPierceDecay = true;
+    }
+
+    // 회피 시 은신 (스나이퍼 E Lv.5)
+    if (effects.dodgeStealth) {
+      this.player.dodgeStealthDur = effects.dodgeStealth;
+    }
+
+    // 레어 드롭 배율 (히든 E Lv.5)
+    if (effects.rareDropMult) {
+      this.player.rareDropMult = effects.rareDropMult;
+    }
+  }
+
+  // ── R 궁극기 HUD ──
+
+  /**
+   * R 궁극기 버튼을 생성한다.
+   * 우하단(X=320, Y=500) 56x56px 원형 버튼.
+   * @private
+   */
+  _createUltimateButton() {
+    const btnX = GAME_WIDTH - 40;
+    const btnY = GAME_HEIGHT - 140;
+    const btnSize = 56;
+    const charColor = CHARACTER_COLORS[this.characterId] || 0x00FFFF;
+    const rLevel = SaveManager.getSkillLevel(this.characterId, 'R');
+
+    // 궁극기 버튼 배경
+    this._ultBtnBg = this.add.graphics()
+      .setScrollFactor(0).setDepth(200);
+
+    // 궁극기 텍스트
+    this._ultBtnText = this.add.text(btnX, btnY, '', {
+      fontSize: '16px',
+      fontFamily: 'Galmuri11, monospace',
+      color: '#FFFFFF',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+
+    // 쿨다운/지속시간 서브 텍스트
+    this._ultBtnSubText = this.add.text(btnX, btnY + 16, '', {
+      fontSize: '10px',
+      fontFamily: 'Galmuri11, monospace',
+      color: '#FFFFFF',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+
+    if (rLevel <= 0) {
+      // R 미해금: 회색 + 잠금 아이콘
+      this._ultBtnBg.fillStyle(0x333333, 0.3);
+      this._ultBtnBg.fillCircle(btnX, btnY, btnSize / 2);
+      this._ultBtnText.setText(t('ult.locked'));
+      this._ultBtnBg.setAlpha(0.3);
+      this._ultBtnText.setAlpha(0.3);
+    } else {
+      // R 해금: 캐릭터 컬러 + R 텍스트
+      this._ultBtnBg.fillStyle(charColor, 0.6);
+      this._ultBtnBg.fillCircle(btnX, btnY, btnSize / 2);
+      this._ultBtnBg.lineStyle(2, charColor, 0.8);
+      this._ultBtnBg.strokeCircle(btnX, btnY, btnSize / 2);
+      this._ultBtnText.setText(t('ult.ready'));
+
+      // 글로우 펄스 애니메이션 (발동 가능 시)
+      this._ultGlowTween = this.tweens.add({
+        targets: this._ultBtnBg,
+        alpha: { from: 0.6, to: 1 },
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+
+      // 터치 영역
+      const zone = this.add.zone(btnX, btnY, btnSize, btnSize)
+        .setScrollFactor(0).setDepth(202)
+        .setInteractive({ useHandCursor: true });
+
+      zone.on('pointerdown', () => {
+        if (this._ultCooldownRemaining <= 0 && !this._ultActive) {
+          this._activateUltimate();
+        }
+      });
+    }
+  }
+
+  /**
+   * 궁극기 HUD를 매 프레임 갱신한다.
+   * @private
+   */
+  _updateUltimateHUD() {
+    if (!this._ultBtnBg || !this._ultEffect) return;
+
+    const charColor = CHARACTER_COLORS[this.characterId] || 0x00FFFF;
+    const btnX = GAME_WIDTH - 40;
+    const btnY = GAME_HEIGHT - 140;
+    const btnSize = 56;
+
+    if (this._ultActive) {
+      // 발동 중: 밝은 컬러 + 남은 시간
+      this._ultBtnBg.clear();
+      this._ultBtnBg.fillStyle(charColor, 0.9);
+      this._ultBtnBg.fillCircle(btnX, btnY, btnSize / 2);
+      this._ultBtnBg.lineStyle(3, 0xFFFFFF, 0.8);
+      this._ultBtnBg.strokeCircle(btnX, btnY, btnSize / 2);
+      this._ultBtnText.setText(t('ult.ready'));
+      this._ultBtnSubText.setText(Math.ceil(this._ultDurationRemaining) + 's');
+      if (this._ultGlowTween) this._ultGlowTween.pause();
+      this._ultBtnBg.setAlpha(1);
+    } else if (this._ultCooldownRemaining > 0) {
+      // 쿨다운 중: 어두운 컬러 + 남은 초
+      this._ultBtnBg.clear();
+      this._ultBtnBg.fillStyle(charColor, 0.3);
+      this._ultBtnBg.fillCircle(btnX, btnY, btnSize / 2);
+      this._ultBtnBg.lineStyle(1, charColor, 0.4);
+      this._ultBtnBg.strokeCircle(btnX, btnY, btnSize / 2);
+
+      // 쿨다운 게이지 (방사형 오버레이)
+      const cdRatio = 1 - (this._ultCooldownRemaining / this._ultMaxCooldown);
+      const startAngle = -Math.PI / 2;
+      const endAngle = startAngle + cdRatio * Math.PI * 2;
+      this._ultBtnBg.fillStyle(charColor, 0.5);
+      this._ultBtnBg.slice(btnX, btnY, btnSize / 2, startAngle, endAngle, false);
+      this._ultBtnBg.fillPath();
+
+      this._ultBtnText.setText(Math.ceil(this._ultCooldownRemaining) + 's');
+      this._ultBtnSubText.setText('');
+      if (this._ultGlowTween) this._ultGlowTween.pause();
+      this._ultBtnBg.setAlpha(0.8);
+    } else {
+      // 발동 가능: 기존 글로우 펄스 재개
+      if (this._ultGlowTween && this._ultGlowTween.paused) {
+        this._ultGlowTween.resume();
+      }
+      this._ultBtnBg.clear();
+      this._ultBtnBg.fillStyle(charColor, 0.6);
+      this._ultBtnBg.fillCircle(btnX, btnY, btnSize / 2);
+      this._ultBtnBg.lineStyle(2, charColor, 0.8);
+      this._ultBtnBg.strokeCircle(btnX, btnY, btnSize / 2);
+      this._ultBtnText.setText(t('ult.ready'));
+      this._ultBtnSubText.setText('');
+    }
+  }
+
+  // ── R 궁극기 효과 ──
+
+  /**
+   * 궁극기를 발동한다. 캐릭터별 효과를 적용하고 쿨다운을 시작한다.
+   * @private
+   */
+  _activateUltimate() {
+    if (!this._ultEffect || this._ultActive) return;
+
+    const effect = this._ultEffect;
+    const rKey = Object.keys(effect)[0];
+    const rData = effect[rKey];
+    if (!rData) return;
+
+    this._ultActive = true;
+    this._ultDurationRemaining = rData.dur || 0;
+    this._ultCooldownRemaining = rData.cd || 60;
+
+    switch (this.characterId) {
+      case 'agent': {
+        // 전술 폭격: 화면 전체 적에게 ATK x mult 데미지 + stunDur초 스턴
+        const damage = (this.player.atk || 10) * this.player.getEffectiveAttackMultiplier() * rData.mult;
+        if (this.waveSystem && this.waveSystem.enemies) {
+          this.waveSystem.enemies.getChildren().forEach(enemy => {
+            if (enemy && enemy.active) {
+              enemy.takeDamage(damage, false);
+              if (rData.stunDur && enemy.applyStun) {
+                enemy.applyStun(rData.stunDur * 1000);
+              }
+            }
+          });
+        }
+        // 즉시 효과이므로 duration 0
+        this._ultDurationRemaining = 0;
+        this._ultActive = false;
+        break;
+      }
+
+      case 'sniper': {
+        // 데스 샷: dur초간 크리티컬 확정 + 크리뎀 배율
+        this.player.critGuaranteed = true;
+        this.player.critDamageMultiplier += rData.critMult;
+        this.time.delayedCall(rData.dur * 1000, () => {
+          this.player.critGuaranteed = false;
+          this.player.critDamageMultiplier -= rData.critMult;
+          this._ultActive = false;
+        });
+        break;
+      }
+
+      case 'engineer': {
+        // 오버드라이브: dur초간 드론/포탑 ATK·공속 배율
+        this.player.droneDamageBonus += (rData.atkMult - 1);
+        this.time.delayedCall(rData.dur * 1000, () => {
+          this.player.droneDamageBonus -= (rData.atkMult - 1);
+          this._ultActive = false;
+        });
+        break;
+      }
+
+      case 'berserker': {
+        // 광전사의 분노: dur초간 무적 + ATK 배율 + 접촉 데미지
+        this.player.invincible = true;
+        const atkBonus = rData.atkMult - 1;
+        this.player.attackMultiplier += atkBonus;
+        this.time.delayedCall(rData.dur * 1000, () => {
+          this.player.invincible = false;
+          this.player.attackMultiplier -= atkBonus;
+          this._ultActive = false;
+        });
+        break;
+      }
+
+      case 'medic': {
+        // 생명의 파동: HP healPercent 즉시 회복 + dur초 dmgReduce
+        const healAmount = Math.floor(this.player.maxHp * rData.healPercent);
+        this.player.heal(healAmount);
+        const prevArmor = this.player.armorRate;
+        this.player.armorRate = Math.min(0.9, this.player.armorRate + rData.dmgReduce);
+        this.time.delayedCall(rData.dur * 1000, () => {
+          this.player.armorRate = prevArmor;
+          this._ultActive = false;
+        });
+        break;
+      }
+
+      case 'hidden': {
+        // 오메가 프로토콜: dur초간 전 무기 동시 발사 + ATK 배율
+        this._omegaProtocolActive = true;
+        const atkMult = rData.atkMult - 1;
+        this.player.attackMultiplier += atkMult;
+        this.time.delayedCall(rData.dur * 1000, () => {
+          this._omegaProtocolActive = false;
+          this.player.attackMultiplier -= atkMult;
+          this._ultActive = false;
+        });
+        break;
+      }
+    }
   }
 }

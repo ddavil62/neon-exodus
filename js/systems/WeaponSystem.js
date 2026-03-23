@@ -350,6 +350,13 @@ export default class WeaponSystem {
     // 미사일 업데이트 (활성 미사일 매 프레임 추적)
     this._updateMissiles(time, delta);
 
+    // 오메가 프로토콜 활성 시 모든 무기 쿨다운 즉시 리셋
+    if (this.scene._omegaProtocolActive) {
+      for (const w of this.weapons) {
+        if (w.cooldownTimer > 0) w.cooldownTimer = 0;
+      }
+    }
+
     // 각 무기 처리
     for (const weapon of this.weapons) {
       const weaponType = weapon.data.type;

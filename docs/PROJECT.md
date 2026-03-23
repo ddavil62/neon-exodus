@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-24 (난이도 모드 시스템 추가)
+> 최종 업데이트: 2026-03-24 (캐릭터 레벨 & 스킬 시스템 추가)
 
 ## 프로젝트 개요
 
@@ -62,7 +62,7 @@ neon-exodus/
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (5탭 카드 그리드: 기본/성장/특수/드론/한계돌파)
-│   │   ├── AchievementScene.js    # 도전과제 목록 화면 (100개, 7카테고리, 진행률, 보상 정보)
+│   │   ├── AchievementScene.js    # 도전과제 목록 화면 (111개, 7카테고리, 진행률, 보상 정보)
 │   │   └── CollectionScene.js     # 도감 화면 (4탭: 무기/패시브/적/진화)
 │   ├── entities/
 │   │   ├── Player.js              # 플레이어 (이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드, 발밑 글로우 서클 펄스/피격 플래시)
@@ -83,7 +83,7 @@ neon-exodus/
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
-│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v11, 난이도 모드/드론 해금/업그레이드/컷신 포함)
+│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v12, 캐릭터 레벨&스킬/난이도 모드/드론 해금/업그레이드/컷신 포함)
 │   │   ├── HapticManager.js       # 햅틱 진동 관리 (Capacitor, enabled 플래그)
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
@@ -99,7 +99,8 @@ neon-exodus/
 │       ├── upgrades.js            # 영구 업그레이드 22종
 │       ├── consumables.js          # 소모성 아이템 6종 (드롭률, 텍스처, 색상)
 │       ├── characters.js          # 캐릭터 6종 (spriteKey 필드로 텍스처 매핑)
-│       └── achievements.js        # 도전과제 100종 (7카테고리: kill/survive/clear/weapon/character/growth/explore)
+│       ├── characterSkills.js     # 캐릭터 레벨 & 스킬 데이터 (6캐릭터 x 4스킬, 레벨XP 테이블, 궁극기 게이트)
+│       └── achievements.js        # 도전과제 111종 (7카테고리: kill/survive/clear/weapon/character/growth/explore)
 ├── assets/
 │   ├── backgrounds/               # 배경 에셋 (Phase 2/3 아트)
 │   │   ├── bg_tile.png            # 128x128 사이버 메탈 바닥 seamless 타일 (S1 기본, GPT Image API)
@@ -241,10 +242,11 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 설정 | `js/scenes/SettingsScene.js` | BGM/SFX/햅틱 ON/OFF 토글 UI, SaveManager 연동 |
 | 햅틱 | `js/managers/HapticManager.js` | Capacitor Haptics 래퍼, enabled 플래그 제어 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 9종 (기존 6종 + consumableCollect + empBlast + decoBreak), empRing/empBurst 진화 분기 |
-| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v11), 크레딧/통계/도감/스테이지 클리어(난이도별)/무기 해금/설정/캐릭터 클리어/미니보스 킬/난이도 선택 관리 |
+| 캐릭터 스킬 데이터 | `js/data/characterSkills.js` | 6캐릭터 x 4스킬(Q/W/E/R) 정의, CHAR_LEVEL_XP 테이블, ULT_LEVEL_GATES, 유틸리티 함수 |
+| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v12), 크레딧/통계/도감/스테이지 클리어(난이도별)/무기 해금/설정/캐릭터 클리어/미니보스 킬/난이도 선택/캐릭터 레벨&스킬 관리 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
-| 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사 |
-| 도전과제 | `js/scenes/AchievementScene.js` | 100개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
+| 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사, 레벨/XP 표시, 스킬 배분 UI |
+| 도전과제 | `js/scenes/AchievementScene.js` | 111개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/진화) |
 | 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑) |
 | 광고 관리 | `js/managers/AdManager.js` | AdMob 보상형 광고 표시/보상 판단, Mock 모드, 일일 제한 |
@@ -1017,7 +1019,63 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 관련 파일: `js/data/characters.js`, `js/scenes/CharacterScene.js`
 - 구현 일자: 2026-03-09
 
-#### 도전과제 (105종, 7카테고리)
+#### 캐릭터 레벨 & 스킬 시스템
+
+캐릭터별 영구 성장 시스템. 런 종료 시 획득한 데이터코어를 원하는 캐릭터에 분배하여 레벨업하고, 스킬포인트로 Q/W/E/R 스킬을 강화한다.
+
+##### 레벨 시스템
+- 최대 레벨: 18 (MAX_CHAR_LEVEL)
+- 레벨업 필요 XP(데이터코어): `CHAR_LEVEL_XP = [0, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 8, 9, 10, 11, 12, 13, 14]`
+- 누적: 0, 3, 6, 10, 14, 19, 24, 30, 36, 43, 51, 59, 68, 78, 89, 101, 114, 128
+- 레벨업 시 스킬포인트 1 획득
+- 캐릭터 해금 시 자동으로 Lv.1, Q Lv.1 설정
+- 미해금 캐릭터(level=0)에 XP 추가 불가
+
+##### 스킬 시스템 (Q/W/E/R)
+- Q/W/E: 영구 패시브 스킬, 각 최대 Lv.5
+- R: 액티브 궁극기, 최대 Lv.3
+- R 투자 레벨 게이트: Lv.6(R1), Lv.11(R2), Lv.16(R3)
+- 런 시작 시 Q/W/E 패시브 효과 자동 적용 (기존 uniquePassive 대체)
+- R 궁극기: 우하단 56x56px 버튼으로 수동 발동, 쿨다운 표시
+
+##### 캐릭터별 스킬 요약
+| 캐릭터 | Q (패시브) | W (패시브) | E (패시브) | R (궁극기) |
+|---|---|---|---|---|
+| Agent | 공격속도 +8~40% | 최대HP +10~50% | XP 획득 +10~50% | 전술 폭격 (화면 전체 데미지+스턴) |
+| Sniper | 크리확률 +6~30% | 크리관통 1~3 | 회피 8~20% | 데스 샷 (크리확정+크리뎀 배율) |
+| Engineer | 드론 데미지 +15~80% | 자동회복 10~4초 | 포탑 1~2기 | 오버드라이브 (드론/포탑 배율) |
+| Berserker | 저HP 공격 +20~50% | 흡혈 1~5% | 이동속도 +10~30% | 광전사의 분노 (무적+공격 배율) |
+| Medic | 회복 배율 1.5~3.5x | 힐 오라 8~5초 | 독 3~5초 | 생명의 파동 (HP회복+피해감소) |
+| Hidden | 무기 데미지 +8~40% | 진화 조건 완화 | 드롭률 +10~30% | 오메가 프로토콜 (전무기 동시 발사+공격 배율) |
+
+##### 경험치 분배 UI (ResultScene)
+- 런 종료 후 DC 보상이 있을 때 "캐릭터 경험치 분배" 섹션 표시
+- 해금된 캐릭터 카드 리스트 (panelH=420, CARD_W=280, CARD_H=48, CARD_GAP=6)
+- 캐릭터 탭 시 해당 캐릭터에 DC 전량 부여
+- 레벨업 시 팡파레 연출 + "스킬포인트 +N 획득!" 알림
+- DC=0인 런에서는 UI 건너뜀
+
+##### 스킬 배분 UI (CharacterScene)
+- 선택된 캐릭터 카드 확장 (CARD_H_EXPANDED=220)
+- 스킬 4행 표시: 슬롯 라벨, 스킬명, 현재/최대 레벨, [+1] 버튼
+- [+1] 버튼 활성 조건: SP >= 1, 해당 스킬 < maxLevel, R 슬롯은 레벨 게이트 충족
+- 미사용 SP 배지 (노란색 강조)
+- R 미해금 시 "Lv.N에서 해금" 표시
+
+##### 궁극기 HUD (GameScene)
+- 위치: 우하단 (X: GAME_WIDTH-40, Y: GAME_HEIGHT-140), 56x56px
+- 상태별 렌더링: 미해금(회색+자물쇠), 쿨다운(방사형 오버레이+남은초), 발동가능(글로우 펄스), 발동중(밝은 컬러+시간바)
+
+##### 세이브 데이터 (v12)
+- `characterProgression` 필드 추가: `{ charId: { xp, level, sp, skills: { Q, W, E, R } } }`
+- v11->v12 마이그레이션: 해금 캐릭터는 level:1/Q:1, 미해금은 level:0/Q:0
+- SaveManager API 6개: `getCharacterProgression()`, `addCharacterXP()`, `allocateSkillPoint()`, `getAvailableSkillPoints()`, `getSkillLevel()`, `initCharacterOnUnlock()`
+
+- 관련 파일: `js/data/characterSkills.js`, `js/managers/SaveManager.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`, `js/scenes/CharacterScene.js`, `js/entities/Player.js`
+- 구현 일자: 2026-03-24
+- 스펙 문서: `.claude/specs/2026-03-24-character-level-skill.md`
+
+#### 도전과제 (111종, 7카테고리)
 
 | 카테고리 | 수 | 주요 condition 타입 |
 |---------|---|-------------------|
@@ -1025,7 +1083,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | survive (생존) | 15 | surviveMinutes, totalSurviveMinutes, lowHpClear, noDamageSurvive, noDamageRun |
 | clear (클리어) | 20 | totalClears, consecutiveClears, totalRuns, hardClear, hardAllClear, nightmareClear, nightmareAllClear, nightmareNoDamage |
 | weapon (무기) | 20 | fillWeaponSlots, weaponEvolution, specificEvolution, allEvolutionsSeen, weaponCollectionComplete, passiveCollectionComplete |
-| character (캐릭터) | 12 | characterClear, characterClearCount, allCharacterClears |
+| character (캐릭터) | 18 | characterClear, characterClearCount, allCharacterClears, charLevel, firstUltimate, maxUltimate, allMaxLevel |
 | growth (성장) | 8 | maxLevel, allUpgradesMaxed |
 | explore (탐험) | 10 | stageClear, allStagesClear, totalPlayTime, enemyCollectionComplete |
 
@@ -1038,9 +1096,19 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | nightmare_all_clear | 악몽 정복자 | 모든 스테이지 나이트메어 클리어 | 5 데이터코어 |
 | nightmare_no_damage | 무적의 존재 | 나이트메어 무피격 클리어 | 10 데이터코어 |
 
-- AchievementManager: 32개 condition type 처리 (`_checkCondition` switch문)
+##### 캐릭터 레벨 & 스킬 업적 (6종)
+| ID | 이름 | 조건 | 보상 |
+|---|---|---|---|
+| first_levelup | 첫 성장 | 아무 캐릭터 레벨 2 달성 | 100 크레딧 |
+| char_level_10 | 중급 전투원 | 아무 캐릭터 레벨 10 달성 | 3 데이터코어 |
+| char_level_18 | 만렙 전투원 | 아무 캐릭터 레벨 18 달성 | 5 데이터코어 |
+| first_ultimate | 궁극기 해금 | 아무 캐릭터 R 스킬 Lv.1 투자 | 200 크레딧 |
+| max_ultimate | 궁극기 마스터 | 아무 캐릭터 R 스킬 Lv.3 달성 | 3 데이터코어 |
+| all_max_level | 전원 만렙 | 모든 캐릭터 레벨 18 달성 | 20 데이터코어 |
+
+- AchievementManager: 36개 condition type 처리 (`_checkCondition` switch문)
 - 보상 타입 5종: credits, dataCore, dataCoreAndTitle, characterHint, hiddenCharacterUnlock
-- AchievementScene: 100개 도전과제를 세로 스크롤 리스트로 표시 (CARD_H=86, CARD_GAP=6)
+- AchievementScene: 111개 도전과제를 세로 스크롤 리스트로 표시 (CARD_H=86, CARD_GAP=6)
 - 각 항목에 달성 여부 아이콘, 제목, 설명, 진행률 (현재값/목표값), 보상 정보 표시
 - 보상 행: 카드 하단(y+14)에 보상 타입별 텍스트 표시 (색상: `UI_COLORS.xpYellow` `#FFDD00`, fontSize 9px, 완료 시 alpha 1.0 / 미완료 시 alpha 0.7)
 - `_getRewardText(reward)` 헬퍼: credits, dataCore, dataCoreAndTitle(병기), characterHint, hiddenCharacterUnlock 5종 처리. null/unknown 타입은 빈 문자열 반환
@@ -1049,7 +1117,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - GameScene 추적 스탯: `_totalHitsTaken`, `_noDamageStreakStart`, `_maxNoDamageStreak`, `totalMinibossKills`
 - ResultScene: `lowHpClear`(HP 10% 이하 클리어), `noDamageRun`(피격 0회 클리어), `characterId` 전달, `characterClears` 기록
 - 관련 파일: `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/scenes/AchievementScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`
-- 구현 일자: 2026-03-09 (100개 확장: 2026-03-22, 보상 정보 추가: 2026-03-23)
+- 구현 일자: 2026-03-09 (100개 확장: 2026-03-22, 보상 정보 추가: 2026-03-23, 레벨&스킬 업적 6개 추가: 2026-03-24)
 - 스펙 문서: `.claude/specs/2026-03-22-neon-exodus-100-achievements-purpose.md`, `.claude/specs/2026-03-23-achievement-dedup.md`
 
 #### 도감 (4탭)
@@ -1532,7 +1600,7 @@ HUD 인벤토리의 무기 또는 패시브 아이콘을 탭하면 해당 아이
 
 ### 세이브/매니저 시스템
 
-- SaveManager: 로컬스토리지 기반, 세이브 버전 v11. 크레딧/통계/도감/자동사냥/설정/캐릭터 클리어/미니보스 킬/난이도별 스테이지 클리어/난이도 선택 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled), v6->v7(characterClears, totalMinibossKills), v7->v8(cutscenesSeen), v8->v9(upgradeUnlocked), v9->v10(droneUnlocked, droneUpgrades), v10->v11(stageClears 구조 변환 숫자->객체, selectedDifficulty).
+- SaveManager: 로컬스토리지 기반, 세이브 버전 v12. 크레딧/통계/도감/자동사냥/설정/캐릭터 클리어/미니보스 킬/난이도별 스테이지 클리어/난이도 선택/캐릭터 레벨&스킬 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled), v6->v7(characterClears, totalMinibossKills), v7->v8(cutscenesSeen), v8->v9(upgradeUnlocked), v9->v10(droneUnlocked, droneUpgrades), v10->v11(stageClears 구조 변환 숫자->객체, selectedDifficulty), v11->v12(characterProgression 추가).
 - MetaManager: 영구 업그레이드 구매/다운그레이드/적용 계산. canDowngrade(), getDowngradeRefund(), downgradeUpgrade() 메서드 제공. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
 - AchievementManager: 도전과제 조건 검사/보상 지급. ResultScene에서 checkAll() 호출.
 - IAPManager: `@capgo/native-purchases` v8 기반 Google Play 인앱결제 구매/복원/가격조회. 네이티브 환경에서 실제 결제 다이얼로그 표시, 취소 시 실패 메시지 미표시. 웹 환경 Mock 모드 지원. BootScene에서 초기화 및 구매 복원.

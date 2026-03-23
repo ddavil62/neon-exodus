@@ -166,6 +166,35 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     /** 최대 HP 페널티 (메딕: 0.30 = maxHp * 0.70) */
     this.maxHpPenalty = 0;
 
+    // ── 캐릭터 스킬 시스템 속성 ──
+
+    /** 공격 속도 보너스 (스킬 계열, 0 = 보너스 없음) */
+    this.atkSpeedBonus = 0;
+
+    /** 크리티컬 관통 (스킬 계열) */
+    this.critPierce = 0;
+
+    /** 회피 확률 (0~1) */
+    this.dodgeChance = 0;
+
+    /** 무기 데미지 보너스 (스킬 계열) */
+    this.weaponDamageBonus = 0;
+
+    /** 이동 속도 보너스 (스킬 계열, 기존 speedMultiplier에 가산) */
+    this.speedBonus = 0;
+
+    /** 접촉 데미지 (ATK 기준 비율) */
+    this.contactDamage = 0;
+
+    /** 드롭률 보너스 (스킬 계열) */
+    this.dropRateBonus = 0;
+
+    /** 크리티컬 확정 플래그 (R 스킬 임시) */
+    this.critGuaranteed = false;
+
+    /** 생명력 흡수 설정 { chance, heal } (스킬 계열) */
+    this.lifeStealConfig = null;
+
     // ── 리젠 타이머 ──
     this._regenTimer = 0;
 
