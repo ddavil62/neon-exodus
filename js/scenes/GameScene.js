@@ -463,9 +463,9 @@ export default class GameScene extends Phaser.Scene {
         this.player.body.setVelocity(0, 0);
       }
 
-      // 조이스틱 상태 리셋 + 입력 잠금 — LevelUpScene pointerdown 전파 방지
+      // 조이스틱 상태 리셋 + 입력 잠금 — LevelUpScene pointerdown 전파 방지 (50ms = ~3프레임)
       if (this.joystick) {
-        this.joystick.resetAndLock(300);
+        this.joystick.resetAndLock(50);
       }
     });
   }
