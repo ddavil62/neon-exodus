@@ -28,11 +28,11 @@ export const PLAYER_START_X = 0;
 /** 무한 월드 플레이어 시작 좌표 Y */
 export const PLAYER_START_Y = 0;
 
-/** 무기 드롭 플레이어 기준 오프셋 최소 범위 (px) */
-export const WEAPON_DROP_OFFSET_MIN = 800;
+/** 무기 드롭 플레이어 기준 오프셋 최소 범위 (px) — permanent 무기는 래핑 제외이므로 멀리 배치 가능 */
+export const WEAPON_DROP_OFFSET_MIN = 2500;
 
 /** 무기 드롭 플레이어 기준 오프셋 최대 범위 (px) */
-export const WEAPON_DROP_OFFSET_MAX = 1000;
+export const WEAPON_DROP_OFFSET_MAX = 3500;
 
 // ── 스프라이트 설정 ──
 

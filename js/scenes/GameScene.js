@@ -1420,9 +1420,9 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
-    // 무기 드롭 래핑 (자석 흡수 중 제외)
+    // 무기 드롭 래핑 — permanent(맵 배치) 무기는 래핑 제외, 몬스터 드롭만 래핑
     this.weaponDropPool.forEach((drop) => {
-      if (!drop.active || drop.beingMagnetized) return;
+      if (!drop.active || drop.beingMagnetized || drop.permanent) return;
       const dx = drop.x - px;
       const dy = drop.y - py;
       if (dx * dx + dy * dy > r2) {
