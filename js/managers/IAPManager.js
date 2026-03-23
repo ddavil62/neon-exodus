@@ -140,7 +140,19 @@ class IAPManagerClass {
       });
       console.log('[IAPManager] 구매 완료:', result);
 
-      // acknowledgePurchase 별도 호출 불필요 — 플러그인이 내부 처리
+      // 구매 확인(acknowledge) — 3일 내 미확인 시 Google Play가 자동 환불함
+      if (result?.purchaseToken) {
+        try {
+          await this._iap.acknowledgePurchase({
+            purchaseToken: result.purchaseToken,
+          });
+          console.log('[IAPManager] 구매 acknowledge 완료');
+        } catch (ackErr) {
+          // 이미 acknowledge된 경우 등 — 구매 자체는 성공이므로 무시
+          console.warn('[IAPManager] acknowledge 실패 (구매는 유효):', ackErr.message);
+        }
+      }
+
       return { purchased: true };
     } catch (e) {
       // 취소 감지: 에러 메시지에 'cancel' 포함 여부 확인
@@ -182,6 +194,18 @@ class IAPManagerClass {
         // @capgo/native-purchases는 productIdentifier 필드를 사용
         if (purchase.productIdentifier === IAP_PRODUCTS.autoHunt) {
           autoHuntRestored = true;
+
+          // 미확인(unacknowledged) 구매가 있으면 acknowledge 처리
+          if (purchase.purchaseToken && !purchase.isAcknowledged) {
+            try {
+              await this._iap.acknowledgePurchase({
+                purchaseToken: purchase.purchaseToken,
+              });
+              console.log('[IAPManager] 복원 중 미확인 구매 acknowledge 완료');
+            } catch (ackErr) {
+              console.warn('[IAPManager] 복원 중 acknowledge 실패:', ackErr.message);
+            }
+          }
         }
       }
 
