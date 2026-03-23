@@ -463,9 +463,14 @@ export default class GameScene extends Phaser.Scene {
         this.player.body.setVelocity(0, 0);
       }
 
-      // 조이스틱 상태 리셋 — 레벨업 전 방향/힘 초기화
+      // 조이스틱: 활성 포인터가 있으면 즉시 연결, 없으면 리셋
       if (this.joystick) {
-        this.joystick.reset();
+        const pointer = this.input.activePointer;
+        if (pointer.isDown) {
+          this.joystick.activateAt(pointer);
+        } else {
+          this.joystick.reset();
+        }
       }
     });
   }

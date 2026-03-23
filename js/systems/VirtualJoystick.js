@@ -199,6 +199,23 @@ export default class VirtualJoystick {
     this.thumb.setVisible(false);
   }
 
+  /**
+   * 특정 좌표에서 조이스틱을 즉시 활성화한다.
+   * 레벨업 선택 등 씬 전환 직후 활성 포인터를 조이스틱에 연결할 때 사용한다.
+   * @param {Phaser.Input.Pointer} pointer - 현재 활성 포인터
+   */
+  activateAt(pointer) {
+    this.reset();
+    this._pointerId = pointer.id;
+    this._startX = pointer.x;
+    this._startY = pointer.y;
+    this.base.setPosition(pointer.x, pointer.y);
+    this.thumb.setPosition(pointer.x, pointer.y);
+    this.base.setVisible(true);
+    this.thumb.setVisible(true);
+    this.isActive = true;
+  }
+
   // ── 키보드 입력 처리 ──
 
   /** @type {Object<string, string>} 키코드 → 방향 매핑 */
