@@ -612,8 +612,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // 방향 벡터 지수이동평균(EMA) 스무딩 — 미세 진동 필터링
-    // 계수 0.65: 이전 값 65% + 현재 값 35%, 약 2~3프레임 지연 (60fps 기준 ~40ms)
-    const SMOOTH = 0.65;
+    // 계수 0.35: 이전 값 35% + 현재 값 65%, 약 1프레임 지연 (60fps 기준 ~16ms)
+    const SMOOTH = 0.35;
     this._smoothDirX = this._smoothDirX * SMOOTH + dirX * (1 - SMOOTH);
     this._smoothDirY = this._smoothDirY * SMOOTH + dirY * (1 - SMOOTH);
 

@@ -240,7 +240,7 @@ export const BG_TILE_SIZE = 64;
 // ── 카메라 설정 ──
 
 /** 카메라 추적 감속 (lerp). 1에 가까울수록 즉시 추적 */
-export const CAMERA_LERP = 0.1;
+export const CAMERA_LERP = 0.25;
 
 // ── AdMob 설정 ──
 
