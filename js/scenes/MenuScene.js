@@ -9,6 +9,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS, IAP_PRODUCTS } from '../con
 import { t, toggleLocale } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
+import { DailyMissionManager } from '../managers/DailyMissionManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
 
 // ── MenuScene 클래스 ──
@@ -55,8 +56,8 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // ── 메뉴 버튼 (동적 Y 배치) ──
-    let nextY = 280;
-    const BTN_GAP = 50;
+    let nextY = 265;
+    const BTN_GAP = 44;
 
     // 출격 버튼 (프롤로그 미시청 시 컷신 → StageSelectScene)
     this._createButton(centerX, nextY, t('menu.start'), UI_COLORS.btnPrimary, () => {
@@ -84,6 +85,16 @@ export default class MenuScene extends Phaser.Scene {
     // 도전과제 버튼
     this._createButton(centerX, nextY, t('menu.achievements'), UI_COLORS.btnPrimary, () => {
       this.scene.start('AchievementScene');
+    });
+    nextY += BTN_GAP;
+
+    // 일일 미션 버튼 (미완료 미션이 있으면 알림 표시)
+    DailyMissionManager.init();
+    const dailyLabel = DailyMissionManager.hasUnclaimedMissions()
+      ? `${t('menu.dailyMission')} (!)`
+      : t('menu.dailyMission');
+    this._createButton(centerX, nextY, dailyLabel, UI_COLORS.btnPrimary, () => {
+      this.scene.start('DailyMissionScene');
     });
     nextY += BTN_GAP;
 

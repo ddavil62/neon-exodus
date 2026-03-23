@@ -253,6 +253,18 @@ export default class GameScene extends Phaser.Scene {
     /** 최대 무피격 연속 시간 (초) */
     this._maxNoDamageStreak = 0;
 
+    /** 런 내 보스 처치 수 (일일 미션용) */
+    this._bossKillCount = 0;
+
+    /** 런 내 미니보스 처치 수 (일일 미션용) */
+    this._minibossKillCount = 0;
+
+    /** 런 내 소모품 사용 수 (일일 미션용) */
+    this._consumablesUsed = 0;
+
+    /** 런 내 궁극기 사용 수 (일일 미션용) */
+    this._ultimateUses = 0;
+
     /** 이미 표시한 진화 힌트 ID 세트 (중복 방지) */
     this._shownHints = new Set();
 
@@ -651,6 +663,12 @@ export default class GameScene extends Phaser.Scene {
       totalHitsTaken: this._totalHitsTaken,
       difficulty: this.difficulty,
       tookDamage: this._totalHitsTaken > 0,
+      bossKills: this._bossKillCount || 0,
+      minibossKills: this._minibossKillCount || 0,
+      consumablesUsed: this._consumablesUsed || 0,
+      ultimateUses: this._ultimateUses || 0,
+      maxedWeapons: this.weaponSystem ? this.weaponSystem.weapons.filter(w => w.level >= (w.data.maxLevel || 8)).length : 0,
+      passiveCount: this.player ? Object.keys(this.player._passives || {}).length : 0,
     };
 
     // 물리 엔진 즉시 정지 (딜레이 중 추가 충돌 방지)
@@ -686,14 +704,16 @@ export default class GameScene extends Phaser.Scene {
       SaveManager.addToCollection('enemiesSeen', enemy.typeId);
     }
 
-    // 보스 처치 시 totalBossKills 통계 증가
+    // 보스 처치 시 totalBossKills 통계 증가 + 런 내 카운트
     if (enemy.isBoss) {
       SaveManager.updateStats('totalBossKills', 1);
+      this._bossKillCount++;
     }
 
-    // 미니보스 처치 시 totalMinibossKills 통계 증가
+    // 미니보스 처치 시 totalMinibossKills 통계 증가 + 런 내 카운트
     if (enemy.isMiniBoss) {
       SaveManager.updateStats('totalMinibossKills', 1);
+      this._minibossKillCount++;
     }
 
     // 최종 보스 처치 판정 → 스테이지 클리어 + 엔들리스 모드 전환
@@ -1350,6 +1370,9 @@ export default class GameScene extends Phaser.Scene {
 
     const itemId = item.collect();
     const data = CONSUMABLE_MAP[itemId];
+
+    // 런 내 소모품 사용 카운트 증가 (일일 미션용)
+    this._consumablesUsed++;
 
     // 수집 VFX/SFX
     if (data) {
@@ -2738,6 +2761,12 @@ export default class GameScene extends Phaser.Scene {
         totalHitsTaken: this._totalHitsTaken,
         difficulty: this.difficulty,
         tookDamage: this._totalHitsTaken > 0,
+        bossKills: this._bossKillCount || 0,
+        minibossKills: this._minibossKillCount || 0,
+        consumablesUsed: this._consumablesUsed || 0,
+        ultimateUses: this._ultimateUses || 0,
+        maxedWeapons: this.weaponSystem ? this.weaponSystem.weapons.filter(w => w.level >= (w.data.maxLevel || 8)).length : 0,
+        passiveCount: this.player ? Object.keys(this.player._passives || {}).length : 0,
       };
 
       this._cleanup();
@@ -3278,6 +3307,9 @@ export default class GameScene extends Phaser.Scene {
     const rKey = Object.keys(effect)[0];
     const rData = effect[rKey];
     if (!rData) return;
+
+    // 런 내 궁극기 사용 카운트 증가 (일일 미션용)
+    this._ultimateUses++;
 
     this._ultActive = true;
     this._ultDurationRemaining = rData.dur || 0;

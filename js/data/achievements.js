@@ -913,6 +913,32 @@ export const ACHIEVEMENTS = [
     condition: { type: 'nightmareNoDamage' },
     reward: { type: 'dataCore', amount: 10 },
   },
+
+  // ── 일일 미션 업적 (3종) ──
+  {
+    id: 'first_daily_complete',
+    nameKey: 'achievement.firstDailyComplete.name',
+    descKey: 'achievement.firstDailyComplete.desc',
+    category: 'explore',
+    condition: { type: 'dailyComplete' },
+    reward: { type: 'credits', amount: 200 },
+  },
+  {
+    id: 'daily_streak_7',
+    nameKey: 'achievement.dailyStreak7.name',
+    descKey: 'achievement.dailyStreak7.desc',
+    category: 'explore',
+    condition: { type: 'dailyStreak', value: 7 },
+    reward: { type: 'dataCore', amount: 3 },
+  },
+  {
+    id: 'daily_total_30',
+    nameKey: 'achievement.dailyTotal30.name',
+    descKey: 'achievement.dailyTotal30.desc',
+    category: 'explore',
+    condition: { type: 'dailyTotal', value: 30 },
+    reward: { type: 'dataCore', amount: 5 },
+  },
 ];
 
 /**

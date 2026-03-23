@@ -40,6 +40,15 @@ const DEFAULT_SAVE = {
     medic:     { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
     hidden:    { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
   },
+  dailyMissions: {          // 일일 미션 시스템
+    date: '',
+    seed: 0,
+    missions: [],
+    bonusClaimed: false,
+    streak: 0,
+    totalCompleted: 0,
+    charsUsedToday: [],
+  },
   stats: {
     totalKills: 0,
     totalRuns: 0,
@@ -705,6 +714,34 @@ export class SaveManager {
     prog.skills.Q = 1;
   }
 
+  // ── 일일 미션 ──
+
+  /**
+   * 일일 미션 데이터를 반환한다.
+   * @returns {Object} dailyMissions 객체
+   */
+  static getDailyMissions() {
+    const data = SaveManager.getData();
+    if (!data.dailyMissions) {
+      data.dailyMissions = {
+        date: '', seed: 0, missions: [],
+        bonusClaimed: false, streak: 0,
+        totalCompleted: 0, charsUsedToday: [],
+      };
+    }
+    return data.dailyMissions;
+  }
+
+  /**
+   * 일일 미션 데이터를 저장한다.
+   * @param {Object} missions - dailyMissions 객체
+   */
+  static setDailyMissions(missions) {
+    const data = SaveManager.getData();
+    data.dailyMissions = missions;
+    SaveManager.save();
+  }
+
   // ── 초기화 ──
 
   /**
@@ -887,6 +924,20 @@ export class SaveManager {
         };
       });
       data.version = 12;
+    }
+
+    // v12 -> v13: 일일 미션 시스템 — dailyMissions 필드 추가
+    if (data.version < 13) {
+      data.dailyMissions = {
+        date: '',
+        seed: 0,
+        missions: [],
+        bonusClaimed: false,
+        streak: 0,
+        totalCompleted: 0,
+        charsUsedToday: [],
+      };
+      data.version = 13;
     }
 
     data.version = SAVE_DATA_VERSION;

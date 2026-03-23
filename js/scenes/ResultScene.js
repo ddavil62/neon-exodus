@@ -9,6 +9,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS, ADMOB_UNITS, AD_LIMITS } fr
 import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import { AchievementManager } from '../managers/AchievementManager.js';
+import { DailyMissionManager } from '../managers/DailyMissionManager.js';
 import { MetaManager } from '../managers/MetaManager.js';
 import { AdManager } from '../managers/AdManager.js';
 import { getWeaponById } from '../data/weapons.js';
@@ -85,6 +86,24 @@ export default class ResultScene extends Phaser.Scene {
 
     /** 피격 여부 */
     this.tookDamage = data.tookDamage || false;
+
+    /** 보스 처치 수 */
+    this.bossKills = data.bossKills || 0;
+
+    /** 미니보스 처치 수 */
+    this.minibossKills = data.minibossKills || 0;
+
+    /** 소모품 사용 수 */
+    this.consumablesUsed = data.consumablesUsed || 0;
+
+    /** 궁극기 사용 수 */
+    this.ultimateUses = data.ultimateUses || 0;
+
+    /** 만렙 무기 수 */
+    this.maxedWeapons = data.maxedWeapons || 0;
+
+    /** 패시브 보유 수 */
+    this.passiveCount = data.passiveCount || 0;
   }
 
   /**
@@ -160,6 +179,32 @@ export default class ResultScene extends Phaser.Scene {
       difficulty: this.difficulty,
       tookDamage: this.tookDamage,
     });
+
+    // ── 일일 미션 진행도 갱신 ──
+    const newlyCompletedMissions = DailyMissionManager.updateProgress({
+      killCount: this.killCount,
+      bossKills: this.bossKills,
+      minibossKills: this.minibossKills,
+      runTime: this.runTime,
+      victory: this.victory,
+      creditsEarned: adjustedCredits,
+      level: this.playerLevel,
+      consumablesUsed: this.consumablesUsed,
+      weaponSlotsFilled: this.weaponSlotsFilled,
+      weaponEvolutions: this.weaponEvolutions,
+      maxedWeapons: this.maxedWeapons,
+      passiveCount: this.passiveCount,
+      maxNoDamageStreak: this.maxNoDamageStreak,
+      ultimateUses: this.ultimateUses,
+      difficulty: this.difficulty,
+      characterId: this.characterId,
+      dcReward: dcReward,
+    });
+
+    // 새로 완료된 일일 미션 알림
+    if (newlyCompletedMissions && newlyCompletedMissions.length > 0) {
+      this._dailyMissionCompleted = newlyCompletedMissions;
+    }
 
     // ── 배경 ──
     this.cameras.main.setBackgroundColor(COLORS.BG_DARK);
@@ -391,6 +436,37 @@ export default class ResultScene extends Phaser.Scene {
     if (dcReward > 0) {
       this.time.delayedCall(1500, () => {
         this._showXPDistributionUI(dcReward);
+      });
+    }
+
+    // ── 일일 미션 완료 알림 표시 ──
+    if (this._dailyMissionCompleted && this._dailyMissionCompleted.length > 0) {
+      const missionText = this.add.text(
+        centerX, 40,
+        t('daily.missionComplete'),
+        {
+          fontSize: '14px',
+          fontFamily: 'Galmuri11, monospace',
+          color: UI_COLORS.neonGreen,
+          stroke: '#000000',
+          strokeThickness: 2,
+        }
+      ).setOrigin(0.5).setAlpha(0).setDepth(200);
+
+      this.tweens.add({
+        targets: missionText,
+        alpha: 1,
+        duration: 400,
+        delay: 1500,
+        onComplete: () => {
+          this.tweens.add({
+            targets: missionText,
+            alpha: 0,
+            duration: 500,
+            delay: 2000,
+            onComplete: () => missionText.destroy(),
+          });
+        },
       });
     }
 

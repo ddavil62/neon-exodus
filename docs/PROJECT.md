@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-24 (캐릭터 레벨 & 스킬 시스템 추가)
+> 최종 업데이트: 2026-03-24 (일일 미션 시스템 추가)
 
 ## 프로젝트 개요
 
@@ -54,7 +54,7 @@ neon-exodus/
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
 │   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종 + 장식 오브젝트 16종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 배경 타일 128x128 4종 프로시저럴 패턴(_generateBackgroundTile + _regenerateTileTexture), 장식 오브젝트 16종 프로시저럴 폴백(_generateDecoTextures), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
-│   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 도감, 설정, 자동 사냥 구매)
+│   │   ├── MenuScene.js           # 메인 메뉴 (출격, 업그레이드, 도전과제, 일일 미션, 도감, 설정, 자동 사냥 구매)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브)
@@ -62,7 +62,8 @@ neon-exodus/
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (5탭 카드 그리드: 기본/성장/특수/드론/한계돌파)
-│   │   ├── AchievementScene.js    # 도전과제 목록 화면 (111개, 7카테고리, 진행률, 보상 정보)
+│   │   ├── AchievementScene.js    # 도전과제 목록 화면 (114개, 7카테고리, 진행률, 보상 정보)
+│   │   ├── DailyMissionScene.js   # 일일 미션 화면 (미션 카드 3개, 진행바, 보너스, streak, 리셋 타이머)
 │   │   └── CollectionScene.js     # 도감 화면 (4탭: 무기/패시브/적/진화)
 │   ├── entities/
 │   │   ├── Player.js              # 플레이어 (이동, 캐릭터별 고유 스프라이트, 8방향 걷기 애니메이션, HP/XP, 레벨업, 메타 업그레이드, 발밑 글로우 서클 펄스/피격 플래시)
@@ -83,7 +84,8 @@ neon-exodus/
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
-│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v12, 캐릭터 레벨&스킬/난이도 모드/드론 해금/업그레이드/컷신 포함)
+│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v13, 일일 미션/캐릭터 레벨&스킬/난이도 모드/드론 해금/업그레이드/컷신 포함)
+│   │   ├── DailyMissionManager.js # 일일 미션 매니저 (UTC 자정 리셋, 시드 PRNG, 진행 추적, 보상 수령, streak)
 │   │   ├── HapticManager.js       # 햅틱 진동 관리 (Capacitor, enabled 플래그)
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
 │   │   ├── AchievementManager.js  # 도전과제 추적/보상
@@ -100,7 +102,8 @@ neon-exodus/
 │       ├── consumables.js          # 소모성 아이템 6종 (드롭률, 텍스처, 색상)
 │       ├── characters.js          # 캐릭터 6종 (spriteKey 필드로 텍스처 매핑)
 │       ├── characterSkills.js     # 캐릭터 레벨 & 스킬 데이터 (6캐릭터 x 4스킬, 레벨XP 테이블, 궁극기 게이트)
-│       └── achievements.js        # 도전과제 111종 (7카테고리: kill/survive/clear/weapon/character/growth/explore)
+│       ├── dailyMissions.js       # 일일 미션 풀 32종 (5카테고리) + 보너스/streak 상수
+│       └── achievements.js        # 도전과제 114종 (7카테고리: kill/survive/clear/weapon/character/growth/explore)
 ├── assets/
 │   ├── backgrounds/               # 배경 에셋 (Phase 2/3 아트)
 │   │   ├── bg_tile.png            # 128x128 사이버 메탈 바닥 seamless 타일 (S1 기본, GPT Image API)
@@ -216,6 +219,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
                │                                                    ↓
                ├── UpgradeScene                               ← ResultScene
                ├── AchievementScene
+               ├── DailyMissionScene
                ├── CollectionScene
                └── SettingsScene
 ```
@@ -243,10 +247,13 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 햅틱 | `js/managers/HapticManager.js` | Capacitor Haptics 래퍼, enabled 플래그 제어 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 9종 (기존 6종 + consumableCollect + empBlast + decoBreak), empRing/empBurst 진화 분기 |
 | 캐릭터 스킬 데이터 | `js/data/characterSkills.js` | 6캐릭터 x 4스킬(Q/W/E/R) 정의, CHAR_LEVEL_XP 테이블, ULT_LEVEL_GATES, 유틸리티 함수 |
-| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v12), 크레딧/통계/도감/스테이지 클리어(난이도별)/무기 해금/설정/캐릭터 클리어/미니보스 킬/난이도 선택/캐릭터 레벨&스킬 관리 |
+| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v13), 크레딧/통계/도감/스테이지 클리어(난이도별)/무기 해금/설정/캐릭터 클리어/미니보스 킬/난이도 선택/캐릭터 레벨&스킬/일일 미션 관리 |
+| 일일 미션 매니저 | `js/managers/DailyMissionManager.js` | UTC 자정 리셋, 날짜 시드 PRNG로 3개 미션 선택, 런 결과 기반 진행도 추적, 보상 수령, streak 연속 출석 |
+| 일일 미션 데이터 | `js/data/dailyMissions.js` | 32종 미션 풀 (5카테고리), 전체 완료 보너스/streak 보너스/주기 상수 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
 | 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사, 레벨/XP 표시, 스킬 배분 UI |
-| 도전과제 | `js/scenes/AchievementScene.js` | 111개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
+| 도전과제 | `js/scenes/AchievementScene.js` | 114개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
+| 일일 미션 씬 | `js/scenes/DailyMissionScene.js` | 미션 카드 3개(진행바/수령 버튼), 전체 완료 보너스, streak, 리셋 타이머 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/진화) |
 | 자동 사냥 AI | `js/systems/AutoPilotSystem.js` | AI 자동 이동 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑) |
 | 광고 관리 | `js/managers/AdManager.js` | AdMob 보상형 광고 표시/보상 판단, Mock 모드, 일일 제한 |
@@ -1075,7 +1082,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 구현 일자: 2026-03-24
 - 스펙 문서: `.claude/specs/2026-03-24-character-level-skill.md`
 
-#### 도전과제 (111종, 7카테고리)
+#### 도전과제 (114종, 7카테고리)
 
 | 카테고리 | 수 | 주요 condition 타입 |
 |---------|---|-------------------|
@@ -1085,7 +1092,7 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | weapon (무기) | 20 | fillWeaponSlots, weaponEvolution, specificEvolution, allEvolutionsSeen, weaponCollectionComplete, passiveCollectionComplete |
 | character (캐릭터) | 18 | characterClear, characterClearCount, allCharacterClears, charLevel, firstUltimate, maxUltimate, allMaxLevel |
 | growth (성장) | 8 | maxLevel, allUpgradesMaxed |
-| explore (탐험) | 10 | stageClear, allStagesClear, totalPlayTime, enemyCollectionComplete |
+| explore (탐험) | 13 | stageClear, allStagesClear, totalPlayTime, enemyCollectionComplete, dailyComplete, dailyStreak, dailyTotal |
 
 ##### 난이도 업적 (5종)
 | ID | 이름 | 조건 | 보상 |
@@ -1106,9 +1113,16 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | max_ultimate | 궁극기 마스터 | 아무 캐릭터 R 스킬 Lv.3 달성 | 3 데이터코어 |
 | all_max_level | 전원 만렙 | 모든 캐릭터 레벨 18 달성 | 20 데이터코어 |
 
-- AchievementManager: 36개 condition type 처리 (`_checkCondition` switch문)
+##### 일일 미션 업적 (3종)
+| ID | 이름 | 조건 | 보상 |
+|---|---|---|---|
+| first_daily_complete | 첫 일일 미션 | 일일 미션 1개 완료 | 200 크레딧 |
+| daily_streak_7 | 7일 연속 출석 | 7일 연속 출석 달성 | 3 데이터코어 |
+| daily_total_30 | 미션 마스터 | 누적 30개 미션 완료 | 5 데이터코어 |
+
+- AchievementManager: 39개 condition type 처리 (`_checkCondition` switch문, dailyComplete/dailyStreak/dailyTotal 3개 추가)
 - 보상 타입 5종: credits, dataCore, dataCoreAndTitle, characterHint, hiddenCharacterUnlock
-- AchievementScene: 111개 도전과제를 세로 스크롤 리스트로 표시 (CARD_H=86, CARD_GAP=6)
+- AchievementScene: 114개 도전과제를 세로 스크롤 리스트로 표시 (CARD_H=86, CARD_GAP=6)
 - 각 항목에 달성 여부 아이콘, 제목, 설명, 진행률 (현재값/목표값), 보상 정보 표시
 - 보상 행: 카드 하단(y+14)에 보상 타입별 텍스트 표시 (색상: `UI_COLORS.xpYellow` `#FFDD00`, fontSize 9px, 완료 시 alpha 1.0 / 미완료 시 alpha 0.7)
 - `_getRewardText(reward)` 헬퍼: credits, dataCore, dataCoreAndTitle(병기), characterHint, hiddenCharacterUnlock 5종 처리. null/unknown 타입은 빈 문자열 반환
@@ -1117,8 +1131,60 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - GameScene 추적 스탯: `_totalHitsTaken`, `_noDamageStreakStart`, `_maxNoDamageStreak`, `totalMinibossKills`
 - ResultScene: `lowHpClear`(HP 10% 이하 클리어), `noDamageRun`(피격 0회 클리어), `characterId` 전달, `characterClears` 기록
 - 관련 파일: `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/scenes/AchievementScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`
-- 구현 일자: 2026-03-09 (100개 확장: 2026-03-22, 보상 정보 추가: 2026-03-23, 레벨&스킬 업적 6개 추가: 2026-03-24)
+- 구현 일자: 2026-03-09 (100개 확장: 2026-03-22, 보상 정보 추가: 2026-03-23, 레벨&스킬 업적 6개 추가: 2026-03-24, 일일 미션 업적 3개 추가: 2026-03-24)
 - 스펙 문서: `.claude/specs/2026-03-22-neon-exodus-100-achievements-purpose.md`, `.claude/specs/2026-03-23-achievement-dedup.md`
+
+#### 일일 미션 시스템
+
+매일 UTC 자정(KST 09:00) 기준 3개 미션을 자동 생성하고, 런 종료 시 진행도를 추적한다. 전체 완료 시 보너스 보상을 지급하며, 연속 출석(streak) 시 추가 보상을 지급한다.
+
+##### 미션 풀 (32종, 5카테고리)
+
+| 카테고리 | 수 | 예시 미션 | 보상 범위 |
+|---------|---|---------|----------|
+| kill (처치) | 8 | 적 100/300/500/1000 처치, 보스 1/3 처치, 미니보스 3/5 처치 | 200~1000 크레딧 |
+| survival (생존) | 6 | 5/10/15분 생존, 1/2회 클리어, 3회 런 | 200~800 크레딧 |
+| collection (수집) | 6 | 크레딧 500/2000 획득, Lv.10/20/30 도달, 소모품 5회 사용 | 200~600 크레딧 |
+| weapon (무기) | 6 | 슬롯 4/6개 채우기, 1/2회 진화, 만렙 무기, 패시브 3개 | 300~800 크레딧 |
+| special (특수) | 6 | 무피격 3분, 하드/나이트메어 클리어, 궁극기 3회, 다른 캐릭터 2종, DC 3개 획득 | 400~500 크레딧 또는 1~2 데이터코어 |
+
+##### 미션 선택 로직
+- 날짜 문자열(`YYYY-MM-DD`)에서 결정론적 시드를 생성 (`_generateSeed`)
+- mulberry32 PRNG로 5개 카테고리를 셔플한 뒤 3개 선택
+- 선택된 각 카테고리에서 1개 미션을 랜덤 선택 (같은 카테고리 중복 없음)
+- 같은 날짜는 항상 같은 3개 미션 생성 (결정론적)
+
+##### 진행도 추적
+- 런 종료 시 ResultScene에서 `DailyMissionManager.updateProgress(runData)` 호출
+- 누적형 미션: kill, kill_boss, kill_miniboss, clear, run, earn_credits, use_consumable, evolve, hard_clear, nightmare_clear, use_ultimate, earn_dc (일일 누적)
+- 최대값형 미션: survive, reach_lv, fill_slots, max_weapon, collect_passive, no_damage (단일 런 최대값)
+- 특수: diff_char는 `charsUsedToday` 배열의 고유 캐릭터 수 기반
+- GameScene에서 추가 추적하는 데이터: `_bossKillCount`, `_minibossKillCount`, `_consumablesUsed`, `_ultimateUses` (정상 종료/포기 모두 resultData에 포함)
+
+##### 보상 체계
+- 개별 미션 완료: 미션별 크레딧 또는 데이터코어 (200~1000 크레딧, 1~2 데이터코어)
+- 전체 완료 보너스: 데이터코어 2개 (`DAILY_BONUS_REWARD`)
+- streak 보너스: 7일 주기(`STREAK_CYCLE`)마다 추가 1000 크레딧 + 3 데이터코어 (`STREAK_BONUS`)
+
+##### DailyMissionScene UI
+- 타이틀 (Y=25, neonCyan) + 리셋 타이머 (Y=48, HH:MM:SS)
+- 미션 카드 3개: CARD_W=320, CARD_H=100, CARD_GAP=10, CARD_START_Y=70
+  - 카테고리 라벨 (10px, neonMagenta), 미션 이름 (12px, textPrimary), 설명 (10px, textSecondary)
+  - 진행바 (200x12px, neonCyan), 진행 텍스트
+  - 보상 표시 (xpYellow/neonMagenta), 수령 버튼 (60x28px)
+- 전체 완료 보너스 패널 (Y=420, 320x60px, neonGreen 테두리)
+- streak 정보 (Y=490)
+- 뒤로가기 버튼 (Y=560)
+- MenuScene에서 "일일 미션" 버튼으로 진입 (도전과제 버튼 아래, 미완료 시 `(!)` 표시)
+
+##### 세이브 데이터 (v13)
+- `dailyMissions` 필드 추가: `{ date, seed, missions[], bonusClaimed, streak, totalCompleted, charsUsedToday[] }`
+- v12->v13 마이그레이션: `dailyMissions` 필드 기본값으로 초기화
+- SaveManager API 2개: `getDailyMissions()`, `setDailyMissions(missions)`
+
+- 관련 파일: `js/data/dailyMissions.js`, `js/managers/DailyMissionManager.js`, `js/scenes/DailyMissionScene.js`, `js/scenes/MenuScene.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`, `js/config.js`, `js/managers/SaveManager.js`, `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/i18n.js`, `js/main.js`
+- 구현 일자: 2026-03-24
+- 스펙 문서: `.claude/specs/2026-03-24-daily-mission.md`
 
 #### 도감 (4탭)
 - CollectionScene: 무기 / 패시브 / 적 / 진화 4개 탭 (tabW=62)
@@ -1195,8 +1261,9 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 진입: MenuScene "설정" 버튼 탭 -> scene.start('SettingsScene')
 - 복귀: 뒤로가기 버튼, ESC 키, Android 하드웨어 백버튼 -> scene.start('MenuScene')
 
-#### MenuScene 버튼 Y좌표 (설정 버튼 추가 후)
-- 출격: y=280, 업그레이드: y=330, 도전과제: y=380, 도감: y=430, 자동사냥: y=480, 설정: y=530
+#### MenuScene 버튼 Y좌표 (일일 미션 버튼 추가 후)
+- 동적 Y 배치 (nextY 방식, 시작 Y=265, BTN_GAP=44)
+- 출격 -> 업그레이드(해금 시) -> 도전과제 -> 일일 미션 -> 도감 -> 자동사냥 -> 설정
 - 크레딧 텍스트: y=568, 데이터코어 텍스트: y=585
 
 #### 초기화 (BootScene)
@@ -1600,7 +1667,7 @@ HUD 인벤토리의 무기 또는 패시브 아이콘을 탭하면 해당 아이
 
 ### 세이브/매니저 시스템
 
-- SaveManager: 로컬스토리지 기반, 세이브 버전 v12. 크레딧/통계/도감/자동사냥/설정/캐릭터 클리어/미니보스 킬/난이도별 스테이지 클리어/난이도 선택/캐릭터 레벨&스킬 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled), v6->v7(characterClears, totalMinibossKills), v7->v8(cutscenesSeen), v8->v9(upgradeUnlocked), v9->v10(droneUnlocked, droneUpgrades), v10->v11(stageClears 구조 변환 숫자->객체, selectedDifficulty), v11->v12(characterProgression 추가).
+- SaveManager: 로컬스토리지 기반, 세이브 버전 v13. 크레딧/통계/도감/자동사냥/설정/캐릭터 클리어/미니보스 킬/난이도별 스테이지 클리어/난이도 선택/캐릭터 레벨&스킬/일일 미션 영구 저장 연동 완료. 마이그레이션 체인: v1->v2(totalBossKills), v2->v3(totalSurviveMinutes), v3->v4(autoHuntUnlocked, autoHuntEnabled), v4->v5(stageClears, unlockedWeapons, selectedStage), v5->v6(hapticEnabled, bgmEnabled, sfxEnabled), v6->v7(characterClears, totalMinibossKills), v7->v8(cutscenesSeen), v8->v9(upgradeUnlocked), v9->v10(droneUnlocked, droneUpgrades), v10->v11(stageClears 구조 변환 숫자->객체, selectedDifficulty), v11->v12(characterProgression 추가), v12->v13(dailyMissions 추가).
 - MetaManager: 영구 업그레이드 구매/다운그레이드/적용 계산. canDowngrade(), getDowngradeRefund(), downgradeUpgrade() 메서드 제공. GameScene에서 getPlayerBonuses() 호출하여 런 시작 시 보너스 적용.
 - AchievementManager: 도전과제 조건 검사/보상 지급. ResultScene에서 checkAll() 호출.
 - IAPManager: `@capgo/native-purchases` v8 기반 Google Play 인앱결제 구매/복원/가격조회. 네이티브 환경에서 실제 결제 다이얼로그 표시, 취소 시 실패 메시지 미표시. 웹 환경 Mock 모드 지원. BootScene에서 초기화 및 구매 복원.

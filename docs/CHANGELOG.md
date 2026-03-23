@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-03-24 -- 일일 미션 시스템
+
+### 추가
+- `js/data/dailyMissions.js`: 32종 미션 풀 (5카테고리: kill 8, survival 6, collection 6, weapon 6, special 6) + `DAILY_BONUS_REWARD`(dataCores: 2), `STREAK_BONUS`(credits: 1000, dataCores: 3), `STREAK_CYCLE`(7) 상수
+- `js/managers/DailyMissionManager.js`: 일일 미션 핵심 매니저 (init, _getToday, _getYesterday, _generateSeed, _mulberry32 PRNG, _selectMissions, getCurrentMissions, updateProgress, claimReward, claimBonus, getStreak, getTimeUntilReset, hasUnclaimedMissions, isBonusClaimable, _checkAchievements)
+- `js/scenes/DailyMissionScene.js`: 전용 UI 씬 (미션 카드 3개 + 진행바 + 수령 버튼, 전체 완료 보너스 패널, streak 표시, 리셋 타이머, 뒤로가기 버튼)
+- `js/data/achievements.js`: 일일 미션 업적 3종 (first_daily_complete: credits 200, daily_streak_7: dataCore 3, daily_total_30: dataCore 5)
+- `js/managers/AchievementManager.js`: dailyComplete, dailyStreak, dailyTotal condition type 3개 추가
+
+### 변경
+- `js/config.js`: `SAVE_DATA_VERSION` 12 -> 13
+- `js/managers/SaveManager.js`: v12->v13 마이그레이션 (dailyMissions 필드 추가), DEFAULT_SAVE에 dailyMissions 추가, `getDailyMissions()`/`setDailyMissions()` API 추가
+- `js/scenes/GameScene.js`: `_bossKillCount`, `_minibossKillCount`, `_consumablesUsed`, `_ultimateUses` 추적 변수 추가, resultData에 6개 새 필드 추가 (정상 종료 + 포기 모두)
+- `js/scenes/ResultScene.js`: `DailyMissionManager.updateProgress()` 호출, 새로 완료된 미션 알림 텍스트 표시 (네온 그린, fade out)
+- `js/scenes/MenuScene.js`: 도전과제 버튼 아래에 "일일 미션" 버튼 추가 (미완료 시 `(!)` 표시)
+- `js/main.js`: DailyMissionScene 등록
+- `js/i18n.js`: 일일 미션 관련 i18n 키 추가 (UI 23개 + 미션 64개 + 업적 6개, ko/en)
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-24-daily-mission-purpose.md`
+- 스펙: `.claude/specs/2026-03-24-daily-mission.md`
+- 구현 리포트: `.claude/specs/2026-03-24-daily-mission-report.md`
+- QA: `.claude/specs/2026-03-24-daily-mission-qa.md`
+- QA 결과: 수용기준 25/25 충족, 예외 시나리오 13/13 PASS, Playwright 32/32 전체 통과
+- 변경 파일: `js/data/dailyMissions.js`, `js/managers/DailyMissionManager.js`, `js/scenes/DailyMissionScene.js`, `js/config.js`, `js/managers/SaveManager.js`, `js/scenes/GameScene.js`, `js/scenes/ResultScene.js`, `js/scenes/MenuScene.js`, `js/main.js`, `js/data/achievements.js`, `js/managers/AchievementManager.js`, `js/i18n.js` 총 12개
+- 스펙 대비 차이 없음 (전체 구현 완료)
+- 경미한 이슈 (QA PASS, 개선 권장): DailyMissionScene 설명 텍스트-진행바 간격 5px, 영어 "1 days" 단복수, _createButton pointerout 중복 등록
+
 ## 2026-03-24 -- 난이도 모드 시스템 (Normal / Hard / Nightmare)
 
 ### 추가

@@ -14,6 +14,7 @@
  * - maxLevel, stageClear, allStagesClear, totalPlayTime
  * - hardClear, hardAllClear, nightmareClear, nightmareAllClear, nightmareNoDamage
  * - charLevel, firstUltimate, maxUltimate, allMaxLevel
+ * - dailyComplete, dailyStreak, dailyTotal
  */
 
 import { ACHIEVEMENTS, getAchievementById } from '../data/achievements.js';
@@ -351,6 +352,19 @@ export class AchievementManager {
           return prog && prog.level >= MAX_CHAR_LEVEL;
         });
       }
+
+      // ── 일일 미션 관련 ──
+      case 'dailyComplete':
+        // 일일 미션 1개 이상 완료
+        return runData.dailyComplete === true;
+
+      case 'dailyStreak':
+        // 연속 출석 N일 이상
+        return (runData.dailyStreak || 0) >= condition.value;
+
+      case 'dailyTotal':
+        // 누적 N개 미션 완료
+        return (runData.dailyTotal || 0) >= condition.value;
 
       default:
         return false;
