@@ -1405,65 +1405,28 @@ export default class GameScene extends Phaser.Scene {
 
   /**
    * 배경 장식 오브젝트를 플레이어 주변에 랜덤 배치한다.
-   * 프로시저럴 그래픽으로 4종 도형을 생성하여 스프라이트 의존 없이 확실한 가시성을 보장한다.
-   * Depth 1~2, alpha 0.10~0.20, 물리 충돌 없음.
+   * 스테이지별 decoTypes 스프라이트를 사용하며, decoTint로 색조를 맞춘다.
+   * Depth 1~2, alpha 0.25~0.45, 물리 충돌 없음.
    * @private
    */
   _initDecos() {
     /** @type {Phaser.GameObjects.Image[]} */
     this._decos = [];
 
-    const accent = this.stageData.accentColor || 0x00FFFF;
-
-    // ── 프로시저럴 텍스처 4종 생성 ──
-    const shapes = ['_deco_circle', '_deco_ring', '_deco_cross', '_deco_diamond'];
-    if (!this.textures.exists(shapes[0])) {
-      const sz = 32;
-      // 원 (filled)
-      const g1 = this.make.graphics({ add: false });
-      g1.fillStyle(0xFFFFFF, 1);
-      g1.fillCircle(sz / 2, sz / 2, sz / 2 - 2);
-      g1.generateTexture('_deco_circle', sz, sz);
-      g1.destroy();
-      // 링 (outline)
-      const g2 = this.make.graphics({ add: false });
-      g2.lineStyle(2, 0xFFFFFF, 1);
-      g2.strokeCircle(sz / 2, sz / 2, sz / 2 - 2);
-      g2.generateTexture('_deco_ring', sz, sz);
-      g2.destroy();
-      // 십자
-      const g3 = this.make.graphics({ add: false });
-      g3.lineStyle(2, 0xFFFFFF, 1);
-      g3.lineBetween(sz / 2, 2, sz / 2, sz - 2);
-      g3.lineBetween(2, sz / 2, sz - 2, sz / 2);
-      g3.generateTexture('_deco_cross', sz, sz);
-      g3.destroy();
-      // 다이아몬드
-      const g4 = this.make.graphics({ add: false });
-      g4.fillStyle(0xFFFFFF, 1);
-      g4.fillPoints([
-        { x: sz / 2, y: 2 },
-        { x: sz - 2, y: sz / 2 },
-        { x: sz / 2, y: sz - 2 },
-        { x: 2, y: sz / 2 },
-      ], true);
-      g4.generateTexture('_deco_diamond', sz, sz);
-      g4.destroy();
-    }
+    const decoTypes = this.stageData.decoTypes || [];
+    if (decoTypes.length === 0) return;
 
     const decoCount = Phaser.Math.Between(18, 28);
     const px = this.player ? this.player.x : PLAYER_START_X;
     const py = this.player ? this.player.y : PLAYER_START_Y;
 
     for (let i = 0; i < decoCount; i++) {
-      const texKey = shapes[Phaser.Math.Between(0, shapes.length - 1)];
+      const texKey = decoTypes[Phaser.Math.Between(0, decoTypes.length - 1)];
       const x = px + Phaser.Math.Between(-800, 800);
       const y = py + Phaser.Math.Between(-800, 800);
       const img = this.add.image(x, y, texKey);
       img.setDepth(Phaser.Math.Between(1, 2));
-      img.setScale(Phaser.Math.FloatBetween(0.6, 1.8));
-      img.setAlpha(Phaser.Math.FloatBetween(0.10, 0.20));
-      img.setTint(accent);
+      img.setAlpha(Phaser.Math.FloatBetween(0.35, 0.55));
       img.setAngle(Phaser.Math.Between(0, 359));
       this._decos.push(img);
     }

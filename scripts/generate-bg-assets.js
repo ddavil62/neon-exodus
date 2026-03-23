@@ -73,125 +73,126 @@ const BG_ASSETS = [
   },
 
   // ── 장식 오브젝트 16종 (투명 배경) ──
+  // 픽셀아트 스타일, 스테이지 색상 계열, 뚜렷한 실루엣
 
-  // S1 도시 외곽 (색상: 어두운 남색 #1A1A2E~#222240 계열)
+  // S1 도시 외곽 (시안 네온 계열)
   {
     key: 'deco_s1_lamppost',
     outputPath: 'sprites/decos/deco_s1_lamppost.png',
-    finalW: 16,
-    finalH: 64,
-    prompt: 'very dark silhouette of a broken street lamp post, cyberpunk style, dark navy blue #1A1A2E, thin pole with small circle on top, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 24,
+    finalH: 72,
+    prompt: 'pixel art broken street lamp post, cyberpunk neon style, medium-dark cyan blue color #4466AA, thin metal pole with tilted lamp head emitting faint glow at top, visible cracks and rust, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s1_car',
     outputPath: 'sprites/decos/deco_s1_car.png',
-    finalW: 48,
-    finalH: 32,
-    prompt: 'very dark silhouette of an abandoned wrecked car, cyberpunk style, dark navy #222240, simple rectangular outline with broken details, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 56,
+    finalH: 40,
+    prompt: 'pixel art abandoned wrecked car top-down view, cyberpunk style, medium-dark steel blue #556688, rectangular sedan shape with smashed windshield, dented roof, visible rust patches, one tire missing, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s1_manhole',
     outputPath: 'sprites/decos/deco_s1_manhole.png',
-    finalW: 24,
-    finalH: 24,
-    prompt: 'very dark silhouette of a circular manhole cover, cyberpunk style, dark navy #1A1A2E, circle with cross grid pattern inside, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 40,
+    finalH: 40,
+    prompt: 'pixel art circular manhole cover, cyberpunk style, medium gray-blue #667799, round disc with cross-hatch grid pattern and small bolts around rim, slightly ajar with faint cyan glow underneath, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s1_debris',
     outputPath: 'sprites/decos/deco_s1_debris.png',
-    finalW: 32,
-    finalH: 24,
-    prompt: 'very dark silhouette of rubble debris pile, cyberpunk style, dark navy #222240, irregular shapes of broken concrete, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 48,
+    finalH: 36,
+    prompt: 'pixel art pile of concrete rubble and debris, cyberpunk style, medium gray-blue #556677, scattered broken concrete chunks with rebar sticking out, dust particles, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
 
-  // S2 산업 지구 (색상: 어두운 갈색 #1C130A~#261A0E 계열)
+  // S2 산업 지구 (오렌지 계열)
   {
     key: 'deco_s2_drum',
     outputPath: 'sprites/decos/deco_s2_drum.png',
-    finalW: 20,
-    finalH: 24,
-    prompt: 'very dark silhouette of an industrial oil drum barrel, dark brown #1C130A, simple cylinder with horizontal bands, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 36,
+    finalH: 40,
+    prompt: 'pixel art industrial oil drum barrel, rusted metal, dark orange-brown #885533, cylindrical barrel with horizontal bands and hazard warning label, slight dent on side, leaking fluid puddle, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s2_pipe',
     outputPath: 'sprites/decos/deco_s2_pipe.png',
-    finalW: 72,
-    finalH: 12,
-    prompt: 'very dark silhouette of industrial pipe segment, dark brown #261A0E, long horizontal tube with joints, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 80,
+    finalH: 24,
+    prompt: 'pixel art broken industrial pipe segment, dark orange-brown #774422, long horizontal thick pipe with flanged joints at both ends, steam leak from a crack in the middle, rusty surface texture, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s2_crane',
     outputPath: 'sprites/decos/deco_s2_crane.png',
-    finalW: 40,
-    finalH: 48,
-    prompt: 'very dark silhouette of collapsed crane wreckage, dark brown #1C130A, diagonal truss beams, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 56,
+    finalH: 56,
+    prompt: 'pixel art collapsed construction crane wreckage, dark rust orange #886644, diagonal steel truss lattice beams fallen on ground, bent metal, scattered bolts and cables, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s2_sign',
     outputPath: 'sprites/decos/deco_s2_sign.png',
-    finalW: 16,
-    finalH: 20,
-    prompt: 'very dark silhouette of a warning sign on pole, dark brown #261A0E, small triangle on thin stick, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 32,
+    finalH: 40,
+    prompt: 'pixel art fallen warning sign on broken pole, industrial style, yellow-orange #AA7733 triangle warning sign with exclamation mark, bent metal pole lying on ground, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
 
-  // S3 지하 서버 (색상: 어두운 보라 #100A1E~#1A1030 계열)
+  // S3 지하 서버 (보라 네온 계열)
   {
     key: 'deco_s3_rack',
     outputPath: 'sprites/decos/deco_s3_rack.png',
-    finalW: 24,
-    finalH: 48,
-    prompt: 'very dark silhouette of a server rack cabinet, dark purple #100A1E, tall rectangle with horizontal divider lines, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 36,
+    finalH: 56,
+    prompt: 'pixel art server rack cabinet, dark purple #6644AA, tall rectangular unit with horizontal slot lines for blade servers, small LED indicator dots on front in green and red, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s3_cable',
     outputPath: 'sprites/decos/deco_s3_cable.png',
-    finalW: 56,
-    finalH: 10,
-    prompt: 'very dark silhouette of bundled network cables, dark purple #1A1030, three parallel wavy lines, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 64,
+    finalH: 20,
+    prompt: 'pixel art bundle of network ethernet cables, purple #7755BB, three parallel thick cables with slight curve, connector plugs visible at ends, cable ties holding bundle together, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s3_fan',
     outputPath: 'sprites/decos/deco_s3_fan.png',
-    finalW: 28,
-    finalH: 28,
-    prompt: 'very dark silhouette of a cooling fan unit, dark purple #100A1E, circle with X cross inside, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 40,
+    finalH: 40,
+    prompt: 'pixel art large server cooling fan unit, dark purple #5533AA, square housing with circular fan blade pattern inside, wire mesh grill cover, small screws at corners, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s3_terminal',
     outputPath: 'sprites/decos/deco_s3_terminal.png',
-    finalW: 20,
-    finalH: 24,
-    prompt: 'very dark silhouette of a computer terminal, dark purple #1A1030, rectangle body with small monitor on top, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 36,
+    finalH: 40,
+    prompt: 'pixel art broken computer terminal monitor, purple-blue #6655AA, CRT-style square screen showing glitched static lines in purple, attached keyboard below, cracked screen corner, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
 
-  // S4 더 코어 (색상: 어두운 그린 #0A1A0A~#122412 계열)
+  // S4 더 코어 (녹색 에너지 계열)
   {
     key: 'deco_s4_node',
     outputPath: 'sprites/decos/deco_s4_node.png',
-    finalW: 24,
-    finalH: 24,
-    prompt: 'very dark silhouette of an energy node, dark green #0A1A0A, double concentric circles with crosshair lines, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 40,
+    finalH: 40,
+    prompt: 'pixel art energy relay node, dark green #448844, double concentric circle rings with pulsing energy, crosshair targeting lines extending outward, faint green glow aura, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s4_pillar',
     outputPath: 'sprites/decos/deco_s4_pillar.png',
-    finalW: 16,
-    finalH: 56,
-    prompt: 'very dark silhouette of a data pillar column, dark green #122412, tall thin rectangle with dotted line details, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 28,
+    finalH: 64,
+    prompt: 'pixel art tall data pillar column, dark green #336633, rectangular column with glowing green circuit line patterns running vertically, small data readout panels on sides, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s4_core',
     outputPath: 'sprites/decos/deco_s4_core.png',
-    finalW: 32,
-    finalH: 32,
-    prompt: 'very dark silhouette of a broken energy core, dark green #0A1A0A, hexagonal outline with crack lines, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 44,
+    finalH: 44,
+    prompt: 'pixel art broken energy core fragment, dark green #448844, hexagonal crystalline structure with glowing crack lines revealing bright green energy inside, shattered corner pieces floating nearby, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
   {
     key: 'deco_s4_shard',
     outputPath: 'sprites/decos/deco_s4_shard.png',
-    finalW: 20,
-    finalH: 20,
-    prompt: 'very dark silhouette of floating debris shard, dark green #122412, irregular angular polygon shape, top-down view, extremely muted and dark, transparent background, game sprite',
+    finalW: 32,
+    finalH: 32,
+    prompt: 'pixel art energy crystal shard, translucent green #55AA55, irregular angular polygon crystal shape with faceted surfaces catching light, faint green glow emanating from edges, top-down overhead view, transparent background, clean sharp edges, 2D game sprite asset',
   },
 ];
 
@@ -326,15 +327,19 @@ async function main() {
     process.exit(1);
   }
 
+  // --deco-only 플래그: 데코 스프라이트만 재생성 (배경 타일 스킵)
+  const decoOnly = process.argv.includes('--deco-only');
+  const targetAssets = decoOnly ? BG_ASSETS.filter(a => !a.isBgTile) : BG_ASSETS;
+
   console.log('=== NEON EXODUS 배경 리디자인 에셋 생성 시작 ===');
-  console.log(`에셋 ${BG_ASSETS.length}종 생성 예정\n`);
+  console.log(`에셋 ${targetAssets.length}종 생성 예정${decoOnly ? ' (데코만)' : ''}\n`);
 
   let successCount = 0;
   let failCount = 0;
   const failedAssets = [];
 
-  for (let i = 0; i < BG_ASSETS.length; i++) {
-    const asset = BG_ASSETS[i];
+  for (let i = 0; i < targetAssets.length; i++) {
+    const asset = targetAssets[i];
 
     try {
       const ok = await generateAsset(asset);
@@ -346,14 +351,14 @@ async function main() {
     }
 
     // Rate limit 대응: 마지막 에셋이 아니면 1초 대기
-    if (i < BG_ASSETS.length - 1) {
+    if (i < targetAssets.length - 1) {
       await sleep(1000);
     }
   }
 
   // 결과 요약 로그
   console.log('\n=== 배경 리디자인 에셋 생성 완료 ===');
-  console.log(`성공: ${successCount}종 / 실패: ${failCount}종 / 전체: ${BG_ASSETS.length}종`);
+  console.log(`성공: ${successCount}종 / 실패: ${failCount}종 / 전체: ${targetAssets.length}종`);
 
   if (failedAssets.length > 0) {
     console.log(`실패 목록: ${failedAssets.join(', ')}`);
