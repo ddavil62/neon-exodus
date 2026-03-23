@@ -1159,15 +1159,24 @@ export default class BootScene extends Phaser.Scene {
       gfx.generateTexture('effect_perpetual_emp', 64, 64);
     }
 
-    // 7. phantom_strike (force_blade 진화) — 유령 흰색 슬래시
+    // 7. phantom_strike (force_blade 진화) — 유령 시안+보라 슬래시
     if (!this.textures.exists('effect_phantom_strike')) {
       gfx.clear();
-      gfx.fillStyle(0xAABBFF, 0.4);
-      gfx.fillRect(0, 8, 48, 32);
-      gfx.fillStyle(0xFFFFFF, 0.7);
-      gfx.fillRect(4, 16, 40, 16);
+      // 외곽 보라 글로우
+      gfx.fillStyle(0x8844FF, 0.25);
+      gfx.fillRect(0, 4, 48, 40);
+      // 중간 시안 슬래시 코어
+      gfx.fillStyle(0x00FFFF, 0.5);
+      gfx.fillRect(2, 10, 44, 28);
+      // 밝은 시안 중심선
+      gfx.fillStyle(0x00FFFF, 0.85);
+      gfx.fillRect(4, 18, 40, 12);
+      // 흰색 하이라이트 (가운데 얇은 라인)
       gfx.fillStyle(0xFFFFFF, 0.9);
-      gfx.fillRect(8, 20, 32, 8);
+      gfx.fillRect(8, 22, 32, 4);
+      // 테두리 라인
+      gfx.lineStyle(1, 0xBB66FF, 0.6);
+      gfx.strokeRect(2, 10, 44, 28);
       gfx.generateTexture('effect_phantom_strike', 48, 48);
     }
 
