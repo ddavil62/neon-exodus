@@ -23,6 +23,8 @@ export const STAGES = {
     bossId: 'core_processor',
     miniBossOverride: null,
     spawnTableOverride: null,
+    decoTypes: ['deco_s1_lamppost', 'deco_s1_car', 'deco_s1_manhole', 'deco_s1_debris'],
+    decoTint: 0x4D4D8A,
   },
   stage_2: {
     id: 'stage_2',
@@ -42,6 +44,8 @@ export const STAGES = {
       { time: 720, enemyId: 'assault_mech' },
     ],
     spawnTableOverride: { earlySpawnBoost: { enemyId: 'repair_bot', fromMinute: 1 } },
+    decoTypes: ['deco_s2_drum', 'deco_s2_pipe', 'deco_s2_crane', 'deco_s2_sign'],
+    decoTint: 0x54391E,
   },
   stage_3: {
     id: 'stage_3',
@@ -61,6 +65,8 @@ export const STAGES = {
       { time: 660, enemyId: 'guardian_drone' },
     ],
     spawnTableOverride: { earlySpawnBoost: { enemyId: 'teleport_drone', fromMinute: 5 } },
+    decoTypes: ['deco_s3_rack', 'deco_s3_cable', 'deco_s3_fan', 'deco_s3_terminal'],
+    decoTint: 0x301E5A,
   },
   stage_4: {
     id: 'stage_4',
@@ -86,6 +92,8 @@ export const STAGES = {
         { enemyId: 'heavy_bot', fromMinute: 4 },
       ],
     },
+    decoTypes: ['deco_s4_node', 'deco_s4_pillar', 'deco_s4_core', 'deco_s4_shard'],
+    decoTint: 0x1E4E1E,
   },
 };
 

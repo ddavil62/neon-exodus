@@ -138,6 +138,9 @@ export default class GameScene extends Phaser.Scene {
     // ── 플레이어 (선택된 캐릭터 ID에 따른 스프라이트 적용) ──
     this.player = new Player(this, PLAYER_START_X, PLAYER_START_Y, this.characterId);
 
+    // 배경 장식 오브젝트 초기화 (플레이어 주변 배치)
+    this._initDecos();
+
     // ── 플레이어 발밑 글로우 서클 ──
     // depth 9: 플레이어(depth 10) 아래, 배경(depth 0~1) 위
     this._playerGlowCircle = this.add.graphics();
@@ -408,6 +411,7 @@ export default class GameScene extends Phaser.Scene {
 
     // 무한 월드 래핑 — 플레이어 기준 WRAP_RADIUS 밖 엔티티를 반대편으로 텔레포트
     this._wrapEntities();
+    this._wrapDecos();  // 배경 장식 오브젝트 래핑
 
     // HUD 갱신
     this._updateHUD();
@@ -1394,6 +1398,60 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
+  // ── 배경 장식 오브젝트 ──
+
+  /**
+   * 배경 장식 오브젝트를 플레이어 주변에 랜덤 배치한다.
+   * 스테이지 데이터의 decoTypes가 없으면 아무것도 생성하지 않는다.
+   * Depth 1~2, alpha 0.15~0.25, 물리 충돌 없음.
+   * @private
+   */
+  _initDecos() {
+    /** @type {Phaser.GameObjects.Image[]} */
+    this._decos = [];
+
+    const decoTypes = this.stageData.decoTypes || [];
+    if (decoTypes.length === 0) return;
+
+    const decoTint = this.stageData.decoTint || 0x1A1A2E;
+    const decoCount = Phaser.Math.Between(15, 25);
+    const px = this.player ? this.player.x : PLAYER_START_X;
+    const py = this.player ? this.player.y : PLAYER_START_Y;
+
+    for (let i = 0; i < decoCount; i++) {
+      const texKey = decoTypes[Phaser.Math.Between(0, decoTypes.length - 1)];
+      const x = px + Phaser.Math.Between(-800, 800);
+      const y = py + Phaser.Math.Between(-800, 800);
+      const img = this.add.image(x, y, texKey);
+      img.setDepth(Phaser.Math.Between(1, 2));
+      img.setAlpha(Phaser.Math.FloatBetween(0.15, 0.25));
+      img.setTint(decoTint);  // 스테이지 컬러로 틴트 적용
+      img.setAngle(Phaser.Math.Between(0, 359));  // 랜덤 회전으로 단조로움 방지
+      this._decos.push(img);
+    }
+  }
+
+  /**
+   * 배경 장식 오브젝트를 WRAP_RADIUS 기반으로 래핑한다.
+   * 플레이어에서 WRAP_RADIUS 밖으로 벗어난 데코를 반대편으로 이동시킨다.
+   * @private
+   */
+  _wrapDecos() {
+    if (!this._decos || this._decos.length === 0) return;
+
+    const px = this.player.x;
+    const py = this.player.y;
+    const r2 = WRAP_RADIUS * WRAP_RADIUS;
+
+    for (const deco of this._decos) {
+      const dx = deco.x - px;
+      const dy = deco.y - py;
+      if (dx * dx + dy * dy > r2) {
+        deco.setPosition(px - dx, py - dy);
+      }
+    }
+  }
+
   /**
    * 플레이어 기준 래핑 반경 밖의 엔티티를 반대편으로 텔레포트한다.
    * 뱀파이어 서바이버 스타일 무한 월드 핵심 로직.
@@ -2374,6 +2432,14 @@ export default class GameScene extends Phaser.Scene {
     if (this._playerGlowCircle) {
       this._playerGlowCircle.destroy();
       this._playerGlowCircle = null;
+    }
+
+    // 배경 장식 오브젝트 정리
+    if (this._decos) {
+      for (const deco of this._decos) {
+        if (deco && deco.destroy) deco.destroy();
+      }
+      this._decos = null;
     }
 
     // destroy 후 참조를 null로 설정하여 use-after-destroy 방지

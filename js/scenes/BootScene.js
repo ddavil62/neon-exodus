@@ -182,6 +182,17 @@ export default class BootScene extends Phaser.Scene {
     for (const id of EFFECT_IDS) {
       this.load.image('effect_' + id, 'assets/sprites/effects/' + id + '.png');
     }
+
+    // ── 장식 오브젝트 16종 (배경 리디자인) ──
+    const DECO_IDS = [
+      'deco_s1_lamppost', 'deco_s1_car', 'deco_s1_manhole', 'deco_s1_debris',
+      'deco_s2_drum', 'deco_s2_pipe', 'deco_s2_crane', 'deco_s2_sign',
+      'deco_s3_rack', 'deco_s3_cable', 'deco_s3_fan', 'deco_s3_terminal',
+      'deco_s4_node', 'deco_s4_pillar', 'deco_s4_core', 'deco_s4_shard',
+    ];
+    for (const id of DECO_IDS) {
+      this.load.image(id, `assets/sprites/decos/${id}.png`);
+    }
   }
 
   /**
@@ -205,6 +216,9 @@ export default class BootScene extends Phaser.Scene {
 
     // 배경 타일 텍스처 생성
     this._generateBackgroundTile();
+
+    // 장식 오브젝트 텍스처 생성 (PNG 미로드 시 폴백)
+    this._generateDecoTextures();
 
     // ── SoundSystem 초기화 ──
     SoundSystem.init(SaveManager.getSettings());
@@ -677,47 +691,393 @@ export default class BootScene extends Phaser.Scene {
 
   /**
    * 배경 타일 텍스처를 생성한다.
-   * 스테이지별(S1~S4) SF 바닥 느낌의 64x64 반복 타일.
+   * 스테이지별(S1~S4) 128x128 반복 타일. 각 스테이지 세계관을 반영하는 고유 패턴.
+   * PNG 에셋이 이미 로드된 경우 기존 텍스처를 제거 후 재생성한다.
    * @private
    */
   _generateBackgroundTile() {
-    const size = 64;
+    const size = 128;
 
-    // 스테이지별 타일 정의: [텍스처키, 배경색, 그리드색, 리벳색]
-    const tileDefs = [
-      { key: 'bg_tile',    bg: 0x0D0D1F, grid: 0x1A1A3A, rivet: 0x222244 },
-      { key: 'bg_tile_s2', bg: 0x1A0800, grid: 0x3A1A0A, rivet: 0x442211 },
-      { key: 'bg_tile_s3', bg: 0x050510, grid: 0x1A0A3A, rivet: 0x221144 },
-      { key: 'bg_tile_s4', bg: 0x000000, grid: 0x0A2A0A, rivet: 0x114411 },
-    ];
-
-    for (const def of tileDefs) {
-      if (this.textures.exists(def.key)) continue;
-
-      const gfx = this.add.graphics();
-
-      // 어두운 배경
-      gfx.fillStyle(def.bg, 1);
+    // ── S1 도시 외곽: 아스팔트 + 시안 표시선 ──
+    this._regenerateTileTexture('bg_tile', size, (gfx) => {
+      // 기조색
+      gfx.fillStyle(0x0C0C18, 1);
       gfx.fillRect(0, 0, size, size);
 
-      // 그리드 라인
-      gfx.lineStyle(1, def.grid, 0.5);
-      gfx.lineBetween(0, 0, size, 0);
-      gfx.lineBetween(0, 0, 0, size);
+      // 대각선 크랙 라인 (약간 밝은 남색)
+      gfx.lineStyle(1, 0x14142A, 0.6);
+      gfx.lineBetween(10, 0, size, size - 10);
+      gfx.lineBetween(0, 30, 98, size);
+      gfx.lineBetween(40, 0, size, 88);
+      gfx.lineStyle(0.5, 0x14142A, 0.4);
+      gfx.lineBetween(0, 70, 58, size);
+      gfx.lineBetween(70, 0, size, 58);
 
-      // 가운데 작은 점 (SF 금속 바닥 리벳)
-      gfx.fillStyle(def.rivet, 1);
-      gfx.fillCircle(size / 2, size / 2, 2);
+      // 도로 점선 세그먼트 (시안, alpha 0.12)
+      gfx.lineStyle(1.5, 0x00FFFF, 0.12);
+      for (let i = 0; i < size; i += 16) {
+        gfx.lineBetween(i, 32, i + 8, 32);
+        gfx.lineBetween(i + 4, 96, i + 12, 96);
+      }
 
-      // 모서리 점
-      gfx.fillCircle(2, 2, 1);
-      gfx.fillCircle(size - 2, 2, 1);
-      gfx.fillCircle(2, size - 2, 1);
-      gfx.fillCircle(size - 2, size - 2, 1);
+      // 맨홀 커버 점선 원 (시안, alpha 0.08)
+      gfx.lineStyle(1, 0x00FFFF, 0.08);
+      gfx.strokeCircle(64, 64, 12);
+      gfx.lineStyle(0.5, 0x00FFFF, 0.06);
+      gfx.lineBetween(56, 64, 72, 64);
+      gfx.lineBetween(64, 56, 64, 72);
+    });
 
-      gfx.generateTexture(def.key, size, size);
-      gfx.destroy();
+    // ── S2 산업 지구: 강철 격자판 + 오렌지 경고선 ──
+    this._regenerateTileTexture('bg_tile_s2', size, (gfx) => {
+      // 기조색
+      gfx.fillStyle(0x0E0A06, 1);
+      gfx.fillRect(0, 0, size, size);
+
+      // 32x32 금속 격자 (1.5px)
+      gfx.lineStyle(1.5, 0x1A1208, 0.6);
+      for (let i = 0; i <= size; i += 32) {
+        gfx.lineBetween(i, 0, i, size);
+        gfx.lineBetween(0, i, size, i);
+      }
+
+      // 볼트 점 (격자 교차점)
+      gfx.fillStyle(0x241A0C, 0.7);
+      for (let x = 0; x <= size; x += 32) {
+        for (let y = 0; y <= size; y += 32) {
+          gfx.fillCircle(x, y, 2);
+        }
+      }
+
+      // 45도 경고 해칭 (오렌지, alpha 0.10) — 한 코너
+      gfx.lineStyle(1.5, 0xFF6600, 0.10);
+      for (let i = 0; i < 32; i += 6) {
+        gfx.lineBetween(i, 0, 0, i);
+      }
+    });
+
+    // ── S3 지하 서버: PCB 회로 + 퍼플 데이터 라인 ──
+    this._regenerateTileTexture('bg_tile_s3', size, (gfx) => {
+      // 기조색
+      gfx.fillStyle(0x06040E, 1);
+      gfx.fillRect(0, 0, size, size);
+
+      // 직각 꺾임 PCB 라인 (퍼플, alpha 0.15)
+      gfx.lineStyle(1, 0x8800FF, 0.15);
+      // 라인 1: 수평 → 수직 꺾임
+      gfx.lineBetween(0, 20, 40, 20);
+      gfx.lineBetween(40, 20, 40, 60);
+      gfx.lineBetween(40, 60, 80, 60);
+      // 라인 2
+      gfx.lineBetween(20, 0, 20, 40);
+      gfx.lineBetween(20, 40, 60, 40);
+      gfx.lineBetween(60, 40, 60, 80);
+      // 라인 3
+      gfx.lineBetween(80, 0, 80, 30);
+      gfx.lineBetween(80, 30, 110, 30);
+      gfx.lineBetween(110, 30, 110, 70);
+      // 라인 4
+      gfx.lineBetween(0, 90, 30, 90);
+      gfx.lineBetween(30, 90, 30, 128);
+      // 라인 5
+      gfx.lineBetween(90, 80, 90, 128);
+      gfx.lineBetween(90, 80, 128, 80);
+
+      // 비아 포인트 원 (라인 꺾임점에 작은 원)
+      gfx.fillStyle(0x8800FF, 0.20);
+      const viaPoints = [
+        [40, 20], [40, 60], [80, 60],
+        [20, 40], [60, 40], [60, 80],
+        [80, 30], [110, 30], [110, 70],
+        [30, 90], [90, 80],
+      ];
+      for (const [vx, vy] of viaPoints) {
+        gfx.fillCircle(vx, vy, 2);
+      }
+
+      // IC 칩 윤곽 (작은 직사각형)
+      gfx.lineStyle(0.8, 0x8800FF, 0.10);
+      gfx.strokeRect(48, 8, 16, 10);
+      gfx.strokeRect(96, 96, 20, 14);
+    });
+
+    // ── S4 더 코어: 육각 에너지 셀 + 그린 맥동 ──
+    this._regenerateTileTexture('bg_tile_s4', size, (gfx) => {
+      // 기조색
+      gfx.fillStyle(0x010801, 1);
+      gfx.fillRect(0, 0, size, size);
+
+      // 육각형 반복 패턴 (그린, alpha 0.10)
+      gfx.lineStyle(1, 0x00FF44, 0.10);
+      const hexR = 20;
+      const hexW = hexR * Math.sqrt(3);
+      const hexH = hexR * 2;
+
+      for (let row = -1; row < 5; row++) {
+        for (let col = -1; col < 5; col++) {
+          const cx = col * hexW + (row % 2 === 0 ? 0 : hexW / 2);
+          const cy = row * (hexH * 0.75);
+
+          // 육각형 꼭짓점 계산
+          const pts = [];
+          for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i - Math.PI / 6;
+            pts.push({
+              x: cx + hexR * Math.cos(angle),
+              y: cy + hexR * Math.sin(angle),
+            });
+          }
+          // 육각형 외곽선
+          for (let i = 0; i < 6; i++) {
+            const next = (i + 1) % 6;
+            gfx.lineBetween(pts[i].x, pts[i].y, pts[next].x, pts[next].y);
+          }
+
+          // 셀 중심 원 (alpha 0.18)
+          gfx.fillStyle(0x00FF44, 0.18);
+          gfx.fillCircle(cx, cy, 2);
+
+          // 방사선 라인 (alpha 0.08) — 꼭짓점에서 중심으로
+          gfx.lineStyle(0.5, 0x00FF44, 0.08);
+          for (let i = 0; i < 6; i += 2) {
+            gfx.lineBetween(cx, cy, pts[i].x, pts[i].y);
+          }
+          // 복원
+          gfx.lineStyle(1, 0x00FF44, 0.10);
+        }
+      }
+    });
+  }
+
+  /**
+   * 기존 텍스처를 제거(존재 시)하고 새 그래픽으로 재생성한다.
+   * @param {string} key - 텍스처 키
+   * @param {number} size - 타일 크기 (px)
+   * @param {function(Phaser.GameObjects.Graphics): void} drawFn - 그리기 함수
+   * @private
+   */
+  _regenerateTileTexture(key, size, drawFn) {
+    // PNG가 이미 로드되었으면 제거 후 재생성 (프로시저럴 디자인 우선)
+    if (this.textures.exists(key)) {
+      this.textures.remove(key);
     }
+
+    const gfx = this.add.graphics();
+    drawFn(gfx);
+    gfx.generateTexture(key, size, size);
+    gfx.destroy();
+  }
+
+  // ── 장식 오브젝트 텍스처 생성 (폴백) ──
+
+  /**
+   * 스테이지별 장식 오브젝트 16종의 프로시저럴 텍스처를 생성한다.
+   * PNG 에셋이 이미 로드된 경우 생성을 건너뛴다.
+   * @private
+   */
+  _generateDecoTextures() {
+    const gfx = this.add.graphics();
+
+    // ── S1 도시 외곽 — 색상: 0x1A1A2E ~ 0x222240 ──
+
+    // 가로등 기둥: 16x64 — 세로 막대 + 상단 원(꺼진 랜턴)
+    if (!this.textures.exists('deco_s1_lamppost')) {
+      gfx.clear();
+      gfx.fillStyle(0x1A1A2E, 1);
+      gfx.fillRect(6, 12, 4, 52);  // 기둥
+      gfx.fillCircle(8, 8, 6);     // 랜턴
+      gfx.generateTexture('deco_s1_lamppost', 16, 64);
+    }
+
+    // 파손된 차량: 48x32 — 직사각형 윤곽 + 파손 선
+    if (!this.textures.exists('deco_s1_car')) {
+      gfx.clear();
+      gfx.lineStyle(1.5, 0x222240, 1);
+      gfx.strokeRect(2, 4, 44, 24);
+      gfx.lineBetween(12, 4, 8, 28);   // 파손 선 1
+      gfx.lineBetween(30, 4, 36, 28);  // 파손 선 2
+      gfx.lineBetween(2, 16, 46, 16);  // 중앙 분할
+      gfx.generateTexture('deco_s1_car', 48, 32);
+    }
+
+    // 맨홀: 24x24 — 원형 윤곽선 + 내부 십자 격자
+    if (!this.textures.exists('deco_s1_manhole')) {
+      gfx.clear();
+      gfx.lineStyle(1.5, 0x1A1A2E, 1);
+      gfx.strokeCircle(12, 12, 10);
+      gfx.lineBetween(4, 12, 20, 12);
+      gfx.lineBetween(12, 4, 12, 20);
+      gfx.generateTexture('deco_s1_manhole', 24, 24);
+    }
+
+    // 잔해 더미: 32x24 — 불규칙 삼각형/사각형 조합
+    if (!this.textures.exists('deco_s1_debris')) {
+      gfx.clear();
+      gfx.fillStyle(0x222240, 1);
+      gfx.fillTriangle(4, 20, 14, 4, 24, 20);
+      gfx.fillRect(16, 10, 12, 12);
+      gfx.fillTriangle(20, 18, 28, 6, 30, 18);
+      gfx.generateTexture('deco_s1_debris', 32, 24);
+    }
+
+    // ── S2 산업 지구 — 색상: 0x1C130A ~ 0x261A0E ──
+
+    // 드럼통: 20x24 — 세로 직사각형 + 가로줄 2개
+    if (!this.textures.exists('deco_s2_drum')) {
+      gfx.clear();
+      gfx.fillStyle(0x1C130A, 1);
+      gfx.fillRect(2, 2, 16, 20);
+      gfx.lineStyle(1, 0x261A0E, 1);
+      gfx.lineBetween(2, 9, 18, 9);
+      gfx.lineBetween(2, 15, 18, 15);
+      gfx.generateTexture('deco_s2_drum', 20, 24);
+    }
+
+    // 파이프라인: 72x12 — 가로 직사각형 + 조인트 마디
+    if (!this.textures.exists('deco_s2_pipe')) {
+      gfx.clear();
+      gfx.fillStyle(0x261A0E, 1);
+      gfx.fillRect(0, 2, 72, 8);
+      gfx.fillStyle(0x1C130A, 1);
+      gfx.fillRect(16, 0, 4, 12);   // 조인트 1
+      gfx.fillRect(40, 0, 4, 12);   // 조인트 2
+      gfx.fillRect(56, 0, 4, 12);   // 조인트 3
+      gfx.generateTexture('deco_s2_pipe', 72, 12);
+    }
+
+    // 크레인 잔해: 40x48 — 대각선 트러스 구조 + 보조선
+    if (!this.textures.exists('deco_s2_crane')) {
+      gfx.clear();
+      gfx.lineStyle(2, 0x1C130A, 1);
+      gfx.lineBetween(4, 44, 36, 4);    // 대각선 1
+      gfx.lineBetween(4, 4, 36, 44);    // 대각선 2
+      gfx.lineStyle(1, 0x261A0E, 0.8);
+      gfx.lineBetween(4, 24, 36, 24);   // 가로 보조선
+      gfx.lineBetween(20, 4, 20, 44);   // 세로 보조선
+      gfx.generateTexture('deco_s2_crane', 40, 48);
+    }
+
+    // 경고 표지판: 16x20 — 삼각형 + 세로 막대
+    if (!this.textures.exists('deco_s2_sign')) {
+      gfx.clear();
+      gfx.fillStyle(0x261A0E, 1);
+      gfx.fillRect(7, 10, 2, 10);       // 막대
+      gfx.fillStyle(0x1C130A, 1);
+      gfx.fillTriangle(8, 0, 0, 12, 16, 12);  // 삼각형
+      gfx.generateTexture('deco_s2_sign', 16, 20);
+    }
+
+    // ── S3 지하 서버 — 색상: 0x100A1E ~ 0x1A1030 ──
+
+    // 서버 랙: 24x48 — 세로 직사각형 + 가로 분할선 4개
+    if (!this.textures.exists('deco_s3_rack')) {
+      gfx.clear();
+      gfx.lineStyle(1.5, 0x100A1E, 1);
+      gfx.strokeRect(2, 2, 20, 44);
+      gfx.lineStyle(1, 0x1A1030, 0.8);
+      for (let y = 11; y < 44; y += 10) {
+        gfx.lineBetween(2, y, 22, y);
+      }
+      gfx.generateTexture('deco_s3_rack', 24, 48);
+    }
+
+    // 케이블 묶음: 56x10 — 가로 평행선 3줄 (약간 구불구불)
+    if (!this.textures.exists('deco_s3_cable')) {
+      gfx.clear();
+      gfx.lineStyle(1.5, 0x1A1030, 1);
+      gfx.lineBetween(0, 2, 56, 3);
+      gfx.lineBetween(0, 5, 56, 5);
+      gfx.lineBetween(0, 8, 56, 7);
+      gfx.generateTexture('deco_s3_cable', 56, 10);
+    }
+
+    // 냉각 팬: 28x28 — 원 + 내부 X자
+    if (!this.textures.exists('deco_s3_fan')) {
+      gfx.clear();
+      gfx.lineStyle(1.5, 0x100A1E, 1);
+      gfx.strokeCircle(14, 14, 12);
+      gfx.lineBetween(4, 4, 24, 24);
+      gfx.lineBetween(24, 4, 4, 24);
+      gfx.generateTexture('deco_s3_fan', 28, 28);
+    }
+
+    // 터미널: 20x24 — 하단 직사각형 + 상단 모니터
+    if (!this.textures.exists('deco_s3_terminal')) {
+      gfx.clear();
+      gfx.fillStyle(0x100A1E, 1);
+      gfx.fillRect(2, 10, 16, 14);    // 본체
+      gfx.fillStyle(0x1A1030, 1);
+      gfx.fillRect(4, 2, 12, 8);      // 모니터
+      gfx.generateTexture('deco_s3_terminal', 20, 24);
+    }
+
+    // ── S4 더 코어 — 색상: 0x0A1A0A ~ 0x122412 ──
+
+    // 에너지 노드: 24x24 — 이중 원 + 십자선
+    if (!this.textures.exists('deco_s4_node')) {
+      gfx.clear();
+      gfx.lineStyle(1.5, 0x0A1A0A, 1);
+      gfx.strokeCircle(12, 12, 10);
+      gfx.strokeCircle(12, 12, 5);
+      gfx.lineBetween(2, 12, 22, 12);
+      gfx.lineBetween(12, 2, 12, 22);
+      gfx.generateTexture('deco_s4_node', 24, 24);
+    }
+
+    // 데이터 기둥: 16x56 — 세로 rect + 점선 디테일
+    if (!this.textures.exists('deco_s4_pillar')) {
+      gfx.clear();
+      gfx.fillStyle(0x122412, 1);
+      gfx.fillRect(4, 0, 8, 56);
+      // 점선 효과 (작은 직사각형 반복)
+      gfx.fillStyle(0x0A1A0A, 0.8);
+      for (let y = 4; y < 56; y += 8) {
+        gfx.fillRect(6, y, 4, 3);
+      }
+      gfx.generateTexture('deco_s4_pillar', 16, 56);
+    }
+
+    // 깨진 코어: 32x32 — 육각형 윤곽 + 크랙 선 3개
+    if (!this.textures.exists('deco_s4_core')) {
+      gfx.clear();
+      gfx.lineStyle(1.5, 0x0A1A0A, 1);
+      // 육각형
+      const hexPts = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        hexPts.push({
+          x: 16 + 13 * Math.cos(angle),
+          y: 16 + 13 * Math.sin(angle),
+        });
+      }
+      for (let i = 0; i < 6; i++) {
+        const next = (i + 1) % 6;
+        gfx.lineBetween(hexPts[i].x, hexPts[i].y, hexPts[next].x, hexPts[next].y);
+      }
+      // 크랙 선 3개
+      gfx.lineStyle(1, 0x122412, 0.9);
+      gfx.lineBetween(16, 4, 10, 16);
+      gfx.lineBetween(16, 4, 22, 14);
+      gfx.lineBetween(10, 16, 20, 28);
+      gfx.generateTexture('deco_s4_core', 32, 32);
+    }
+
+    // 부유 파편: 20x20 — 불규칙 다각형 (5~6점)
+    if (!this.textures.exists('deco_s4_shard')) {
+      gfx.clear();
+      gfx.fillStyle(0x122412, 1);
+      gfx.fillPoints([
+        { x: 10, y: 1 },
+        { x: 18, y: 5 },
+        { x: 19, y: 14 },
+        { x: 12, y: 19 },
+        { x: 3, y: 15 },
+        { x: 2, y: 6 },
+      ], true);
+      gfx.generateTexture('deco_s4_shard', 20, 20);
+    }
+
+    gfx.destroy();
   }
 
   // ── 진화 무기 전용 이펙트 텍스처 생성 ──
