@@ -598,7 +598,8 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // 광고 부활도 불가 — 결과 화면으로 전환
-    this._goToResult(false);
+    // 엔들리스 모드 진입 = 스테이지 클리어이므로 victory=true
+    this._goToResult(this.isEndlessMode ? true : false);
   }
 
   /**
