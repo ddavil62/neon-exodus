@@ -3188,12 +3188,22 @@ export default class GameScene extends Phaser.Scene {
   // ── R 궁극기 HUD ──
 
   /**
+   * 설정에 따른 궁극기 버튼 X 좌표를 반환한다.
+   * @returns {number}
+   * @private
+   */
+  _getUltBtnX() {
+    const side = SaveManager.getSetting('ultBtnSide') || 'left';
+    return side === 'left' ? 40 : GAME_WIDTH - 40;
+  }
+
+  /**
    * R 궁극기 버튼을 생성한다.
-   * 우하단(X=320, Y=500) 56x56px 원형 버튼.
+   * 56x56px 원형 버튼. 위치는 설정(좌/우)에 따라 결정된다.
    * @private
    */
   _createUltimateButton() {
-    const btnX = GAME_WIDTH - 40;
+    const btnX = this._getUltBtnX();
     const btnY = GAME_HEIGHT - 140;
     const btnSize = 56;
     const charColor = CHARACTER_COLORS[this.characterId] || 0x00FFFF;
@@ -3263,7 +3273,7 @@ export default class GameScene extends Phaser.Scene {
     if (!this._ultBtnBg || !this._ultEffect) return;
 
     const charColor = CHARACTER_COLORS[this.characterId] || 0x00FFFF;
-    const btnX = GAME_WIDTH - 40;
+    const btnX = this._getUltBtnX();
     const btnY = GAME_HEIGHT - 140;
     const btnSize = 56;
 

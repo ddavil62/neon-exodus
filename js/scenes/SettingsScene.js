@@ -54,8 +54,11 @@ export default class SettingsScene extends Phaser.Scene {
       SaveManager.setSetting('hapticEnabled', val);
     });
 
+    // ── 궁극기 버튼 위치 (좌/우) ──
+    this._createSideToggleRow(490);
+
     // ── 뒤로가기 버튼 ──
-    this._createBackButton(centerX, 520);
+    this._createBackButton(centerX, 590);
 
     // ── ESC 키 리스너 ──
     this.input.keyboard.on('keydown-ESC', () => this._onBack());
@@ -126,6 +129,43 @@ export default class SettingsScene extends Phaser.Scene {
       // 상태 텍스트 갱신
       stateText.setText(newVal ? t('settings.on') : t('settings.off'));
       stateText.setColor(newVal ? UI_COLORS.neonGreen : UI_COLORS.textSecondary);
+    });
+  }
+
+  // ── 궁극기 버튼 좌우 토글 ──
+
+  /**
+   * 궁극기 버튼 위치(좌/우) 토글 행을 생성한다.
+   * @param {number} y - 행 중심 Y 좌표
+   * @private
+   */
+  _createSideToggleRow(y) {
+    const centerX = GAME_WIDTH / 2;
+    const isLeft = (SaveManager.getSetting('ultBtnSide') || 'left') === 'left';
+
+    // 레이블 텍스트 (좌측)
+    this.add.text(centerX - 80, y, t('settings.ultSide'), {
+      fontSize: '18px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0, 0.5);
+
+    // 상태 텍스트 (우측)
+    const stateText = this.add.text(centerX + 80, y,
+      isLeft ? t('settings.ultLeft') : t('settings.ultRight'), {
+        fontSize: '18px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonCyan,
+      }).setOrigin(0, 0.5);
+
+    // 터치 영역
+    const zone = this.add.zone(centerX, y, 280, 60).setInteractive({ useHandCursor: true });
+
+    zone.on('pointerdown', () => {
+      const current = SaveManager.getSetting('ultBtnSide') || 'left';
+      const newVal = current === 'left' ? 'right' : 'left';
+      SaveManager.setSetting('ultBtnSide', newVal);
+      stateText.setText(newVal === 'left' ? t('settings.ultLeft') : t('settings.ultRight'));
     });
   }
 

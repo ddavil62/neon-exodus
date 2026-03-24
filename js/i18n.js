@@ -830,6 +830,9 @@ const TRANSLATIONS = {
     'settings.bgm': 'BGM',
     'settings.sfx': '효과음',
     'settings.haptic': '햅틱',
+    'settings.ultSide': '궁극기 버튼',
+    'settings.ultLeft': '◀ 왼쪽',
+    'settings.ultRight': '오른쪽 ▶',
     'settings.on': 'ON',
     'settings.off': 'OFF',
 
@@ -1940,6 +1943,9 @@ const TRANSLATIONS = {
     'settings.bgm': 'BGM',
     'settings.sfx': 'SFX',
     'settings.haptic': 'Haptic',
+    'settings.ultSide': 'Ult Button',
+    'settings.ultLeft': '◀ Left',
+    'settings.ultRight': 'Right ▶',
     'settings.on': 'ON',
     'settings.off': 'OFF',
 
