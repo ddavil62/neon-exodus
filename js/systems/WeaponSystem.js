@@ -20,7 +20,7 @@ const EVOLVED_TEXTURE_MAP = {
   guardian_sphere:  'effect_guardian_sphere',
   nuke_missile:     'effect_nuke_missile',
   perpetual_emp:    'effect_perpetual_emp',
-  phantom_strike:   'effect_phantom_strike',
+  phantom_strike:   'effect_force_slash',
   bioplasma:        'effect_bioplasma',
   event_horizon:    'effect_event_horizon',
   death_blossom:    'effect_death_blossom',
@@ -1349,20 +1349,32 @@ export default class WeaponSystem {
    * @private
    */
   _showSlashEffect(px, py, angle, range, evolvedId) {
-    // phantom_strike: 호(arc) 궤적 이펙트로 렌더링
-    if (evolvedId === 'phantom_strike') {
-      this._showArcSlashEffect(px, py, angle, range);
-      return;
-    }
-
+    // 진화 여부와 무관하게 force_slash 스프라이트 기반 렌더링
     const slashTex = evolvedId && EVOLVED_TEXTURE_MAP[evolvedId]
       ? EVOLVED_TEXTURE_MAP[evolvedId] : 'effect_force_slash';
     const offsetX = Math.cos(angle) * range / 2;
     const offsetY = Math.sin(angle) * range / 2;
+    const scale = range / 48;
+
+    // phantom_strike: 블레이드 스프라이트 확대 + 보라 글로우 레이어
+    if (evolvedId === 'phantom_strike') {
+      const glow = this.scene.add.image(px + offsetX, py + offsetY, 'effect_force_slash')
+        .setRotation(angle)
+        .setScale(scale * 1.4)
+        .setAlpha(0.35)
+        .setTint(0x8844FF)
+        .setDepth(8);
+      this.scene.tweens.add({
+        targets: glow,
+        alpha: 0, scaleX: scale * 1.6, scaleY: scale * 1.6,
+        duration: 300,
+        onComplete: () => glow.destroy(),
+      });
+    }
 
     const sprite = this.scene.add.image(px + offsetX, py + offsetY, slashTex)
       .setRotation(angle)
-      .setScale(range / 48)
+      .setScale(scale)
       .setAlpha(0.9)
       .setDepth(9);
 
