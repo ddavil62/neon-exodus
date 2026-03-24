@@ -2279,18 +2279,19 @@ export default class GameScene extends Phaser.Scene {
         }
       ).setOrigin(1, 1).setScrollFactor(0).setDepth(107);
 
-      // 터치 영역: 슬롯 전체를 덮는 투명 히트존
-      // pointerdown+pointerup 양쪽 모두 히트존 안에서 발생해야 팝업 표시
+      // 터치 영역: 롱탭(500ms)으로 팝업 표시 (조이스틱 오조작 방지)
       const hitZone = this.add.zone(cx, weaponY, weaponSize, weaponSize)
         .setScrollFactor(0).setDepth(108)
         .setInteractive({ useHandCursor: true });
-      let weaponPressed = false;
-      hitZone.on('pointerdown', () => { weaponPressed = true; });
-      hitZone.on('pointerup', () => {
-        if (weaponPressed) this._showWeaponInfoModal(w);
-        weaponPressed = false;
+      let weaponTimer = null;
+      hitZone.on('pointerdown', () => {
+        weaponTimer = this.time.delayedCall(500, () => {
+          this._showWeaponInfoModal(w);
+          weaponTimer = null;
+        });
       });
-      hitZone.on('pointerout', () => { weaponPressed = false; });
+      hitZone.on('pointerup', () => { if (weaponTimer) { weaponTimer.remove(); weaponTimer = null; } });
+      hitZone.on('pointerout', () => { if (weaponTimer) { weaponTimer.remove(); weaponTimer = null; } });
 
       inv.weapons.push({ bg, icon, level, hitZone });
     });
@@ -2335,18 +2336,19 @@ export default class GameScene extends Phaser.Scene {
         }
       ).setOrigin(1, 1).setScrollFactor(0).setDepth(107);
 
-      // 터치 영역: 슬롯 전체를 덮는 투명 히트존
-      // pointerdown+pointerup 양쪽 모두 히트존 안에서 발생해야 팝업 표시
+      // 터치 영역: 롱탭(500ms)으로 팝업 표시 (조이스틱 오조작 방지)
       const hitZone = this.add.zone(cx, passiveY, passiveSize, passiveSize)
         .setScrollFactor(0).setDepth(108)
         .setInteractive({ useHandCursor: true });
-      let passivePressed = false;
-      hitZone.on('pointerdown', () => { passivePressed = true; });
-      hitZone.on('pointerup', () => {
-        if (passivePressed) this._showPassiveInfoModal(pid, plevel);
-        passivePressed = false;
+      let passiveTimer = null;
+      hitZone.on('pointerdown', () => {
+        passiveTimer = this.time.delayedCall(500, () => {
+          this._showPassiveInfoModal(pid, plevel);
+          passiveTimer = null;
+        });
       });
-      hitZone.on('pointerout', () => { passivePressed = false; });
+      hitZone.on('pointerup', () => { if (passiveTimer) { passiveTimer.remove(); passiveTimer = null; } });
+      hitZone.on('pointerout', () => { if (passiveTimer) { passiveTimer.remove(); passiveTimer = null; } });
 
       inv.passives.push({ bg, icon, level, hitZone });
     });
