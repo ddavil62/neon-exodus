@@ -552,13 +552,14 @@ export default class LevelUpScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(3);
     this._cardElements.push(lvLabel);
 
-    // 효과 설명
+    // 효과 설명 (카드 하단 경계 내로 제한)
     const descText = this.add.text(x, y + 45, choice.desc || '', {
-      fontSize: '10px',
+      fontSize: '9px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
       wordWrap: { width: cardW - 14 },
       align: 'center',
+      maxLines: 5,
     }).setOrigin(0.5, 0).setDepth(3).setAlpha(0.85);
     this._cardElements.push(descText);
 
