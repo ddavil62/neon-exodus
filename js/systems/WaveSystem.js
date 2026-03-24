@@ -90,12 +90,11 @@ export default class WaveSystem {
       ? stageData.miniBossOverride
       : MINI_BOSS_SCHEDULE;
 
-    // 스테이지별 보스 스케줄: 15분(900초)에 스테이지 고유 보스 등장
+    // 스테이지별 보스 스케줄: 최종 보스는 엔들리스 모달 확인 후 5초 뒤 수동 스폰
+    // (900초 스케줄에서 최종 보스 제외 — GameScene._showEndlessModal에서 처리)
+    this._finalBossId = stageData?.bossId || null;
     if (stageData && stageData.bossId) {
-      this._bossSchedule = [
-        ...BOSS_SCHEDULE.filter(b => b.time < 900),
-        { time: 900, enemyId: stageData.bossId },
-      ];
+      this._bossSchedule = BOSS_SCHEDULE.filter(b => b.time < 900);
     } else {
       this._bossSchedule = BOSS_SCHEDULE;
     }

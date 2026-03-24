@@ -1909,6 +1909,16 @@ export default class GameScene extends Phaser.Scene {
       this.isPaused = false;
       this.physics.resume();
       this._modalOpen = false;
+
+      // 5초 후 최종 보스 스폰 (보스 경고 먼저 표시)
+      const finalBossId = this.waveSystem._finalBossId
+        || (this.stageData ? this.stageData.bossId : 'core_processor');
+      if (finalBossId) {
+        this._showWarning(t('hud.bossWarning'));
+        this.time.delayedCall(5000, () => {
+          this.waveSystem.spawnBoss({ enemyId: finalBossId });
+        });
+      }
     });
     btnZone.on('pointerout', () => {
       btnText.setAlpha(1);
