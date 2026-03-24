@@ -488,6 +488,15 @@ export default class GameScene extends Phaser.Scene {
       if (this._ultCooldownRemaining < 0) this._ultCooldownRemaining = 0;
     }
 
+    // 자동사냥 궁극기 자동 발동 — HP 50% 이하 + 쿨다운 완료 시
+    if (this.autoPilot && this.autoPilot.enabled
+      && this._ultEffect && !this._ultActive
+      && this._ultCooldownRemaining <= 0
+      && this.player && this.player.active
+      && this.player.hp / this.player.maxHp <= 0.5) {
+      this._activateUltimate();
+    }
+
     // HUD 갱신
     this._updateHUD();
   }
