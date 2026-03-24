@@ -203,7 +203,7 @@ export default class DroneChipScene extends Phaser.Scene {
         fontFamily: 'Galmuri11, monospace',
         color: isActive ? UI_COLORS.neonCyan : UI_COLORS.textSecondary,
         backgroundColor: isActive ? '#002233' : undefined,
-        padding: { x: 6, y: 11 },
+        padding: { x: 6, y: 15 },
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       text.on('pointerdown', () => {

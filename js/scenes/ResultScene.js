@@ -398,6 +398,10 @@ export default class ResultScene extends Phaser.Scene {
     } else if (this.stageId === 'stage_2' && !SaveManager.isCutsceneViewed('drone_unlock')) {
       this._pendingCutscene = 'drone_unlock';
       SaveManager.setDroneUnlocked();
+    // 3스테이지 첫 도전 종료 시 드론 칩 해금 컷신 (클리어/사망 무관)
+    } else if (this.stageId === 'stage_3' && !SaveManager.isCutsceneViewed('drone_chip_unlock')) {
+      this._pendingCutscene = 'drone_chip_unlock';
+      SaveManager.setDroneChipUnlocked();
     } else if (this.victory && this.stageId) {
       // 클리어 컷신 판정
       const stageNum = this.stageId.replace('stage_', '');

@@ -70,11 +70,16 @@ export default class MenuScene extends Phaser.Scene {
       color: UI_COLORS.textSecondary,
     }).setOrigin(0.5);
 
-    // ── 2열 그리드 (메인 버튼 4개) ──
-    // 좌표: col0=96, col1=264, row0=370, row1=434
+    // ── 2열 그리드 (메인 버튼 4개 + 조건부 드론 칩) ──
+    // 드론 칩 해금 시 3행 확장: row0=340, row1=400, row2(드론칩)=466
+    // 미해금 시: row0=370, row1=434 (기존)
+    const droneChipUnlocked = SaveManager.isDroneChipUnlocked();
+    const row0Y = droneChipUnlocked ? 340 : 370;
+    const row1Y = droneChipUnlocked ? 400 : 434;
+    const auxBtnY = droneChipUnlocked ? 510 : 498;
 
     // 캐릭터 버튼 (0,0)
-    this._createButton(96, 370, t('menu.character'), {
+    this._createButton(96, row0Y, t('menu.character'), {
       width: 156,
       height: 52,
       fontSize: '14px',
@@ -91,7 +96,7 @@ export default class MenuScene extends Phaser.Scene {
 
     // 업그레이드 버튼 (1,0) — 조건부 비활성
     const upgradeUnlocked = SaveManager.isUpgradeUnlocked();
-    this._createButton(264, 370, t('menu.upgrade'), {
+    this._createButton(264, row0Y, t('menu.upgrade'), {
       width: 156,
       height: 52,
       fontSize: '14px',
@@ -108,7 +113,7 @@ export default class MenuScene extends Phaser.Scene {
     });
 
     // 도전과제 버튼 (0,1)
-    this._createButton(96, 434, t('menu.achievements'), {
+    this._createButton(96, row1Y, t('menu.achievements'), {
       width: 156,
       height: 52,
       fontSize: '14px',
@@ -128,7 +133,7 @@ export default class MenuScene extends Phaser.Scene {
     const dailyLabel = DailyMissionManager.hasUnclaimedMissions()
       ? `${t('menu.dailyMission')} (!)`
       : t('menu.dailyMission');
-    this._createButton(264, 434, dailyLabel, {
+    this._createButton(264, row1Y, dailyLabel, {
       width: 156,
       height: 52,
       fontSize: '14px',
@@ -143,12 +148,17 @@ export default class MenuScene extends Phaser.Scene {
       },
     });
 
+    // ── 드론 칩 버튼 (해금 시만 표시, 3행 중앙) ──
+    if (droneChipUnlocked) {
+      this._createDroneChipButton(centerX, 466);
+    }
+
     // ── 보조 버튼 행 ──
     const autoHuntUnlocked = IAPManager.isAutoHuntUnlocked();
 
     if (autoHuntUnlocked) {
       // 자동사냥 해금됨: 도감/설정 2개 + 자동사냥 ON 텍스트 (넓은 간격)
-      this._createButton(56, 498, t('menu.collection'), {
+      this._createButton(56, auxBtnY, t('menu.collection'), {
         width: 96,
         height: 36,
         fontSize: '12px',
@@ -164,13 +174,13 @@ export default class MenuScene extends Phaser.Scene {
       });
 
       // 자동사냥 ON 텍스트 (버튼 없이)
-      this.add.text(centerX, 498, t('autoHunt.on'), {
+      this.add.text(centerX, auxBtnY, t('autoHunt.on'), {
         fontSize: '12px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonGreen,
       }).setOrigin(0.5);
 
-      this._createButton(304, 498, t('menu.settings'), {
+      this._createButton(304, auxBtnY, t('menu.settings'), {
         width: 96,
         height: 36,
         fontSize: '12px',
@@ -186,7 +196,7 @@ export default class MenuScene extends Phaser.Scene {
       });
     } else {
       // 자동사냥 미해금: 3개 버튼 (도감, 자동사냥 구매, 설정)
-      this._createButton(56, 498, t('menu.collection'), {
+      this._createButton(56, auxBtnY, t('menu.collection'), {
         width: 96,
         height: 36,
         fontSize: '12px',
@@ -204,7 +214,7 @@ export default class MenuScene extends Phaser.Scene {
       // 자동사냥 구매 버튼
       const price = IAPManager.getLocalizedPrice();
       const btnLabel = `${t('autoHunt.purchase')} (${price})`;
-      this._createButton(180, 498, btnLabel, {
+      this._createButton(180, auxBtnY, btnLabel, {
         width: 120,
         height: 36,
         fontSize: '12px',
@@ -219,7 +229,7 @@ export default class MenuScene extends Phaser.Scene {
         },
       });
 
-      this._createButton(304, 498, t('menu.settings'), {
+      this._createButton(304, auxBtnY, t('menu.settings'), {
         width: 96,
         height: 36,
         fontSize: '12px',
@@ -407,6 +417,58 @@ export default class MenuScene extends Phaser.Scene {
     if (this._dataCoreText) {
       this._dataCoreText.setText(t('menu.dataCores', SaveManager.getDataCores()));
     }
+  }
+
+  /**
+   * 드론 칩 버튼을 생성한다 (시안+마젠타 그라데이션 테두리).
+   * @param {number} x - 중심 X
+   * @param {number} y - 중심 Y
+   * @private
+   */
+  _createDroneChipButton(x, y) {
+    const width = 310;
+    const height = 48;
+    const radius = 8;
+
+    const bg = this.add.graphics();
+
+    // 시안+마젠타 글로우
+    bg.fillStyle(COLORS.NEON_CYAN, 0.1);
+    bg.fillRoundedRect(x - width / 2 - 2, y - height / 2 - 2, width + 4, height + 4, radius + 2);
+
+    // 배경
+    bg.fillStyle(UI_COLORS.btnPrimary, 0.9);
+    bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, radius);
+
+    // 시안 테두리
+    bg.lineStyle(1, COLORS.NEON_CYAN, 0.6);
+    bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, radius);
+
+    // 마젠타 내부 테두리 (2px 안쪽)
+    bg.lineStyle(1, COLORS.NEON_MAGENTA, 0.3);
+    bg.strokeRoundedRect(x - width / 2 + 2, y - height / 2 + 2, width - 4, height - 4, radius - 1);
+
+    const label = t('menu.droneChip');
+    const text = this.add.text(x, y, label, {
+      fontSize: '15px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+      stroke: UI_COLORS.neonMagenta,
+      strokeThickness: 1,
+    }).setOrigin(0.5);
+
+    const zone = this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true });
+
+    zone.on('pointerover', () => { text.setAlpha(0.8); });
+    zone.on('pointerout', () => { text.setAlpha(1); });
+    let pressed = false;
+    zone.on('pointerdown', () => { pressed = true; text.setAlpha(0.6); });
+    zone.on('pointerup', () => {
+      text.setAlpha(1);
+      if (pressed) this._fadeToScene('DroneChipScene');
+      pressed = false;
+    });
+    zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
   }
 
   /**

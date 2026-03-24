@@ -19,6 +19,7 @@ import AchievementScene from './scenes/AchievementScene.js';
 import CollectionScene from './scenes/CollectionScene.js';
 import CutsceneScene from './scenes/CutsceneScene.js';
 import DailyMissionScene from './scenes/DailyMissionScene.js';
+import DroneChipScene from './scenes/DroneChipScene.js';
 
 // ── Phaser 게임 설정 ──
 
@@ -29,7 +30,7 @@ const config = {
   height: GAME_HEIGHT,
   backgroundColor: '#0A0A1A',
   parent: 'game',
-  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene, CutsceneScene, DailyMissionScene],
+  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene, CutsceneScene, DailyMissionScene, DroneChipScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -53,3 +54,39 @@ const config = {
 /** Phaser 게임 인스턴스 (디버그 접근을 위해 window에 노출) */
 const game = new Phaser.Game(config);
 window.__NEON_EXODUS = game;
+
+// ── 드론 칩 디버그 함수 ──
+
+import { SaveManager } from './managers/SaveManager.js';
+import { CHIP_DEFINITIONS } from './data/droneChips.js';
+
+/** 칩 지급 */
+window.__debugAddChip = (chipId, grade) => {
+  const uid = SaveManager.addChip(chipId, grade);
+  console.log(`[Debug] 칩 추가: ${chipId} ${grade}, uid=${uid}`);
+  return uid;
+};
+
+/** 가루 지급 */
+window.__debugAddDust = (amount) => {
+  SaveManager.addDroneChipDust(amount);
+  console.log(`[Debug] 가루 추가: +${amount}, 현재=${SaveManager.getDroneChipDust()}`);
+};
+
+/** 드론 칩 해금 */
+window.__debugUnlockDroneChip = () => {
+  SaveManager.setDroneChipUnlocked();
+  SaveManager.save();
+  console.log('[Debug] 드론 칩 해금 완료');
+};
+
+/** 테스트 세트 일괄 지급 (각 종류별 C등급 2개 + B등급 1개) */
+window.__debugChipTestSet = () => {
+  CHIP_DEFINITIONS.forEach(def => {
+    SaveManager.addChip(def.id, 'C');
+    SaveManager.addChip(def.id, 'C');
+    SaveManager.addChip(def.id, 'B');
+  });
+  SaveManager.addDroneChipDust(50);
+  console.log('[Debug] 테스트 칩 세트 지급 완료 (각 종류 C*2 + B*1 + 가루 50)');
+};

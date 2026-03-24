@@ -172,10 +172,30 @@ export const EMP_SCREEN_MARGIN = 50;
 export const SAVE_KEY = 'neon-exodus-save';
 
 /** 세이브 데이터 버전 */
-export const SAVE_DATA_VERSION = 14;
+export const SAVE_DATA_VERSION = 15;
 
 /** 엔들리스 모드 스케일링 간격 (ms). 60초마다 적 HP/데미지 +10% */
 export const ENDLESS_SCALE_INTERVAL = 60000;
+
+// ── 드론 칩 시스템 설정 ──
+
+/** 드론 칩 인벤토리 최대 용량 */
+export const CHIP_MAX_INVENTORY = 30;
+
+/** 카미카제 칩 리스폰 대기 시간 (ms) */
+export const CHIP_KAMIKAZE_RESPAWN_DELAY = 3000;
+
+/** 카미카제 칩 돌진 속도 (px/s) */
+export const CHIP_KAMIKAZE_RUSH_SPEED = 300;
+
+/** 수리 칩 회복 간격 (ms) */
+export const CHIP_REPAIR_INTERVAL = 5000;
+
+/** 레이저 칩 데미지 틱 간격 (ms) */
+export const CHIP_LASER_TICK_INTERVAL = 200;
+
+/** 레이저 칩 빔 길이 (px) */
+export const CHIP_LASER_BEAM_LENGTH = 180;
 
 // ── 네온 컬러 팔레트 ──
 

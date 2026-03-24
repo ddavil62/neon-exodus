@@ -76,6 +76,12 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
      */
     this.traits = {};
 
+    /**
+     * 어그로(taunt) 칩 대상. null이 아니면 플레이어 대신 이 오브젝트를 향해 이동한다.
+     * @type {Phaser.GameObjects.Image|null}
+     */
+    this.tauntTarget = null;
+
     /** 미니보스 여부 */
     this.isMiniBoss = false;
 
@@ -225,17 +231,30 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * 플레이어 방향으로 이동한다.
+   * 플레이어(또는 어그로 대상) 방향으로 이동한다.
+   * tauntTarget이 존재하면 드론을 향해 이동한다.
    */
   moveToPlayer() {
-    const player = this.scene.player;
-    if (!player || !player.active) {
-      this.body.setVelocity(0, 0);
-      return;
+    // tauntTarget이 유효하면 드론 방향으로 이동
+    let targetX, targetY;
+
+    if (this.tauntTarget && this.tauntTarget.active !== false) {
+      targetX = this.tauntTarget.x;
+      targetY = this.tauntTarget.y;
+    } else {
+      // tauntTarget 무효화 시 초기화
+      this.tauntTarget = null;
+      const player = this.scene.player;
+      if (!player || !player.active) {
+        this.body.setVelocity(0, 0);
+        return;
+      }
+      targetX = player.x;
+      targetY = player.y;
     }
 
-    const dx = player.x - this.x;
-    const dy = player.y - this.y;
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist === 0) return;
@@ -464,6 +483,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this._empTimer = 0;
     this._bossState = null;
     this._lastHitWeaponId = null;
+    this.tauntTarget = null;
   }
 
   /**

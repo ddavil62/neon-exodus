@@ -68,6 +68,17 @@ export const CUTSCENES = {
     ],
   },
 
+  drone_chip_unlock: {
+    id: 'drone_chip_unlock',
+    trigger: 'first_stage3_run',
+    bgKey: 'bg_tile_s3',
+    dialogues: [
+      { speaker: 'engineer', textKey: 'cutscene.drone_chip_unlock.1', portrait: 'portrait_engineer', side: 'left' },
+      { speaker: 'engineer', textKey: 'cutscene.drone_chip_unlock.2', portrait: 'portrait_engineer', side: 'left' },
+      { speaker: 'narrator', textKey: 'cutscene.drone_chip_unlock.3', portrait: null },
+    ],
+  },
+
   stage_2_intro: {
     id: 'stage_2_intro',
     trigger: 'stage_start',

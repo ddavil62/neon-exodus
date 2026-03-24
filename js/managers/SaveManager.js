@@ -4,8 +4,9 @@
  * 모든 데이터 접근은 static 메서드를 통해 이루어진다.
  */
 
-import { SAVE_KEY, SAVE_DATA_VERSION } from '../config.js';
+import { SAVE_KEY, SAVE_DATA_VERSION, CHIP_MAX_INVENTORY } from '../config.js';
 import { MAX_CHAR_LEVEL, getXpForNextLevel, canInvestUlt, CHARACTER_SKILLS } from '../data/characterSkills.js';
+import { CHIP_GRADES, CHIP_DEFINITIONS, getChipDef, getGradeInfo, getNextGrade } from '../data/droneChips.js';
 
 // ── 기본 세이브 데이터 구조 ──
 
@@ -39,6 +40,14 @@ const DEFAULT_SAVE = {
     berserker: { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
     medic:     { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
     hidden:    { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
+  },
+  droneChipUnlocked: false, // 드론 칩 시스템 해금 여부
+  droneChipInventory: [],   // 보유 칩 배열 [{ uid, chipId, grade }]
+  droneChipDust: 0,         // 칩 가루 (합성/변환 재화)
+  equippedChips: {           // 드론별 장착 칩 { 드론인덱스: uid 또는 null }
+    0: null,
+    1: null,
+    2: null,
   },
   dailyMissions: {          // 일일 미션 시스템
     date: '',
@@ -608,6 +617,232 @@ export class SaveManager {
     SaveManager.save();
   }
 
+  // ── 드론 칩 시스템 ──
+
+  /**
+   * 드론 칩 시스템이 해금되었는지 확인한다.
+   * @returns {boolean}
+   */
+  static isDroneChipUnlocked() {
+    return SaveManager.getData().droneChipUnlocked === true;
+  }
+
+  /**
+   * 드론 칩 시스템을 해금 처리하고 세이브한다.
+   */
+  static setDroneChipUnlocked() {
+    const data = SaveManager.getData();
+    data.droneChipUnlocked = true;
+    SaveManager.save();
+  }
+
+  /**
+   * 드론 칩 인벤토리를 반환한다.
+   * @returns {Array<{uid: string, chipId: string, grade: string}>}
+   */
+  static getDroneChipInventory() {
+    const data = SaveManager.getData();
+    if (!data.droneChipInventory) data.droneChipInventory = [];
+    return data.droneChipInventory;
+  }
+
+  /**
+   * 인벤토리에 칩을 추가한다. uid를 자동 생성한다.
+   * @param {string} chipId - 칩 ID
+   * @param {string} grade - 등급 ('C'|'B'|'A'|'S')
+   * @returns {string|null} 생성된 uid (인벤토리 초과 시 null)
+   */
+  static addChip(chipId, grade) {
+    const data = SaveManager.getData();
+    if (!data.droneChipInventory) data.droneChipInventory = [];
+    if (data.droneChipInventory.length >= CHIP_MAX_INVENTORY) return null;
+
+    const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    data.droneChipInventory.push({ uid, chipId, grade });
+    SaveManager.save();
+    return uid;
+  }
+
+  /**
+   * 인벤토리에서 칩을 제거한다.
+   * @param {string} uid - 칩 고유 ID
+   * @returns {boolean} 성공 여부
+   */
+  static removeChip(uid) {
+    const data = SaveManager.getData();
+    if (!data.droneChipInventory) return false;
+    const idx = data.droneChipInventory.findIndex(c => c.uid === uid);
+    if (idx < 0) return false;
+    data.droneChipInventory.splice(idx, 1);
+    SaveManager.save();
+    return true;
+  }
+
+  /**
+   * 장착 상태를 반환한다.
+   * @returns {{0: string|null, 1: string|null, 2: string|null}}
+   */
+  static getEquippedChips() {
+    const data = SaveManager.getData();
+    if (!data.equippedChips) data.equippedChips = { 0: null, 1: null, 2: null };
+    return data.equippedChips;
+  }
+
+  /**
+   * 드론에 칩을 장착한다.
+   * @param {number} droneIndex - 드론 인덱스 (0~2)
+   * @param {string} uid - 칩 uid
+   * @returns {boolean} 성공 여부
+   */
+  static equipChip(droneIndex, uid) {
+    const data = SaveManager.getData();
+    if (!data.equippedChips) data.equippedChips = { 0: null, 1: null, 2: null };
+
+    // 다른 드론에 이미 장착된 칩이면 실패
+    for (const key of Object.keys(data.equippedChips)) {
+      if (data.equippedChips[key] === uid) return false;
+    }
+
+    // 인벤토리에 존재하는지 확인
+    const inv = SaveManager.getDroneChipInventory();
+    if (!inv.find(c => c.uid === uid)) return false;
+
+    data.equippedChips[droneIndex] = uid;
+    SaveManager.save();
+    return true;
+  }
+
+  /**
+   * 드론에서 칩을 해제한다.
+   * @param {number} droneIndex - 드론 인덱스 (0~2)
+   */
+  static unequipChip(droneIndex) {
+    const data = SaveManager.getData();
+    if (!data.equippedChips) data.equippedChips = { 0: null, 1: null, 2: null };
+    data.equippedChips[droneIndex] = null;
+    SaveManager.save();
+  }
+
+  /**
+   * 칩 가루 수량을 반환한다.
+   * @returns {number}
+   */
+  static getDroneChipDust() {
+    const data = SaveManager.getData();
+    return data.droneChipDust || 0;
+  }
+
+  /**
+   * 칩 가루를 추가(또는 차감)한다.
+   * @param {number} amount - 추가할 양 (음수면 차감)
+   */
+  static addDroneChipDust(amount) {
+    const data = SaveManager.getData();
+    data.droneChipDust = Math.max(0, (data.droneChipDust || 0) + amount);
+    SaveManager.save();
+  }
+
+  /**
+   * 칩을 분해하여 가루를 획득한다. 장착 중인 칩은 분해 불가.
+   * @param {string} uid - 칩 uid
+   * @returns {number} 획득 가루량 (실패 시 0)
+   */
+  static dismantleChip(uid) {
+    const data = SaveManager.getData();
+    const inv = SaveManager.getDroneChipInventory();
+    const chip = inv.find(c => c.uid === uid);
+    if (!chip) return 0;
+
+    // 장착 중인지 확인
+    const equipped = SaveManager.getEquippedChips();
+    for (const key of Object.keys(equipped)) {
+      if (equipped[key] === uid) return 0;
+    }
+
+    const gradeInfo = getGradeInfo(chip.grade);
+    if (!gradeInfo) return 0;
+
+    const dustGain = gradeInfo.dustOnDismantle;
+    SaveManager.removeChip(uid);
+    SaveManager.addDroneChipDust(dustGain);
+    return dustGain;
+  }
+
+  /**
+   * 동일 종류+등급 칩 3개를 합성하여 상위 등급 칩 1개를 생성한다.
+   * @param {string} uid1 - 칩 1 uid
+   * @param {string} uid2 - 칩 2 uid
+   * @param {string} uid3 - 칩 3 uid
+   * @returns {string|null} 생성된 칩 uid (실패 시 null)
+   */
+  static synthesizeChips(uid1, uid2, uid3) {
+    const inv = SaveManager.getDroneChipInventory();
+    const c1 = inv.find(c => c.uid === uid1);
+    const c2 = inv.find(c => c.uid === uid2);
+    const c3 = inv.find(c => c.uid === uid3);
+    if (!c1 || !c2 || !c3) return null;
+
+    // 동일 종류+등급 검증
+    if (c1.chipId !== c2.chipId || c1.chipId !== c3.chipId) return null;
+    if (c1.grade !== c2.grade || c1.grade !== c3.grade) return null;
+
+    // 장착 중 검증
+    const equipped = SaveManager.getEquippedChips();
+    const equippedUids = Object.values(equipped);
+    if (equippedUids.includes(uid1) || equippedUids.includes(uid2) || equippedUids.includes(uid3)) return null;
+
+    // 다음 등급 존재 확인
+    const nextGrade = getNextGrade(c1.grade);
+    if (!nextGrade) return null;
+
+    // 합성 비용 확인
+    const nextGradeInfo = getGradeInfo(nextGrade);
+    if (!nextGradeInfo || nextGradeInfo.synthesizeCost === null) return null;
+
+    const cost = nextGradeInfo.synthesizeCost;
+    if (SaveManager.getDroneChipDust() < cost) return null;
+
+    // 재료 제거 + 비용 차감 + 결과물 생성
+    SaveManager.removeChip(uid1);
+    SaveManager.removeChip(uid2);
+    SaveManager.removeChip(uid3);
+    SaveManager.addDroneChipDust(-cost);
+    return SaveManager.addChip(c1.chipId, nextGrade);
+  }
+
+  /**
+   * 칩을 동일 등급 랜덤 다른 종류로 변환한다. 장착 중 불가.
+   * @param {string} uid - 칩 uid
+   * @returns {string|null} 변환된 칩 uid (실패 시 null)
+   */
+  static convertChip(uid) {
+    const inv = SaveManager.getDroneChipInventory();
+    const chip = inv.find(c => c.uid === uid);
+    if (!chip) return null;
+
+    // 장착 중 검증
+    const equipped = SaveManager.getEquippedChips();
+    for (const key of Object.keys(equipped)) {
+      if (equipped[key] === uid) return null;
+    }
+
+    const gradeInfo = getGradeInfo(chip.grade);
+    if (!gradeInfo) return null;
+
+    const cost = gradeInfo.convertCost;
+    if (SaveManager.getDroneChipDust() < cost) return null;
+
+    // 자기 종류 제외 랜덤 선택
+    const otherChips = CHIP_DEFINITIONS.filter(c => c.id !== chip.chipId);
+    if (otherChips.length === 0) return null;
+    const newChipDef = otherChips[Math.floor(Math.random() * otherChips.length)];
+
+    // 원본 제거 + 비용 차감 + 새 칩 생성
+    SaveManager.removeChip(uid);
+    SaveManager.addDroneChipDust(-cost);
+    return SaveManager.addChip(newChipDef.id, chip.grade);
+  }
+
   // ── 캐릭터 레벨 & 스킬 ──
 
   /**
@@ -962,6 +1197,20 @@ export class SaveManager {
         }
       });
       data.version = 14;
+    }
+
+    // v14 -> v15: 드론 칩 시스템 필드 추가
+    if (data.version < 15) {
+      // 기존 유저: 3스테이지 클리어 이력이 있으면 자동 해금
+      const hasStage3 = data.stageClears && data.stageClears['stage_3'] &&
+        (data.stageClears['stage_3'].normal > 0 ||
+         data.stageClears['stage_3'].hard > 0 ||
+         data.stageClears['stage_3'].nightmare > 0);
+      data.droneChipUnlocked = !!hasStage3;
+      if (!data.droneChipInventory) data.droneChipInventory = [];
+      if (data.droneChipDust === undefined) data.droneChipDust = 0;
+      if (!data.equippedChips) data.equippedChips = { 0: null, 1: null, 2: null };
+      data.version = 15;
     }
 
     data.version = SAVE_DATA_VERSION;
