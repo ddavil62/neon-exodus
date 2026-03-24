@@ -439,6 +439,12 @@ export default class GameScene extends Phaser.Scene {
     // 시간 갱신
     this.runTime += delta / 1000;
 
+    // 타이머 0초 도달 시 엔들리스 모드 즉시 전환 (보스 처치 대기 없이)
+    if (!this.isEndlessMode && this.runTime >= RUN_DURATION) {
+      this._onStageClear();
+      this._onEnterEndless();
+    }
+
     // 시스템 업데이트
     if (this.autoPilot && this.autoPilot.enabled) {
       this.autoPilot.update(time, delta);
@@ -725,11 +731,10 @@ export default class GameScene extends Phaser.Scene {
       this._minibossKillCount++;
     }
 
-    // 최종 보스 처치 판정 → 스테이지 클리어 + 엔들리스 모드 전환
+    // 최종 보스 처치 판정 (타이머 기반 엔들리스 전환이 이미 처리하므로 보스 처치만 기록)
     const finalBossId = this.stageData ? this.stageData.bossId : 'core_processor';
     if (enemy.isBoss && enemy.typeId === finalBossId) {
       if (!this.isEndlessMode) {
-        // 스테이지 클리어 처리
         this._onStageClear();
         this._onEnterEndless();
       }
@@ -1760,7 +1765,8 @@ export default class GameScene extends Phaser.Scene {
    * @private
    */
   _onStageClear() {
-    if (!this.stageData) return;
+    if (!this.stageData || this._stageCleared) return;
+    this._stageCleared = true;
 
     SaveManager.clearStage(this.stageId, this.difficulty);
 
