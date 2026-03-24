@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-24 (메인 메뉴 배경 일러스트 + 그라디언트 오버레이 Phase 2)
+> 최종 업데이트: 2026-03-24 (CharacterDetailScene Phase 3 -- 단일 캐릭터 상세 뷰)
 
 ## 프로젝트 개요
 
@@ -49,15 +49,15 @@ neon-exodus/
 ├── package.json                   # 의존성 (Capacitor, Playwright)
 ├── capacitor.config.json          # Android 패키징 설정
 ├── js/
-│   ├── config.js                  # 게임 상수, 밸런스 수치, SPRITE_SCALE
+│   ├── config.js                  # 게임 상수, 밸런스 수치, SPRITE_SCALE, COLORS(DARK_GRAY/TOAST_BG 포함), UI_COLORS(gold/goldBg 포함)
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종 + 장식 오브젝트 16종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 배경 타일 128x128 4종 프로시저럴 패턴(_generateBackgroundTile + _regenerateTileTexture), 장식 오브젝트 16종 프로시저럴 폴백(_generateDecoTextures), 메뉴 배경 프로시저럴 생성(_generateMenuBackground: 시티스케이프 5레이어), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
-│   │   ├── MenuScene.js           # 메인 메뉴 (프로시저럴 배경 + 하단 그라디언트 오버레이, 2열 그리드: 캐릭터/업그레이드/도전과제/일일미션, 보조 행: 도감/자동사냥/설정, CTA 출격)
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종 + 장식 오브젝트 16종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 배경 타일 128x128 4종 프로시저럴 패턴(_generateBackgroundTile + _regenerateTileTexture), 장식 오브젝트 16종 프로시저럴 폴백(_generateDecoTextures), 메뉴 배경 프로시저럴 생성(_generateMenuBackground: 시티스케이프 5레이어), 캐릭터 초상화 글로우 배경 프로시저럴 생성(_generateCharPortraitBgs: 4캐릭터 120x120), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
+│   │   ├── MenuScene.js           # 메인 메뉴 (프로시저럴 배경 + 하단 그라디언트 오버레이, 2열 그리드: 캐릭터(fromScene:'MenuScene')/업그레이드/도전과제/일일미션, 보조 행: 도감/자동사냥/설정, CTA 출격)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
-│   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브, 스킬 롱탭 설명 툴팁)
+│   │   ├── CharacterScene.js      # 캐릭터 상세 뷰 (단일 캐릭터 초상화+글로우 배경, 이름/레벨/XP/패시브/스킬 요약, 좌우 화살표 전환, 인디케이터 도트, fromScene 분기 뒤로가기)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, 무기/패시브 인포 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑/파괴 가능 데코)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
@@ -226,10 +226,11 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 ```
 
 - MenuScene에서 "출격" CTA -> 프롤로그 미시청 시 CutsceneScene, 아니면 StageSelectScene
-- MenuScene에서 "캐릭터" 그리드 버튼 -> CharacterScene (직접 이동)
-- StageSelectScene에서 선택한 stageId를 CharacterScene에 전달
-- CharacterScene에서 { characterId, stageId }를 GameScene에 전달
-- ESC 키: StageSelectScene -> MenuScene 뒤로가기
+- MenuScene에서 "캐릭터" 그리드 버튼 -> CharacterScene ({ fromScene: 'MenuScene' })
+- StageSelectScene에서 출격 버튼 -> CharacterScene ({ stageId, fromScene: 'StageSelectScene' })
+- CharacterScene에서 뒤로가기: fromScene에 따라 MenuScene 또는 StageSelectScene으로 복귀
+- CharacterScene에서 { characterId, stageId, difficulty }를 GameScene에 전달
+- ESC 키: StageSelectScene -> MenuScene 뒤로가기, CharacterScene -> fromScene으로 뒤로가기
 
 ### 핵심 모듈
 
@@ -254,7 +255,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 일일 미션 매니저 | `js/managers/DailyMissionManager.js` | UTC 자정 리셋, 날짜 시드 PRNG로 3개 미션 선택, 런 결과 기반 진행도 추적, 보상 수령, streak 연속 출석 |
 | 일일 미션 데이터 | `js/data/dailyMissions.js` | 32종 미션 풀 (5카테고리), 전체 완료 보너스/streak 보너스/주기 상수 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
-| 캐릭터 선택 | `js/scenes/CharacterScene.js` | 캐릭터 선택, 해금 조건 검사, 레벨/XP 표시, 스킬 배분 UI, 스킬 롱탭 설명 툴팁 |
+| 캐릭터 상세 뷰 | `js/scenes/CharacterScene.js` | 단일 캐릭터 상세 뷰 (초상화+글로우 배경, 이름/레벨/XP바/패시브/스킬 요약), 좌우 화살표 순환 전환, 잠금 캐릭터 실루엣+해금 조건, 인디케이터 도트, fromScene 기반 뒤로가기 분기, 출격 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 114개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
 | 일일 미션 씬 | `js/scenes/DailyMissionScene.js` | 미션 카드 3개(진행바/수령 버튼), 전체 완료 보너스, streak, 리셋 타이머 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/진화) |
@@ -1022,12 +1023,19 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | 메딕 | `medic` | blaster | hpRegenMultiplier x2.0, maxHp -30% | totalSurviveMinutes >= 500 | 4 |
 | ??? (Weapon Master) | `hidden` | blaster | 무기 슬롯 +2, 무기 등장 확률 x2 | sniper+engineer+berserker 모두 해금 | 4 |
 
-- CharacterScene: MenuScene "캐릭터" 그리드 버튼 또는 StageSelectScene에서 이동. 캐릭터 목록을 세로 스크롤로 표시
-- 잠금 캐릭터는 alpha 0.4, 선택 캐릭터는 neonCyan 테두리 하이라이트
-- 선택 후 출격 버튼으로 GameScene 시작 (characterId 전달)
+- CharacterScene: 단일 캐릭터 상세 뷰로 한 캐릭터씩 표시. MenuScene({ fromScene:'MenuScene' }) 또는 StageSelectScene({ stageId, fromScene:'StageSelectScene' })에서 진입
+- 초상화: 프로시저럴 글로우 배경(char_portrait_bg_{charId}, BootScene 120x120) + idle 스프라이트 scale 2.0 (48→96px)
+- 좌우 화살표(30,140)/(330,140)로 4캐릭터(phase<=3) 순환 전환
+- 해금 캐릭터: 이름(18px, charColor), 레벨(14px), XP 바(50~310, 260x8px), 패시브(11px), 스킬 요약(Q/W/E/R, Y=384/416/448/480)
+- 잠금 캐릭터: 실루엣(setTint(0x333333)+alpha 0.5) + 해금 조건 텍스트, 출격 비활성
+- 캐릭터 인디케이터 도트(Y=520): 현재=charColor 밝은 원(r=5), 해금=charColor 반투명(r=4), 미해금=dimGray(r=4)
+- 하단 버튼: 뒤로가기(90,580, 100x40) + 출격(270,580, 140x40, NEON_CYAN 테두리 2px)
+- 뒤로가기: fromScene 기반 분기 (MenuScene 또는 StageSelectScene으로 복귀)
+- 출격: SaveManager.setSelectedCharacter → 컷신 미시청 시 CutsceneScene, 그 외 GameScene (characterId, stageId, difficulty 전달)
+- 신규 해금 알림: toast 표시 후 해당 캐릭터로 자동 이동
 - GameScene.init()에서 characterId 수신, Player 생성 시 전달 -> 캐릭터별 고유 스프라이트/애니메이션 적용
-- 관련 파일: `js/data/characters.js`, `js/scenes/CharacterScene.js`
-- 구현 일자: 2026-03-09
+- 관련 파일: `js/data/characters.js`, `js/scenes/CharacterScene.js`, `js/scenes/BootScene.js`
+- 구현 일자: 2026-03-09 (초기), 2026-03-24 (Phase 3 전면 리팩토링)
 
 #### 캐릭터 레벨 & 스킬 시스템
 
@@ -1065,21 +1073,14 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 레벨업 시 팡파레 연출 + "스킬포인트 +N 획득!" 알림
 - DC=0인 런에서는 UI 건너뜀
 
-##### 스킬 배분 UI (CharacterScene)
-- 선택된 캐릭터 카드 확장 (CARD_H_EXPANDED=220)
-- 스킬 4행 표시: 슬롯 라벨, 스킬명, 현재/최대 레벨, [+1] 버튼
-- [+1] 버튼 활성 조건: SP >= 1, 해당 스킬 < maxLevel, R 슬롯은 레벨 게이트 충족
-- 미사용 SP 배지 (노란색 강조)
-- R 미해금 시 "Lv.N에서 해금" 표시
-- **스킬 롱탭 설명 툴팁**: 스킬 행(Q/W/E/R)을 500ms 이상 롱탭하면 스킬 설명 오버레이 표시
-  - 감지 영역: 슬롯 라벨~레벨 표시 구간 (190x30), [+1] 버튼 영역 제외
-  - 오버레이: 씬 레이어 직접 추가 (GeometryMask 회피), depth 1000, 280px 패널
-  - 구성: 스킬명(12px, neonCyan) + 레벨(10px, 우측 정렬) + 설명(11px, wordWrap 256px)
-  - lv0: Lv.1 설명 미리보기 + "(Lv.1 미리보기)" 안내 텍스트
-  - lv1+: 현재 레벨 설명 표시
-  - blocker zone(depth 999)으로 다른 인터랙션 차단
-  - 닫기: pointerup / 다른 곳 탭 / 스크롤 / 카드 전환(_rebuildCards)
-  - 스크롤 충돌 방지: pointermove dy>5px 시 타이머 취소
+##### 스킬 요약 표시 (CharacterScene -- Phase 3 상세 뷰)
+- 스킬 4행 읽기 전용 표시: [Q]/[W]/[E]/[R] 슬롯 라벨(30,Y, 11px neonCyan) + 스킬명(60,Y, 11px) + 레벨(330,Y, 11px 우측 정렬)
+- Y 좌표: Q=384, W=416, E=448, R=480
+- "스킬" 라벨 (30, 362, 13px neonCyan)
+- SP 배지 (330, 362, 11px gold #FFD700, 배경 goldBg #333300) -- sp > 0일 때만 표시
+- R 스킬 잠금 표시: lv < maxLevel && !canInvestUlt(charLevel, lv) 시 "Lv.N에서 해금" (R 만렙 시에는 정상적으로 "Lv.3/3" 녹색 표시)
+- 만렙 스킬: neonGreen 색상으로 "Lv.N/max" 표시
+- [+1] 투자 버튼 및 롱탭 설명 툴팁은 Phase 4에서 구현 예정
 
 ##### 궁극기 HUD (GameScene)
 - 위치: 우하단 (X: GAME_WIDTH-40, Y: GAME_HEIGHT-140), 56x56px

@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-03-24 -- CharacterDetailScene (Phase 3: 단일 캐릭터 상세 뷰)
+
+### 추가
+- `js/scenes/BootScene.js`: `_generateCharPortraitBgs()` 메서드 추가 -- 4캐릭터(phase<=3) 120x120 프로시저럴 글로우 배경 텍스처 생성 (4레이어: r=56/0.12, r=44/0.22, r=28/0.50, 흰색 stroke r=54/0.45)
+- `js/config.js`: `COLORS.DARK_GRAY` (0x333333), `COLORS.TOAST_BG` (0x002244) 추가
+- `js/config.js`: `UI_COLORS.gold` ('#FFD700'), `UI_COLORS.goldBg` ('#333300') 추가
+- `js/i18n.js`: `charDetail.skills` (ko: '스킬', en: 'Skills'), `charDetail.locked` (ko: '해금 조건', en: 'Unlock Condition') 키 추가
+
+### 변경
+- `js/scenes/CharacterScene.js`: 전면 리팩토링 (세로 스크롤 카드 리스트 -> 단일 캐릭터 상세 뷰)
+  - 초상화: 프로시저럴 글로우 배경(char_portrait_bg_{charId}) + idle 스프라이트 scale 2.0 (180, 140)
+  - 좌우 화살표(30,140)/(330,140)로 4캐릭터 순환 전환
+  - 해금 캐릭터: 이름(18px)/레벨(14px, Y=263)/XP 바(50~310, Y=285, 260x8px)/XP 수치(11px, Y=302)/패시브(11px, Y=330)
+  - 스킬 요약: "스킬" 라벨(30,362) + SP 배지(330,362, gold) + Q/W/E/R 행(Y=384/416/448/480) 읽기 전용
+  - 잠금 캐릭터: setTint(0x333333)+alpha 0.5, 해금 조건 텍스트, 출격 비활성
+  - 인디케이터 도트(Y=520): 현재=r5, 해금=charColor r4, 미해금=dimGray r4
+  - 하단 버튼: 뒤로가기(90,580, 100x40) + 출격(270,580, 140x40, NEON_CYAN 테두리 2px)
+  - init(data)에 fromScene 파라미터 추가 -- 뒤로가기 분기(MenuScene/StageSelectScene)
+- `js/scenes/MenuScene.js`: 캐릭터 버튼에 `{ fromScene: 'MenuScene' }` 전달 추가
+- `js/scenes/StageSelectScene.js`: 출격 버튼에 `fromScene: 'StageSelectScene'` 전달 추가
+
+### 수정
+- `js/scenes/CharacterScene.js`: R 스킬 만렙(Lv.3/3) 시 "Unlock at Lv.16" 잘못 표시되는 버그 수정 (QA 발견) -- `isRLocked` 조건에 `lv < skill.maxLevel` 체크 추가
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-24-character-detail-scene-purpose.md`
+- 스펙: `.claude/specs/2026-03-24-character-detail-scene.md`
+- 구현 리포트: `.claude/specs/2026-03-24-character-detail-scene-report.md`
+- QA: `.claude/specs/2026-03-24-character-detail-scene-qa.md`
+- QA 초기 FAIL (R 스킬 만렙 표시 버그) -> 수정 후 PASS
+- 변경 파일: `js/scenes/BootScene.js`, `js/scenes/CharacterScene.js`, `js/scenes/MenuScene.js`, `js/scenes/StageSelectScene.js`, `js/config.js`, `js/i18n.js` 총 6개
+- 스펙 대비 차이:
+  - 메서드명: 스펙 `_generateCharPortraits()` -> 구현 `_generateCharPortraitBgs()` (글로우 배경 전용 분리)
+  - 글로우 수치: AD 모드 1 컨셉 반영 (alpha 0.15/0.25/0.35 -> 0.12/0.22/0.50, 내부 r=32->28, stroke alpha 0.3->0.45)
+  - 텍스처 중복: 스펙 "remove+재생성" -> 구현 "exists 시 continue 스킵"
+  - 레이아웃 Y좌표: AD 모드 3 조정 (레벨 258->263, XP 바 280->285, XP 수치 296->302)
+- Phase 4 예정: 스킬 투자 버튼(+1), 스킬 롱탭 설명 툴팁
+
 ## 2026-03-24 -- 메인 메뉴 배경 일러스트 + 그라디언트 오버레이 (Phase 2)
 
 ### 추가

@@ -66,7 +66,7 @@ export default class StageSelectScene extends Phaser.Scene {
     // 출격 버튼 (우)
     this._createBtn(centerX + 60, btnY, t('menu.start'), UI_COLORS.btnPrimary, () => {
       SaveManager.setSelectedStage(this._selectedId);
-      this.scene.start('CharacterScene', { stageId: this._selectedId });
+      this.scene.start('CharacterScene', { stageId: this._selectedId, fromScene: 'StageSelectScene' });
     });
 
     // ── ESC 키로 뒤로가기 ──

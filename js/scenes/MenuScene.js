@@ -79,7 +79,7 @@ export default class MenuScene extends Phaser.Scene {
       textColor: UI_COLORS.textPrimary,
       radius: 8,
       callback: () => {
-        this.scene.start('CharacterScene');
+        this.scene.start('CharacterScene', { fromScene: 'MenuScene' });
       },
     });
 

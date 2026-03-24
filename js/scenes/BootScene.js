@@ -15,6 +15,8 @@ import { AdManager } from '../managers/AdManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
 import { initHaptics, setHapticEnabled } from '../managers/HapticManager.js';
+import { CHARACTERS } from '../data/characters.js';
+import { CHARACTER_COLORS } from '../data/characterSkills.js';
 
 // ── BootScene 클래스 ──
 
@@ -219,6 +221,9 @@ export default class BootScene extends Phaser.Scene {
 
     // 메인 메뉴 배경 텍스처 생성
     this._generateMenuBackground();
+
+    // 캐릭터 초상화 글로우 배경 텍스처 생성
+    this._generateCharPortraitBgs();
 
     // 장식 오브젝트 텍스처 생성 (PNG 미로드 시 폴백)
     this._generateDecoTextures();
@@ -995,6 +1000,51 @@ export default class BootScene extends Phaser.Scene {
     }
     gfx.generateTexture('menu_bg', W, H);
     gfx.destroy();
+  }
+
+  // ── 캐릭터 초상화 글로우 배경 ──
+
+  /**
+   * 캐릭터별 120x120 프로시저럴 글로우 배경 텍스처를 생성한다.
+   * CHARACTERS 배열에서 phase <= 3인 캐릭터를 순회하며,
+   * CHARACTER_COLORS의 고유 색상으로 다층 원형 글로우를 렌더링한다.
+   * 텍스처 키: char_portrait_bg_{charId}
+   * @private
+   */
+  _generateCharPortraitBgs() {
+    const visibleChars = CHARACTERS.filter(c => c.phase <= 3);
+    const SIZE = 120;
+    const CX = 60;
+    const CY = 60;
+
+    for (const charData of visibleChars) {
+      const key = `char_portrait_bg_${charData.id}`;
+
+      // 이미 존재하면 스킵
+      if (this.textures.exists(key)) continue;
+
+      const gfx = this.add.graphics();
+      const charColor = CHARACTER_COLORS[charData.id] || 0x00FFFF;
+
+      // 레이어 1: 외곽 글로우 (r=56, alpha 0.12)
+      gfx.fillStyle(charColor, 0.12);
+      gfx.fillCircle(CX, CY, 56);
+
+      // 레이어 2: 중간 글로우 (r=44, alpha 0.22)
+      gfx.fillStyle(charColor, 0.22);
+      gfx.fillCircle(CX, CY, 44);
+
+      // 레이어 3: 내부 코어 (r=28, alpha 0.50)
+      gfx.fillStyle(charColor, 0.50);
+      gfx.fillCircle(CX, CY, 28);
+
+      // 레이어 4: 하이라이트 링 (r=54, 흰색 stroke, alpha 0.45)
+      gfx.lineStyle(1, 0xFFFFFF, 0.45);
+      gfx.strokeCircle(CX, CY, 54);
+
+      gfx.generateTexture(key, SIZE, SIZE);
+      gfx.destroy();
+    }
   }
 
   /**

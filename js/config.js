@@ -204,6 +204,11 @@ export const COLORS = {
   /** UI 패널 테두리 */
   UI_BORDER: 0x2A2A4E,
 
+  /** 다크 그레이 (바 배경, 잠금 틴트) */
+  DARK_GRAY: 0x333333,
+  /** 토스트 배경 */
+  TOAST_BG: 0x002244,
+
   /** 기본 텍스트 (흰색) */
   TEXT_WHITE: 0xFFFFFF,
   /** 보조 텍스트 (회색) */
@@ -231,6 +236,8 @@ export const UI_COLORS = {
   textMuted:     '#BBBBBB',
   panelBgStr:    '#1A1A2E',
   strokeBlack:   '#000000',
+  gold:          '#FFD700',
+  goldBg:        '#333300',
 };
 
 // ── 배경 타일 설정 ──
