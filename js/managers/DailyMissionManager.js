@@ -348,6 +348,10 @@ export class DailyMissionManager {
     }
     if (poolData.reward.dataCores) {
       SaveManager.addDataCores(poolData.reward.dataCores);
+      // 선택된 캐릭터에 XP로 자동 투자
+      const charId = SaveManager.getSelectedCharacter();
+      SaveManager.addCharacterXP(charId, poolData.reward.dataCores);
+      SaveManager.addCharacterDcEarned(charId, poolData.reward.dataCores);
     }
 
     slot.claimed = true;
@@ -382,6 +386,9 @@ export class DailyMissionManager {
     }
     if (DAILY_BONUS_REWARD.dataCores) {
       SaveManager.addDataCores(DAILY_BONUS_REWARD.dataCores);
+      const charId = SaveManager.getSelectedCharacter();
+      SaveManager.addCharacterXP(charId, DAILY_BONUS_REWARD.dataCores);
+      SaveManager.addCharacterDcEarned(charId, DAILY_BONUS_REWARD.dataCores);
     }
 
     // streak 보너스 (STREAK_CYCLE 배수일 때)
@@ -391,6 +398,9 @@ export class DailyMissionManager {
       }
       if (STREAK_BONUS.dataCores) {
         SaveManager.addDataCores(STREAK_BONUS.dataCores);
+        const charId2 = SaveManager.getSelectedCharacter();
+        SaveManager.addCharacterXP(charId2, STREAK_BONUS.dataCores);
+        SaveManager.addCharacterDcEarned(charId2, STREAK_BONUS.dataCores);
       }
     }
 
