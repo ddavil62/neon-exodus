@@ -1349,6 +1349,12 @@ export default class WeaponSystem {
    * @private
    */
   _showSlashEffect(px, py, angle, range, evolvedId) {
+    // phantom_strike: 호(arc) 궤적 이펙트로 렌더링
+    if (evolvedId === 'phantom_strike') {
+      this._showArcSlashEffect(px, py, angle, range);
+      return;
+    }
+
     const slashTex = evolvedId && EVOLVED_TEXTURE_MAP[evolvedId]
       ? EVOLVED_TEXTURE_MAP[evolvedId] : 'effect_force_slash';
     const offsetX = Math.cos(angle) * range / 2;
@@ -1365,6 +1371,46 @@ export default class WeaponSystem {
       alpha: 0,
       duration: 200,
       onComplete: () => sprite.destroy(),
+    });
+  }
+
+  /**
+   * 팬텀 스트라이크 전용 호(arc) 궤적 슬래시 이펙트.
+   * 플레이어 중심에서 arcAngle(240°) 범위로 궤적을 그린다.
+   * @param {number} px - 플레이어 X
+   * @param {number} py - 플레이어 Y
+   * @param {number} angle - 슬래시 방향 (라디안)
+   * @param {number} range - 슬래시 사거리
+   * @private
+   */
+  _showArcSlashEffect(px, py, angle, range) {
+    const halfArc = (240 * Math.PI / 180) / 2;
+    const g = this.scene.add.graphics().setDepth(9);
+
+    // 외곽 보라 글로우
+    g.lineStyle(10, 0x8844FF, 0.3);
+    g.beginPath();
+    g.arc(px, py, range * 0.75, angle - halfArc, angle + halfArc, false);
+    g.strokePath();
+
+    // 시안 슬래시 코어
+    g.lineStyle(5, 0x00FFFF, 0.6);
+    g.beginPath();
+    g.arc(px, py, range * 0.75, angle - halfArc * 0.9, angle + halfArc * 0.9, false);
+    g.strokePath();
+
+    // 흰색 하이라이트 (안쪽 궤적)
+    g.lineStyle(2, 0xFFFFFF, 0.8);
+    g.beginPath();
+    g.arc(px, py, range * 0.75, angle - halfArc * 0.75, angle + halfArc * 0.75, false);
+    g.strokePath();
+
+    // 페이드 아웃
+    this.scene.tweens.add({
+      targets: g,
+      alpha: 0,
+      duration: 250,
+      onComplete: () => g.destroy(),
     });
   }
 
