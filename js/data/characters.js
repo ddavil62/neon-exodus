@@ -91,7 +91,7 @@ export const CHARACTERS = [
       type: 'totalSurviveMinutes',
       value: 500,
     },
-    phase: 4,
+    phase: 3,
   },
   {
     id: 'hidden',
@@ -107,8 +107,8 @@ export const CHARACTERS = [
       weaponChoiceBias: 2.0,
     },
     unlockCondition: {
-      type: 'allCharactersUnlocked',
-      characters: ['sniper', 'engineer', 'berserker'],
+      type: 'totalSurviveMinutes',
+      value: 500,
     },
     phase: 4,
   },

@@ -390,9 +390,9 @@ const TRANSLATIONS = {
     'character.medic.passive': '체력 회복 2배, 최대체력 -30%',
     'character.medic.unlock': '누적 500분 생존',
     'character.hidden.name': '???',
-    'character.hidden.desc': '[해금 조건: 스나이퍼, 엔지니어, 버서커 모두 해금]',
+    'character.hidden.desc': '[해금 조건: 누적 500분 생존]',
     'character.hidden.passive': '웨폰 마스터: 무기 슬롯 +2, 레벨업 시 무기 등장 확률 x2.',
-    'character.hidden.unlock': '스나이퍼, 엔지니어, 버서커를 모두 해금하세요.',
+    'character.hidden.unlock': '누적 500분 생존',
 
     // ── 도전과제: 킬 (20) ──
     'achievement.first_kill.name': '첫 킬',
@@ -1551,7 +1551,7 @@ const TRANSLATIONS = {
     'character.hidden.name': '???',
     'character.hidden.desc': '???',
     'character.hidden.passive': '???',
-    'character.hidden.unlock': 'Unlock all 3 characters',
+    'character.hidden.unlock': 'Accumulate 500 min survival',
 
     // ── Achievements: Kill (20) ──
     'achievement.first_kill.name': 'First Kill',

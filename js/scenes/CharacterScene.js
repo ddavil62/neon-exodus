@@ -946,6 +946,9 @@ export default class CharacterScene extends Phaser.Scene {
       case 'totalBossKills':
         unlocked = (stats.totalBossKills || 0) >= cond.value;
         break;
+      case 'totalSurviveMinutes':
+        unlocked = (stats.totalSurviveMinutes || 0) >= cond.value;
+        break;
       default:
         unlocked = false;
     }
