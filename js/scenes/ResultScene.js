@@ -115,6 +115,10 @@ export default class ResultScene extends Phaser.Scene {
 
     const centerX = GAME_WIDTH / 2;
 
+    // ── 1페이지 요소 저장 배열 (2페이지 전환 시 숨김/표시) ──
+    /** @type {Phaser.GameObjects.GameObject[]} */
+    this._page1Elements = [];
+
     // ── SaveManager 크레딧/통계 저장 (난이도 배율 적용) ──
     const creditMult = DIFFICULTY_MODES[this.difficulty]?.creditMult || 1.0;
     /** @type {number} 난이도 배율 적용 후 크레딧 */
@@ -224,6 +228,7 @@ export default class ResultScene extends Phaser.Scene {
       stroke: '#000000',
       strokeThickness: 3,
     }).setOrigin(0.5).setAlpha(0);
+    this._page1Elements.push(title);
 
     // 타이틀 등장 애니메이션
     this.tweens.add({
@@ -263,6 +268,7 @@ export default class ResultScene extends Phaser.Scene {
         fontFamily: 'Galmuri11, monospace',
         color: stat.color,
       }).setOrigin(0.5).setAlpha(0);
+      this._page1Elements.push(statText);
 
       this.tweens.add({
         targets: statText,
@@ -273,48 +279,14 @@ export default class ResultScene extends Phaser.Scene {
       });
     });
 
-    // ── 버튼 레이아웃 상수 ──
-    /** 버튼 간 간격 (px) */
-    const BTN_GAP = 44;
-    /**
-     * 광고 버튼 중심의 최대 Y 좌표.
-     * menuBtn 하단(adBtnY + BTN_GAP*2 + 20) + 8px 여백 <= GAME_HEIGHT 를 만족하는 상한.
-     * 계산: 640 - 44*2 - 20 - 8 = 524
-     */
-    const MAX_AD_BTN_Y = GAME_HEIGHT - BTN_GAP * 2 - 28; // 524
-    /** 콘텐츠 끝과 광고버튼 간 최소 여백 (px) */
-    const BTN_CONTENT_GAP = 12;
-    /** 콘텐츠 압축 최솟값 (텍스트 가독성 유지) */
-    const MIN_CONTENT_SCALE = 0.78;
-
-    // ── 콘텐츠 압축 스케일 계산 ──
-    // 통계 구간 끝 Y (고정: statsY=160 + lines*26)
-    const fixedStatsEnd = 160 + stats.length * 26;
-    // 배너 자체 반높이 (고정, 배너 크기는 압축하지 않음)
-    const bannerHalf = 16;
-    // 허용 스케일 가능 픽셀 = MAX_AD_BTN_Y - BTN_CONTENT_GAP - fixedStatsEnd - bannerHalf
-    const scalableTarget = MAX_AD_BTN_Y - BTN_CONTENT_GAP - fixedStatsEnd - bannerHalf;
-    const rawScalable = this._calcRawScalable(stats.length);
-    /**
-     * 레이아웃 압축 배율.
-     * rawScalable이 scalableTarget 초과 시 1.0 미만으로 설정된다.
-     * MIN_CONTENT_SCALE으로 하한이 보장된다.
-     */
-    const contentScale = rawScalable > scalableTarget
-      ? Math.max(MIN_CONTENT_SCALE, scalableTarget / rawScalable)
-      : 1.0;
-
-    // ── 무기별 리포트 섹션 ──
-    const weaponReportStartY = statsY + stats.length * lineHeight + 10;
-    const weaponReportEndY = this._renderWeaponReport(centerX, weaponReportStartY, stats.length, contentScale);
-
-    // ── 보상 섹션 ──
-    const rewardY = weaponReportEndY + Math.round(6 * contentScale);
+    // ── 보상 섹션 (무기 리포트 없이 바로 배치) ──
+    const rewardY = statsY + stats.length * lineHeight + 20;
 
     // 구분선
     const divider = this.add.graphics();
     divider.lineStyle(1, COLORS.UI_BORDER, 0.5);
     divider.lineBetween(centerX - 100, rewardY - 4, centerX + 100, rewardY - 4);
+    this._page1Elements.push(divider);
 
     // 획득 크레딧 (난이도 배율 적용 시 배율 표시)
     const creditDisplayStr = creditMult > 1.0
@@ -330,6 +302,7 @@ export default class ResultScene extends Phaser.Scene {
         color: UI_COLORS.neonOrange,
       }
     ).setOrigin(0.5).setAlpha(0);
+    this._page1Elements.push(this._creditText);
 
     this.tweens.add({
       targets: this._creditText,
@@ -348,6 +321,7 @@ export default class ResultScene extends Phaser.Scene {
         color: UI_COLORS.neonCyan,
       }
     ).setOrigin(0.5).setAlpha(0);
+    this._page1Elements.push(dcText);
 
     this.tweens.add({
       targets: dcText,
@@ -356,9 +330,8 @@ export default class ResultScene extends Phaser.Scene {
       delay: 900,
     });
 
-    // 클리어 보너스 (승리 시) -- 크레딧 옆에 인라인 표시
-    /** 보상 섹션 끝 Y 좌표 */
-    let rewardEndY = rewardY + Math.round(42 * contentScale);
+    // 클리어 보너스 (승리 시)
+    let rewardEndY = rewardY + 42;
     if (this.victory) {
       const bonusText = this.add.text(
         centerX, rewardY + 44,
@@ -369,6 +342,7 @@ export default class ResultScene extends Phaser.Scene {
           color: UI_COLORS.neonMagenta,
         }
       ).setOrigin(0.5).setAlpha(0);
+      this._page1Elements.push(bonusText);
 
       this.tweens.add({
         targets: bonusText,
@@ -376,22 +350,24 @@ export default class ResultScene extends Phaser.Scene {
         duration: 500,
         delay: 1000,
       });
-      rewardEndY = rewardY + Math.round(60 * contentScale);
+      rewardEndY = rewardY + 60;
     }
 
     // ── 무기 해금 배너 (스테이지 클리어 시) ──
     if (this.newWeaponUnlocked) {
-      rewardEndY = this._renderWeaponUnlockBanner(centerX, rewardEndY, contentScale);
+      rewardEndY = this._renderWeaponUnlockBanner(centerX, rewardEndY);
     }
 
-    // ── 하단 버튼 Y좌표 동적 계산 ──
-    // contentScale 적용으로 contentEndY <= MAX_AD_BTN_Y - BTN_CONTENT_GAP 가 보장된다.
-    const contentEndY = rewardEndY + Math.round(20 * contentScale);
-    // 콘텐츠 끝 + 여백 기준 배치, 최소 화면 하단 180px 구간 활용, MAX_AD_BTN_Y 상한 적용
-    const adBtnY = Math.min(
-      Math.max(contentEndY + BTN_CONTENT_GAP, GAME_HEIGHT - 180),
-      MAX_AD_BTN_Y
-    );
+    // ── 무기 리포트 탭 버튼 ──
+    if (this.weaponReport && this.weaponReport.length > 0) {
+      const tabY = rewardEndY + 20;
+      this._createReportTabButton(centerX, tabY);
+      rewardEndY = tabY + 20;
+    }
+
+    // ── 하단 버튼 Y좌표 ──
+    const BTN_GAP = 44;
+    const adBtnY = Math.max(rewardEndY + 16, GAME_HEIGHT - 180);
     const retryBtnY = adBtnY + BTN_GAP;
     const menuBtnY = retryBtnY + BTN_GAP;
 
@@ -575,6 +551,11 @@ export default class ResultScene extends Phaser.Scene {
       delay: delay,
     });
 
+    // 페이지 전환 시 숨기기 위해 추적
+    if (this._page1Elements) {
+      this._page1Elements.push(this._adBtnBg, this._adBtnText);
+    }
+
     // 비활성 상태면 인터랙션 없음
     if (limitReached || (this._adjustedCredits || this.creditsEarned) <= 0) return;
 
@@ -584,6 +565,7 @@ export default class ResultScene extends Phaser.Scene {
 
     /** @type {boolean} 광고 사용 완료 여부 */
     this._adUsed = false;
+    if (this._page1Elements) this._page1Elements.push(zone);
 
     let pressed = false;
     zone.on('pointerdown', () => {
@@ -647,149 +629,173 @@ export default class ResultScene extends Phaser.Scene {
     });
   }
 
-  // ── 콘텐츠 스케일 계산 ──
+  // ── 무기 리포트 탭 버튼 ──
 
   /**
-   * scale=1.0 기준 콘텐츠의 스케일 가능한 구간 픽셀 합계를 계산한다.
-   * create()에서 contentScale을 결정하기 위해 실제 렌더링 전에 호출한다.
-   * 통계 구간(fixedStatsEnd)과 배너 자체 반높이(16px)는 고정값이므로 제외한다.
-   * @param {number} statsCount - 통계 항목 수
-   * @returns {number} 스케일 가능한 총 픽셀
+   * "무기 리포트 ▶" 탭 버튼을 생성한다.
+   * @param {number} x - 중심 X
+   * @param {number} y - 중심 Y
    * @private
    */
-  _calcRawScalable(statsCount) {
-    const totalWeapons = this.weaponReport ? this.weaponReport.length : 0;
-    const rowHeight = totalWeapons > 6 ? 22 : 28;
-    const displayCount = Math.min(totalWeapons, 10);
-    // 무기 리포트: stat_gap + title + gap + rows + trail
-    const weaponSection = totalWeapons > 0
-      ? (10 + 12 + 18 + displayCount * rowHeight + 4)
-      : 10;
-    // 보상 구간: reward_gap + height (DC 텍스트 추가로 높이 증가)
-    const rewardSection = this.victory ? (6 + 60) : (6 + 42);
-    // 해금 배너 구간 (있을 때만)
-    let bannerSection = 0;
-    if (this.newWeaponUnlocked) {
-      const stageData = this.stageId ? STAGES[this.stageId] : null;
-      bannerSection = stageData ? (8 + 32 + 20) : (8 + 20);
-    }
-    return weaponSection + rewardSection + bannerSection;
-  }
+  _createReportTabButton(x, y) {
+    const btnW = 180;
+    const btnH = 32;
 
-  // ── 무기별 리포트 렌더링 ──
+    const bg = this.add.graphics();
+    bg.fillStyle(COLORS.UI_PANEL, 0.8);
+    bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 6);
+    bg.lineStyle(1, COLORS.NEON_CYAN, 0.5);
+    bg.strokeRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, 6);
+    this._page1Elements.push(bg);
 
-  /**
-   * 무기별 통계 리포트를 렌더링한다.
-   * 각 무기의 킬 수, 총 데미지, DPS, 데미지 비율 바를 표시한다.
-   * @param {number} centerX - 중심 X 좌표
-   * @param {number} startY - 시작 Y 좌표
-   * @param {number} statsCount - 상단 통계 항목 수 (애니메이션 딜레이 계산용)
-   * @param {number} [scale=1.0] - 레이아웃 압축 배율 (간격·행높이에 적용)
-   * @returns {number} 렌더링 후 다음 Y 좌표
-   * @private
-   */
-  _renderWeaponReport(centerX, startY, statsCount, scale = 1.0) {
-    if (!this.weaponReport || this.weaponReport.length === 0) {
-      return startY;
-    }
-
-    // 구분선
-    const divGfx = this.add.graphics();
-    divGfx.lineStyle(1, COLORS.UI_BORDER, 0.4);
-    divGfx.lineBetween(centerX - 100, startY, centerX + 100, startY);
-
-    // 섹션 타이틀
-    const titleY = startY + Math.round(12 * scale);
-    const sectionTitle = this.add.text(centerX, titleY, t('result.weaponReport'), {
+    const text = this.add.text(x, y, t('result.viewReport'), {
       fontSize: '12px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonCyan,
-    }).setOrigin(0.5).setAlpha(0);
+    }).setOrigin(0.5);
+    this._page1Elements.push(text);
 
-    const baseDelay = 300 + statsCount * 150;
-    this.tweens.add({
-      targets: sectionTitle,
-      alpha: 1,
-      duration: 300,
-      delay: baseDelay,
+    const zone = this.add.zone(x, y, btnW, btnH).setInteractive({ useHandCursor: true });
+    this._page1Elements.push(zone);
+
+    zone.on('pointerdown', () => {
+      this._showWeaponReportPage();
+    });
+  }
+
+  // ── 2페이지: 무기 리포트 ──
+
+  /**
+   * 무기 리포트 페이지를 표시한다. 1페이지 요소를 숨기고 전체 화면으로 렌더링.
+   * @private
+   */
+  _showWeaponReportPage() {
+    // 1페이지 숨기기 (인터랙티브 비활성화 포함)
+    this._page1Elements.forEach(el => {
+      if (el && el.setVisible) el.setVisible(false);
+      if (el && el.disableInteractive) el.disableInteractive();
     });
 
-    // 총 데미지 합산 (비율 계산용)
+    const centerX = GAME_WIDTH / 2;
+    /** @type {Phaser.GameObjects.GameObject[]} */
+    this._page2Elements = [];
+
+    // 섹션 타이틀
+    const titleText = this.add.text(centerX, 60, t('result.weaponReport'), {
+      fontSize: '18px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setOrigin(0.5);
+    this._page2Elements.push(titleText);
+
+    // 구분선
+    const div = this.add.graphics();
+    div.lineStyle(1, COLORS.UI_BORDER, 0.4);
+    div.lineBetween(centerX - 120, 80, centerX + 120, 80);
+    this._page2Elements.push(div);
+
+    // 총 데미지 합산
     const maxDamage = Math.max(1, ...this.weaponReport.map(w => w.damage));
     const totalDamage = Math.max(1, this.weaponReport.reduce((sum, w) => sum + w.damage, 0));
+    const displayWeapons = this.weaponReport.slice(0, 10);
 
-    // 무기 수에 따라 표시 개수·행 높이를 동적으로 조절 (최대 10개 수용)
-    const totalWeapons = this.weaponReport.length;
-    const maxDisplay = Math.min(totalWeapons, 10);
-    const displayWeapons = this.weaponReport.slice(0, maxDisplay);
-
-    let curY = titleY + Math.round(18 * scale);
-    const rowHeight = Math.round((totalWeapons > 6 ? 22 : 28) * scale);
-    const barWidth = 160;
-    const barHeight = 6;
-    const leftX = centerX - 110;
+    // 무기 수에 따라 행 높이 조절
+    const rowHeight = displayWeapons.length > 7 ? 48 : 56;
+    let curY = 96;
+    const barWidth = 220;
+    const barHeight = 8;
+    const leftX = centerX - 130;
 
     displayWeapons.forEach((weapon, idx) => {
-      const rowDelay = baseDelay + 100 + idx * 100;
       const rowY = curY + idx * rowHeight;
 
-      // 진화 무기: 이름 앞에 ★ 마커 + 마젠타 색상
+      // 진화 무기 마커
       const isEvolved = weapon.evolved;
       const namePrefix = isEvolved ? '★ ' : '';
       const nameColor = isEvolved ? UI_COLORS.neonMagenta : UI_COLORS.textPrimary;
       const barColor = isEvolved ? 0xFF00FF : COLORS.NEON_CYAN;
 
-      // 무기 이름
+      // 줄 1: 무기 이름 (좌) + 킬/DPS/% (우)
       const nameText = this.add.text(leftX, rowY, namePrefix + t(weapon.nameKey), {
-        fontSize: '11px',
+        fontSize: '12px',
         fontFamily: 'Galmuri11, monospace',
         color: nameColor,
-      }).setOrigin(0, 0).setAlpha(0);
+        wordWrap: { width: 140 },
+        maxLines: 1,
+      }).setOrigin(0, 0);
+      this._page2Elements.push(nameText);
 
-      // 킬 수 / DPS / 데미지 비율(%) 텍스트 (오른쪽)
       const pct = Math.round((weapon.damage / totalDamage) * 100);
       const infoStr = t('result.weaponKills', weapon.kills) + '  ' + t('result.weaponDps', weapon.dps) + '  ' + pct + '%';
-      const infoText = this.add.text(centerX + 110, rowY, infoStr, {
+      const infoText = this.add.text(centerX + 130, rowY, infoStr, {
         fontSize: '10px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textSecondary,
-      }).setOrigin(1, 0).setAlpha(0);
+      }).setOrigin(1, 0);
+      this._page2Elements.push(infoText);
 
-      // 데미지 비율 바 배경
-      const barY = rowY + 14;
+      // 줄 2: 데미지 바 + 수치
+      const barY = rowY + 18;
       const barBg = this.add.graphics();
       barBg.fillStyle(0x333333, 0.6);
       barBg.fillRect(leftX, barY, barWidth, barHeight);
-      barBg.setAlpha(0);
+      this._page2Elements.push(barBg);
 
-      // 데미지 비율 바 (채움) — 진화 무기는 마젠타
       const damageRatio = weapon.damage / maxDamage;
       const barFill = this.add.graphics();
       barFill.fillStyle(barColor, 0.8);
       barFill.fillRect(leftX, barY, barWidth * damageRatio, barHeight);
-      barFill.setAlpha(0);
+      this._page2Elements.push(barFill);
 
-      // 데미지 수치 텍스트 (바 오른쪽)
-      const dmgText = this.add.text(
-        leftX + barWidth + 6, barY - 1,
-        this._formatNumber(weapon.damage),
-        {
-          fontSize: '10px',
-          fontFamily: 'Galmuri11, monospace',
-          color: UI_COLORS.neonOrange,
-        }
-      ).setOrigin(0, 0).setAlpha(0);
-
-      // 등장 애니메이션
-      this.tweens.add({
-        targets: [nameText, infoText, barBg, barFill, dmgText],
-        alpha: 1,
-        duration: 300,
-        delay: rowDelay,
-      });
+      const dmgText = this.add.text(leftX + barWidth + 6, barY - 2, this._formatNumber(weapon.damage), {
+        fontSize: '10px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonOrange,
+      }).setOrigin(0, 0);
+      this._page2Elements.push(dmgText);
     });
 
-    return curY + displayWeapons.length * rowHeight + Math.round(4 * scale);
+    // 돌아가기 버튼
+    const backY = Math.min(curY + displayWeapons.length * rowHeight + 20, GAME_HEIGHT - 40);
+    const backBtnW = 160;
+    const backBtnH = 36;
+
+    const backBg = this.add.graphics();
+    backBg.fillStyle(UI_COLORS.btnSecondary, 0.8);
+    backBg.fillRoundedRect(centerX - backBtnW / 2, backY - backBtnH / 2, backBtnW, backBtnH, 6);
+    backBg.lineStyle(1, COLORS.NEON_CYAN, 0.4);
+    backBg.strokeRoundedRect(centerX - backBtnW / 2, backY - backBtnH / 2, backBtnW, backBtnH, 6);
+    this._page2Elements.push(backBg);
+
+    const backText = this.add.text(centerX, backY, t('result.backToResult'), {
+      fontSize: '13px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5);
+    this._page2Elements.push(backText);
+
+    const backZone = this.add.zone(centerX, backY, backBtnW, backBtnH).setInteractive({ useHandCursor: true });
+    this._page2Elements.push(backZone);
+
+    backZone.on('pointerdown', () => {
+      this._hideWeaponReportPage();
+    });
+  }
+
+  /**
+   * 무기 리포트 페이지를 닫고 1페이지로 복귀한다.
+   * @private
+   */
+  _hideWeaponReportPage() {
+    if (this._page2Elements) {
+      this._page2Elements.forEach(el => { if (el && el.destroy) el.destroy(); });
+      this._page2Elements = null;
+    }
+    // 1페이지 복원 (인터랙티브 재활성화 포함)
+    this._page1Elements.forEach(el => {
+      if (el && el.setVisible) el.setVisible(true);
+      if (el && el.input && el.setInteractive) el.setInteractive();
+    });
   }
 
   // ── 무기 해금 배너 ──
@@ -799,11 +805,11 @@ export default class ResultScene extends Phaser.Scene {
    * 네온 시안 글로우 텍스트로 해금된 무기명을 표시한다.
    * @param {number} centerX - 중심 X 좌표
    * @param {number} startY - 시작 Y 좌표
-   * @param {number} [scale=1.0] - 레이아웃 압축 배율 (Y 오프셋에 적용)
    * @returns {number} 렌더링 후 다음 Y 좌표
    * @private
    */
-  _renderWeaponUnlockBanner(centerX, startY, scale = 1.0) {
+  _renderWeaponUnlockBanner(centerX, startY) {
+    const scale = 1.0;
     const weaponData = getWeaponById(this.newWeaponUnlocked);
     const weaponName = weaponData ? t(weaponData.nameKey) : this.newWeaponUnlocked;
 
@@ -816,6 +822,7 @@ export default class ResultScene extends Phaser.Scene {
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonGreen,
       }).setOrigin(0.5).setAlpha(0);
+      if (this._page1Elements) this._page1Elements.push(clearText);
 
       this.tweens.add({
         targets: clearText,
@@ -855,6 +862,7 @@ export default class ResultScene extends Phaser.Scene {
         strokeThickness: 1,
       }
     ).setOrigin(0.5).setAlpha(0);
+    if (this._page1Elements) this._page1Elements.push(bannerBg, unlockText);
 
     // 등장 애니메이션 + 글로우 펄스
     this.tweens.add({
@@ -1096,5 +1104,10 @@ export default class ResultScene extends Phaser.Scene {
       pressed = false;
     });
     zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
+
+    // 페이지 전환 시 숨기기 위해 추적
+    if (this._page1Elements) {
+      this._page1Elements.push(bg, text, zone);
+    }
   }
 }

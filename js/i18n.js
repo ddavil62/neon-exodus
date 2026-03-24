@@ -82,6 +82,8 @@ const TRANSLATIONS = {
     'result.retry': '재도전',
     'result.toMenu': '메인 메뉴',
     'result.weaponReport': '무기별 리포트',
+    'result.viewReport': '무기 리포트 ▶',
+    'result.backToResult': '◀ 돌아가기',
     'result.weaponKills': '{0}킬',
     'result.weaponDps': 'DPS {0}',
 
@@ -1195,6 +1197,8 @@ const TRANSLATIONS = {
     'result.retry': 'Retry',
     'result.toMenu': 'Main Menu',
     'result.weaponReport': 'Weapon Report',
+    'result.viewReport': 'Weapon Report ▶',
+    'result.backToResult': '◀ Back',
     'result.weaponKills': '{0} Kills',
     'result.weaponDps': 'DPS {0}',
 
