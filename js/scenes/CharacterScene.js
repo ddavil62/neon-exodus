@@ -166,8 +166,8 @@ export default class CharacterScene extends Phaser.Scene {
     // ── 캐릭터 인디케이터 도트 ──
     this._renderIndicatorDots(centerX, 520, charColor);
 
-    // ── 출격 버튼 활성/비활성 갱신 ──
-    this._updateSortieBtn(isUnlocked);
+    // ── 출격 버튼 활성/비활성 갱신 (캐릭터 대표색 적용) ──
+    this._updateSortieBtn(isUnlocked, charColor, charColorStr);
   }
 
   // ── 초상화 렌더링 ──
@@ -747,21 +747,24 @@ export default class CharacterScene extends Phaser.Scene {
 
   /**
    * 출격 버튼의 활성/비활성 상태를 갱신한다.
+   * 활성 시 캐릭터 대표색으로 테두리+텍스트를 테마 적용한다.
    * @param {boolean} enabled - 활성 여부
+   * @param {number} [charColor=0x00FFFF] - 캐릭터 고유 색상 (hex number)
+   * @param {string} [charColorStr='#00FFFF'] - 캐릭터 색상 CSS 문자열
    * @private
    */
-  _updateSortieBtn(enabled) {
+  _updateSortieBtn(enabled, charColor = COLORS.NEON_CYAN, charColorStr = UI_COLORS.neonCyan) {
     this._sortieEnabled = enabled;
     const { bg, text, x, y, w, h } = this._sortieBtn;
 
     bg.clear();
     if (enabled) {
-      bg.fillStyle(UI_COLORS.btnPrimary, 0.8);
+      bg.fillStyle(charColor, 0.15);
       bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
-      bg.lineStyle(2, COLORS.NEON_CYAN, 0.8);
+      bg.lineStyle(2, charColor, 0.8);
       bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
       text.setAlpha(1);
-      text.setColor(UI_COLORS.neonCyan);
+      text.setColor(charColorStr);
     } else {
       bg.fillStyle(UI_COLORS.btnDisabled, 0.4);
       bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
