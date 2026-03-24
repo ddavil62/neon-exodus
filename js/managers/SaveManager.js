@@ -351,6 +351,15 @@ export class SaveManager {
   }
 
   /**
+   * 개별 설정 값을 반환한다.
+   * @param {string} key - 설정 키
+   * @returns {*} 설정 값 (없으면 undefined)
+   */
+  static getSetting(key) {
+    return SaveManager.getData().settings[key];
+  }
+
+  /**
    * 설정 값을 변경한다.
    * @param {string} key - 설정 키
    * @param {*} value - 설정 값
