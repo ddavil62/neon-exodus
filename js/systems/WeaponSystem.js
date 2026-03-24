@@ -1385,33 +1385,75 @@ export default class WeaponSystem {
    */
   _showArcSlashEffect(px, py, angle, range) {
     const halfArc = (240 * Math.PI / 180) / 2;
+    const r = range * 0.75;
+
+    // ── 1. 외곽 글로우 (넓은 반투명 잔상) ──
+    const glow = this.scene.add.graphics().setDepth(8);
+    glow.lineStyle(18, 0x8844FF, 0.15);
+    glow.beginPath();
+    glow.arc(px, py, r + 6, angle - halfArc, angle + halfArc, false);
+    glow.strokePath();
+
+    this.scene.tweens.add({
+      targets: glow,
+      alpha: 0, duration: 350,
+      onComplete: () => glow.destroy(),
+    });
+
+    // ── 2. 메인 슬래시 궤적 ──
     const g = this.scene.add.graphics().setDepth(9);
 
-    // 외곽 보라 글로우
-    g.lineStyle(10, 0x8844FF, 0.3);
+    // 보라 외곽 호
+    g.lineStyle(8, 0x8844FF, 0.4);
     g.beginPath();
-    g.arc(px, py, range * 0.75, angle - halfArc, angle + halfArc, false);
+    g.arc(px, py, r, angle - halfArc, angle + halfArc, false);
     g.strokePath();
 
-    // 시안 슬래시 코어
-    g.lineStyle(5, 0x00FFFF, 0.6);
+    // 시안 코어 호
+    g.lineStyle(4, 0x00FFFF, 0.7);
     g.beginPath();
-    g.arc(px, py, range * 0.75, angle - halfArc * 0.9, angle + halfArc * 0.9, false);
+    g.arc(px, py, r, angle - halfArc * 0.92, angle + halfArc * 0.92, false);
     g.strokePath();
 
-    // 흰색 하이라이트 (안쪽 궤적)
-    g.lineStyle(2, 0xFFFFFF, 0.8);
+    // 흰색 하이라이트 중심선
+    g.lineStyle(2, 0xFFFFFF, 0.9);
     g.beginPath();
-    g.arc(px, py, range * 0.75, angle - halfArc * 0.75, angle + halfArc * 0.75, false);
+    g.arc(px, py, r, angle - halfArc * 0.8, angle + halfArc * 0.8, false);
     g.strokePath();
 
-    // 페이드 아웃
+    // 메인 궤적 확대+페이드 (칼바람 퍼지는 느낌)
     this.scene.tweens.add({
       targets: g,
-      alpha: 0,
+      scaleX: 1.15, scaleY: 1.15, alpha: 0,
       duration: 250,
       onComplete: () => g.destroy(),
     });
+
+    // ── 3. 파티클 스파크 (궤적 위에 흩뿌림) ──
+    const sparkCount = 8;
+    for (let i = 0; i < sparkCount; i++) {
+      const t = (i / (sparkCount - 1)) * 2 - 1;  // -1 ~ 1
+      const a = angle + t * halfArc * 0.9;
+      const dist = r + (Math.random() - 0.5) * 12;
+      const sx = px + Math.cos(a) * dist;
+      const sy = py + Math.sin(a) * dist;
+
+      const spark = this.scene.add.graphics().setDepth(10);
+      const sparkColor = Math.random() > 0.4 ? 0x00FFFF : 0xBB66FF;
+      spark.fillStyle(sparkColor, 0.9);
+      spark.fillCircle(0, 0, 2 + Math.random() * 2);
+      spark.setPosition(sx, sy);
+
+      this.scene.tweens.add({
+        targets: spark,
+        x: sx + Math.cos(a) * (15 + Math.random() * 10),
+        y: sy + Math.sin(a) * (15 + Math.random() * 10),
+        alpha: 0,
+        scaleX: 0.3, scaleY: 0.3,
+        duration: 200 + Math.random() * 150,
+        onComplete: () => spark.destroy(),
+      });
+    }
   }
 
   // ── 구름(cloud) 타입 업데이트 ──
