@@ -147,8 +147,8 @@ export default class MenuScene extends Phaser.Scene {
     const autoHuntUnlocked = IAPManager.isAutoHuntUnlocked();
 
     if (autoHuntUnlocked) {
-      // 자동사냥 해금됨: 도감/설정 2개만 + 자동사냥 ON 텍스트
-      this._createButton(120, 498, t('menu.collection'), {
+      // 자동사냥 해금됨: 도감/설정 2개 + 자동사냥 ON 텍스트 (넓은 간격)
+      this._createButton(56, 498, t('menu.collection'), {
         width: 96,
         height: 36,
         fontSize: '12px',
@@ -170,7 +170,7 @@ export default class MenuScene extends Phaser.Scene {
         color: UI_COLORS.neonGreen,
       }).setOrigin(0.5);
 
-      this._createButton(240, 498, t('menu.settings'), {
+      this._createButton(304, 498, t('menu.settings'), {
         width: 96,
         height: 36,
         fontSize: '12px',
