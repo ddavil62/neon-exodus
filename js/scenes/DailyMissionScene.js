@@ -50,6 +50,12 @@ export default class DailyMissionScene extends Phaser.Scene {
    * 씬 UI를 생성한다.
    */
   create() {
+    // ── 씬 진입 페이드 ──
+    this.cameras.main.fadeIn(250, 0, 0, 0);
+
+    /** @type {boolean} 씬 전환 중 여부 (중복 전환 방지) */
+    this._transitioning = false;
+
     const centerX = GAME_WIDTH / 2;
 
     // 날짜 체크 → 리셋 필요 시 새 미션 생성
@@ -107,12 +113,29 @@ export default class DailyMissionScene extends Phaser.Scene {
 
     // ── 뒤로가기 버튼 ──
     this._createButton(centerX, 560, t('daily.back'), UI_COLORS.btnSecondary, () => {
-      this.scene.start('MenuScene');
+      this._fadeToScene('MenuScene');
     });
 
     // ── ESC 키로 메뉴 복귀 ──
     this.input.keyboard.on('keydown-ESC', () => {
-      this.scene.start('MenuScene');
+      this._fadeToScene('MenuScene');
+    });
+  }
+
+  // ── 씬 전환 ──
+
+  /**
+   * 페이드 아웃 후 씬을 전환한다.
+   * @param {string} sceneName - 전환할 씬 이름
+   * @param {Object} [data] - 씬에 전달할 데이터
+   * @private
+   */
+  _fadeToScene(sceneName, data) {
+    if (this._transitioning) return;
+    this._transitioning = true;
+    this.cameras.main.fadeOut(200, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start(sceneName, data);
     });
   }
 

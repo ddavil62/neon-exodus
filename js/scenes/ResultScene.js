@@ -110,6 +110,9 @@ export default class ResultScene extends Phaser.Scene {
    * 결과 화면 UI를 생성한다.
    */
   create() {
+    /** @type {boolean} 씬 전환 중 여부 (중복 전환 방지) */
+    this._transitioning = false;
+
     const centerX = GAME_WIDTH / 2;
 
     // ── SaveManager 크레딧/통계 저장 (난이도 배율 적용) ──
@@ -398,7 +401,7 @@ export default class ResultScene extends Phaser.Scene {
     // ── 버튼 ──
     // 다시 도전 버튼
     this._createButton(centerX, retryBtnY, t('result.retry'), UI_COLORS.btnPrimary, () => {
-      this.scene.start('GameScene');
+      this._fadeToScene('GameScene');
     }, 1200);
 
     // 메인 메뉴 버튼 — 클리어 컷신 미시청 시 컷신 재생 후 메뉴로
@@ -488,20 +491,37 @@ export default class ResultScene extends Phaser.Scene {
     });
   }
 
+  // ── 씬 전환 ──
+
+  /**
+   * 페이드 아웃 후 씬을 전환한다.
+   * @param {string} sceneName - 전환할 씬 이름
+   * @param {Object} [data] - 씬에 전달할 데이터
+   * @private
+   */
+  _fadeToScene(sceneName, data) {
+    if (this._transitioning) return;
+    this._transitioning = true;
+    this.cameras.main.fadeOut(200, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start(sceneName, data);
+    });
+  }
+
   /**
    * 메뉴로 이동한다. 대기 중인 클리어 컷신이 있으면 먼저 재생한다.
    * @private
    */
   _goToMenu() {
     if (this._pendingCutscene) {
-      this.scene.start('CutsceneScene', {
+      this._fadeToScene('CutsceneScene', {
         cutsceneId: this._pendingCutscene,
         nextScene: 'MenuScene',
         nextSceneData: {},
       });
       return;
     }
-    this.scene.start('MenuScene');
+    this._fadeToScene('MenuScene');
   }
 
   /** 메뉴 화면으로 돌아간다. */

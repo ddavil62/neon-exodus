@@ -36,6 +36,12 @@ export default class CharacterScene extends Phaser.Scene {
    * 캐릭터 상세 뷰 UI를 생성한다.
    */
   create() {
+    // ── 씬 진입 페이드 ──
+    this.cameras.main.fadeIn(250, 0, 0, 0);
+
+    /** @type {boolean} 씬 전환 중 여부 (중복 전환 방지) */
+    this._transitioning = false;
+
     const centerX = GAME_WIDTH / 2;
 
     // ── 툴팁 상태 초기화 ──
@@ -696,6 +702,23 @@ export default class CharacterScene extends Phaser.Scene {
     zone.on('pointerout', () => { text.setAlpha(1); });
   }
 
+  // ── 씬 전환 ──
+
+  /**
+   * 페이드 아웃 후 씬을 전환한다.
+   * @param {string} sceneName - 전환할 씬 이름
+   * @param {Object} [data] - 씬에 전달할 데이터
+   * @private
+   */
+  _fadeToScene(sceneName, data) {
+    if (this._transitioning) return;
+    this._transitioning = true;
+    this.cameras.main.fadeOut(200, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start(sceneName, data);
+    });
+  }
+
   // ── 뒤로가기 ──
 
   /**
@@ -703,7 +726,7 @@ export default class CharacterScene extends Phaser.Scene {
    * MenuScene에서 진입 시 MenuScene으로, StageSelectScene에서 진입 시 StageSelectScene으로 복귀.
    */
   _onBack() {
-    this.scene.start(this._fromScene);
+    this._fadeToScene(this._fromScene);
   }
 
   // ── 출격 ──
@@ -785,7 +808,7 @@ export default class CharacterScene extends Phaser.Scene {
 
     const selectedDifficulty = SaveManager.getSelectedDifficulty();
     if (!SaveManager.isCutsceneViewed(introId)) {
-      this.scene.start('CutsceneScene', {
+      this._fadeToScene('CutsceneScene', {
         cutsceneId: introId,
         nextScene: 'GameScene',
         nextSceneData: {
@@ -796,7 +819,7 @@ export default class CharacterScene extends Phaser.Scene {
         characterId: charData.id,
       });
     } else {
-      this.scene.start('GameScene', {
+      this._fadeToScene('GameScene', {
         characterId: charData.id,
         stageId: this._stageId,
         difficulty: selectedDifficulty,

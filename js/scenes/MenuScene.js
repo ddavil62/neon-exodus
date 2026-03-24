@@ -25,6 +25,12 @@ export default class MenuScene extends Phaser.Scene {
    * 2열 그리드 + CTA + 보조 버튼 레이아웃으로 시각적 계층을 제공한다.
    */
   create() {
+    // ── 씬 진입 페이드 ──
+    this.cameras.main.fadeIn(250, 0, 0, 0);
+
+    /** @type {boolean} 씬 전환 중 여부 (중복 전환 방지) */
+    this._transitioning = false;
+
     const centerX = GAME_WIDTH / 2;
 
     // ── BGM: 메뉴 BGM 시작 ──
@@ -79,7 +85,7 @@ export default class MenuScene extends Phaser.Scene {
       textColor: UI_COLORS.textPrimary,
       radius: 8,
       callback: () => {
-        this.scene.start('CharacterScene', { fromScene: 'MenuScene' });
+        this._fadeToScene('CharacterScene', { fromScene: 'MenuScene' });
       },
     });
 
@@ -97,7 +103,7 @@ export default class MenuScene extends Phaser.Scene {
       radius: 8,
       disabled: !upgradeUnlocked,
       callback: () => {
-        this.scene.start('UpgradeScene');
+        this._fadeToScene('UpgradeScene');
       },
     });
 
@@ -113,7 +119,7 @@ export default class MenuScene extends Phaser.Scene {
       textColor: UI_COLORS.textPrimary,
       radius: 8,
       callback: () => {
-        this.scene.start('AchievementScene');
+        this._fadeToScene('AchievementScene');
       },
     });
 
@@ -133,7 +139,7 @@ export default class MenuScene extends Phaser.Scene {
       textColor: UI_COLORS.textPrimary,
       radius: 8,
       callback: () => {
-        this.scene.start('DailyMissionScene');
+        this._fadeToScene('DailyMissionScene');
       },
     });
 
@@ -153,7 +159,7 @@ export default class MenuScene extends Phaser.Scene {
         textColor: UI_COLORS.textSecondary,
         radius: 6,
         callback: () => {
-          this.scene.start('CollectionScene');
+          this._fadeToScene('CollectionScene');
         },
       });
 
@@ -175,7 +181,7 @@ export default class MenuScene extends Phaser.Scene {
         textColor: UI_COLORS.textSecondary,
         radius: 6,
         callback: () => {
-          this.scene.start('SettingsScene');
+          this._fadeToScene('SettingsScene');
         },
       });
     } else {
@@ -191,7 +197,7 @@ export default class MenuScene extends Phaser.Scene {
         textColor: UI_COLORS.textSecondary,
         radius: 6,
         callback: () => {
-          this.scene.start('CollectionScene');
+          this._fadeToScene('CollectionScene');
         },
       });
 
@@ -224,7 +230,7 @@ export default class MenuScene extends Phaser.Scene {
         textColor: UI_COLORS.textSecondary,
         radius: 6,
         callback: () => {
-          this.scene.start('SettingsScene');
+          this._fadeToScene('SettingsScene');
         },
       });
     }
@@ -248,13 +254,13 @@ export default class MenuScene extends Phaser.Scene {
       callback: () => {
         SoundSystem.resume();
         if (!SaveManager.isCutsceneViewed('prologue')) {
-          this.scene.start('CutsceneScene', {
+          this._fadeToScene('CutsceneScene', {
             cutsceneId: 'prologue',
             nextScene: 'StageSelectScene',
             nextSceneData: {},
           });
         } else {
-          this.scene.start('StageSelectScene');
+          this._fadeToScene('StageSelectScene');
         }
       },
     });
@@ -355,6 +361,23 @@ export default class MenuScene extends Phaser.Scene {
         msg.destroy();
       });
     }
+  }
+
+  // ── 씬 전환 ──
+
+  /**
+   * 페이드 아웃 후 씬을 전환한다.
+   * @param {string} sceneName - 전환할 씬 이름
+   * @param {Object} [data] - 씬에 전달할 데이터
+   * @private
+   */
+  _fadeToScene(sceneName, data) {
+    if (this._transitioning) return;
+    this._transitioning = true;
+    this.cameras.main.fadeOut(200, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start(sceneName, data);
+    });
   }
 
   // ── 뒤로가기 ──

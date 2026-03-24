@@ -49,6 +49,12 @@ export default class CollectionScene extends Phaser.Scene {
    * 도감 화면 UI를 생성한다.
    */
   create() {
+    // ── 씬 진입 페이드 ──
+    this.cameras.main.fadeIn(250, 0, 0, 0);
+
+    /** @type {boolean} 씬 전환 중 여부 (중복 전환 방지) */
+    this._transitioning = false;
+
     /** 현재 선택된 탭 인덱스 */
     this._currentTab = 0;
 
@@ -85,9 +91,24 @@ export default class CollectionScene extends Phaser.Scene {
     this._renderList();
   }
 
+  /**
+   * 페이드 아웃 후 씬을 전환한다.
+   * @param {string} sceneName - 전환할 씬 이름
+   * @param {Object} [data] - 씬에 전달할 데이터
+   * @private
+   */
+  _fadeToScene(sceneName, data) {
+    if (this._transitioning) return;
+    this._transitioning = true;
+    this.cameras.main.fadeOut(200, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start(sceneName, data);
+    });
+  }
+
   /** 메뉴 화면으로 돌아간다. */
   _onBack() {
-    this.scene.start('MenuScene');
+    this._fadeToScene('MenuScene');
   }
 
   // ── 탭 ──
