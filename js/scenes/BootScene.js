@@ -178,6 +178,12 @@ export default class BootScene extends Phaser.Scene {
       this.load.image(`portrait_${id}`, `assets/portraits/${id}.png`);
     }
 
+    // ── 궁극기 이펙트 6종 (512x512, 캐릭터별 액티브 스킬 연출) ──
+    const ULT_CHAR_IDS = ['agent', 'sniper', 'engineer', 'berserker', 'medic', 'hidden'];
+    for (const id of ULT_CHAR_IDS) {
+      this.load.image(`ult_${id}`, `assets/effects/ult_${id}.png`);
+    }
+
     // ── Phase 4 이펙트 스프라이트 10종 ──
     const EFFECT_IDS = ['projectile', 'plasma_orb', 'missile', 'explosion',
       'drone', 'emp_ring', 'force_slash', 'nano_cloud', 'vortex', 'reaper_blade'];

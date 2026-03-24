@@ -3324,6 +3324,10 @@ export default class GameScene extends Phaser.Scene {
     this._ultActive = true;
     this._ultDurationRemaining = rData.dur || 0;
     this._ultCooldownRemaining = rData.cd || 60;
+    this._ultMaxCooldown = rData.cd || 60;
+
+    // ── 공통 연출: 슬로모션 + 카메라 셰이크 + 이펙트 오버레이 ──
+    this._playUltimateVFX();
 
     switch (this.characterId) {
       case 'agent': {
@@ -3406,5 +3410,106 @@ export default class GameScene extends Phaser.Scene {
         break;
       }
     }
+  }
+
+  // ── 궁극기 시각 연출 ──
+
+  /**
+   * 궁극기 발동 시 공통 시각 연출을 재생한다.
+   * 슬로모션(0.3초) → 이펙트 이미지 오버레이 → 카메라 셰이크 → 페이드아웃.
+   * @private
+   */
+  _playUltimateVFX() {
+    const charColor = CHARACTER_COLORS[this.characterId] || 0x00FFFF;
+    const effectKey = `ult_${this.characterId}`;
+
+    // ── 1. 슬로모션 (0.3초간 시간 감속) ──
+    this.time.timeScale = 0.2;
+    this.physics.world.timeScale = 5; // physics는 역수
+    this.time.delayedCall(300, () => {
+      this.time.timeScale = 1;
+      this.physics.world.timeScale = 1;
+    });
+
+    // ── 2. 화면 플래시 오버레이 ──
+    const flash = this.add.graphics().setScrollFactor(0).setDepth(500);
+    flash.fillStyle(charColor, 0.4);
+    flash.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      duration: 400,
+      onComplete: () => flash.destroy(),
+    });
+
+    // ── 3. 이펙트 이미지 오버레이 ──
+    if (this.textures.exists(effectKey)) {
+      const px = this.player.sprite ? this.player.sprite.x : GAME_WIDTH / 2;
+      const py = this.player.sprite ? this.player.sprite.y : GAME_HEIGHT / 2;
+
+      const effectImg = this.add.image(px, py, effectKey)
+        .setDepth(450)
+        .setScale(0.1)
+        .setAlpha(0.9);
+
+      // 확대 등장
+      this.tweens.add({
+        targets: effectImg,
+        scale: 1.2,
+        duration: 250,
+        ease: 'Back.easeOut',
+        onComplete: () => {
+          // 유지 후 페이드아웃
+          this.tweens.add({
+            targets: effectImg,
+            alpha: 0,
+            scale: 1.5,
+            duration: 500,
+            delay: 200,
+            onComplete: () => effectImg.destroy(),
+          });
+        },
+      });
+    }
+
+    // ── 4. 카메라 셰이크 ──
+    this.cameras.main.shake(400, 0.025);
+
+    // ── 5. 스킬명 텍스트 표시 ──
+    const skillNames = {
+      agent: 'TACTICAL STRIKE',
+      sniper: 'KILL ZONE',
+      engineer: 'ORBITAL CANNON',
+      berserker: 'RAGE NOVA',
+      medic: 'BIO PURGE',
+      hidden: 'VOID RIFT',
+    };
+    const colorStr = '#' + charColor.toString(16).padStart(6, '0');
+    const nameText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80, skillNames[this.characterId] || 'ULTIMATE', {
+      fontSize: '20px',
+      fontFamily: 'Galmuri11, monospace',
+      color: colorStr,
+      stroke: '#000000',
+      strokeThickness: 4,
+      shadow: { offsetX: 0, offsetY: 0, color: colorStr, blur: 16, fill: true },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(510).setAlpha(0).setScale(0.5);
+
+    this.tweens.add({
+      targets: nameText,
+      alpha: 1,
+      scale: 1.2,
+      duration: 200,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: nameText,
+          alpha: 0,
+          y: nameText.y - 30,
+          duration: 600,
+          delay: 400,
+          onComplete: () => nameText.destroy(),
+        });
+      },
+    });
   }
 }
