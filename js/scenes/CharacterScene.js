@@ -196,10 +196,25 @@ export default class CharacterScene extends Phaser.Scene {
       this._dynamicElements.push(bgImg);
     }
 
-    // 캐릭터 스프라이트
+    // 컷씬 포트레이트 (좌측 반신 초상화)
+    const portraitKey = `portrait_${charData.id}`;
+    if (this.textures.exists(portraitKey)) {
+      const portrait = this.add.image(x - 55, y - 5, portraitKey)
+        .setOrigin(0.5)
+        .setDisplaySize(130, 130);
+      if (!isUnlocked) {
+        portrait.setTint(COLORS.DARK_GRAY);
+        portrait.setAlpha(0.3);
+      }
+      this._dynamicElements.push(portrait);
+    }
+
+    // 인게임 SD 스프라이트 (우측 전신)
     const spriteKey = charData.spriteKey;
     if (this.textures.exists(spriteKey)) {
-      const sprite = this.add.image(x, y, spriteKey).setOrigin(0.5).setScale(2.0);
+      const sprite = this.add.image(x + 70, y + 15, spriteKey)
+        .setOrigin(0.5)
+        .setScale(3.0);
       if (!isUnlocked) {
         sprite.setTint(COLORS.DARK_GRAY);
         sprite.setAlpha(0.5);
