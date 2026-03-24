@@ -147,16 +147,24 @@ export const STAGE_ORDER = ['stage_1', 'stage_2', 'stage_3', 'stage_4'];
  * @type {Object.<string, {id: string, labelKey: string, hpMult: number, atkMult: number, spdMult: number, creditMult: number, dcReward: number, color: string, colorHex: number}>}
  */
 export const DIFFICULTY_MODES = {
-  normal:    { id: 'normal',    labelKey: 'difficulty.normal',    hpMult: 1.0, atkMult: 1.0, spdMult: 1.0, creditMult: 1.0, dcReward: 3, color: '#4FC3F7', colorHex: 0x4FC3F7 },
-  hard:      { id: 'hard',      labelKey: 'difficulty.hard',      hpMult: 1.8, atkMult: 1.5, spdMult: 1.1, creditMult: 1.5, dcReward: 5, color: '#FF8A65', colorHex: 0xFF8A65 },
-  nightmare: { id: 'nightmare', labelKey: 'difficulty.nightmare', hpMult: 3.0, atkMult: 2.0, spdMult: 1.2, creditMult: 2.5, dcReward: 8, color: '#EF5350', colorHex: 0xEF5350 },
+  normal:    { id: 'normal',    labelKey: 'difficulty.normal',    hpMult: 1.0, atkMult: 1.0, spdMult: 1.0, creditMult: 1.0, dcBonus: 0, color: '#4FC3F7', colorHex: 0x4FC3F7 },
+  hard:      { id: 'hard',      labelKey: 'difficulty.hard',      hpMult: 1.8, atkMult: 1.5, spdMult: 1.1, creditMult: 1.5, dcBonus: 1, color: '#FF8A65', colorHex: 0xFF8A65 },
+  nightmare: { id: 'nightmare', labelKey: 'difficulty.nightmare', hpMult: 3.0, atkMult: 2.0, spdMult: 1.2, creditMult: 2.5, dcBonus: 2, color: '#EF5350', colorHex: 0xEF5350 },
 };
 
 /** 난이도 진행 순서 */
 export const DIFFICULTY_ORDER = ['normal', 'hard', 'nightmare'];
 
-/** 사망 시 데이터코어 보상 */
-export const DC_REWARD_DEATH = 1;
+/** 승리 시 기본 DC 보상 (스테이지/난이도 보너스가 더해짐) */
+export const DC_REWARD_BASE = 3;
+
+/** 스테이지별 DC 보너스 (뒤로 갈수록 +1씩 증가) */
+export const STAGE_DC_BONUS = {
+  stage_1: 0,
+  stage_2: 1,
+  stage_3: 2,
+  stage_4: 3,
+};
 
 /**
  * 스테이지 ID로 스테이지 데이터를 조회한다.

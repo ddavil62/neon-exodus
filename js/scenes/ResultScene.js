@@ -13,7 +13,7 @@ import { DailyMissionManager } from '../managers/DailyMissionManager.js';
 import { MetaManager } from '../managers/MetaManager.js';
 import { AdManager } from '../managers/AdManager.js';
 import { getWeaponById } from '../data/weapons.js';
-import { STAGES, DIFFICULTY_MODES, DC_REWARD_DEATH } from '../data/stages.js';
+import { STAGES, DIFFICULTY_MODES, DC_REWARD_BASE, STAGE_DC_BONUS } from '../data/stages.js';
 import { CHARACTERS } from '../data/characters.js';
 import { CHARACTER_COLORS, getXpForNextLevel, MAX_CHAR_LEVEL } from '../data/characterSkills.js';
 
@@ -122,11 +122,11 @@ export default class ResultScene extends Phaser.Scene {
     const adjustedCredits = this._adjustedCredits;
     SaveManager.addCredits(adjustedCredits);
 
-    // 데이터코어 보상
+    // 데이터코어 보상 — 승리 시에만 지급, 스테이지/난이도별 보너스 가산
     const dcReward = this.victory
-      ? (DIFFICULTY_MODES[this.difficulty]?.dcReward || 3)
-      : DC_REWARD_DEATH;
-    SaveManager.addDataCores(dcReward);
+      ? DC_REWARD_BASE + (STAGE_DC_BONUS[this.stageId] || 0) + (DIFFICULTY_MODES[this.difficulty]?.dcBonus || 0)
+      : 0;
+    if (dcReward > 0) SaveManager.addDataCores(dcReward);
 
     // 통계 갱신
     SaveManager.updateStats('totalRuns', 1);

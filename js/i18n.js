@@ -65,6 +65,7 @@ const TRANSLATIONS = {
     'difficulty.nightmare': '나이트메어',
     'difficulty.locked': '{0} 클리어 필요',
     'difficulty.reward': '보상 x{0} | DC +{1}',
+    'difficulty.dcInfo': '승리 보상: DC +{0}',
 
     // ── 결과 화면 ──
     'result.victory': 'RUN CLEAR!',
@@ -1174,6 +1175,7 @@ const TRANSLATIONS = {
     'difficulty.nightmare': 'Nightmare',
     'difficulty.locked': 'Clear {0} first',
     'difficulty.reward': 'Reward x{0} | DC +{1}',
+    'difficulty.dcInfo': 'Victory Reward: DC +{0}',
 
     // ── Result ──
     'result.victory': 'RUN CLEAR!',

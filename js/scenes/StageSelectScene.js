@@ -9,7 +9,7 @@
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
 import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
-import { STAGES, STAGE_ORDER, DIFFICULTY_MODES, DIFFICULTY_ORDER } from '../data/stages.js';
+import { STAGES, STAGE_ORDER, DIFFICULTY_MODES, DIFFICULTY_ORDER, DC_REWARD_BASE, STAGE_DC_BONUS } from '../data/stages.js';
 
 // ── 레이아웃 상수 ──
 
@@ -398,14 +398,18 @@ export default class StageSelectScene extends Phaser.Scene {
       }
     });
 
-    // ── 보상 정보 텍스트 (선택된 난이도 기준) ──
+    // ── 보상 정보 텍스트 (선택된 스테이지+난이도 기준) ──
     const selMode = DIFFICULTY_MODES[this._selectedDifficulty];
-    if (selMode && this._selectedDifficulty !== 'normal') {
-      const rewardStr = t('difficulty.reward', selMode.creditMult, selMode.dcReward);
+    if (selMode) {
+      const totalDc = DC_REWARD_BASE + (STAGE_DC_BONUS[this._selectedId] || 0) + (selMode.dcBonus || 0);
+      const rewardColor = this._selectedDifficulty !== 'normal' ? selMode.color : UI_COLORS.textSecondary;
+      const rewardStr = this._selectedDifficulty !== 'normal'
+        ? t('difficulty.reward', selMode.creditMult, totalDc)
+        : t('difficulty.dcInfo', totalDc);
       const rewardText = this.add.text(cardCenterX, btnY + btnH / 2 + 6, rewardStr, {
         fontSize: '9px',
         fontFamily: 'Galmuri11, monospace',
-        color: selMode.color,
+        color: rewardColor,
       }).setOrigin(0.5);
       this._container.add(rewardText);
     }
