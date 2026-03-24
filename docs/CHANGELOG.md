@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-03-24 -- CharacterScene 스킬 투자 버튼 + 롱탭 설명 툴팁 (Phase 4)
+
+### 추가
+- `js/scenes/CharacterScene.js`: 각 Q/W/E/R 행 우측에 [+1] 투자 버튼 추가 (318, rowY+8, zone 44x28, depth 10)
+  - 활성 조건: sp >= 1, lv < maxLevel, R 슬롯은 canInvestUlt 추가 체크
+  - 활성 시 neonCyan alpha 1.0, 비활성 시 textSecondary alpha 0.3
+  - 활성 버튼만 interactive zone 생성 (비활성 시 탭 불가)
+- `js/scenes/CharacterScene.js`: `_onSkillInvest(charId, slot)` 메서드 추가 -- SaveManager.allocateSkillPoint() 호출 + SoundSystem.play('levelup') + _refreshDisplay()
+- `js/scenes/CharacterScene.js`: 롱탭 감지 zone (150 center, 270x28, depth 0) -- 500ms delayedCall, pointermove |dy|>5px 취소
+- `js/scenes/CharacterScene.js`: `_showSkillTooltip(skill, lv, worldY)` 메서드 추가 -- depth 1000 오버레이 패널 (280px, cornerRadius 8, NEON_CYAN 1px 테두리), blocker zone depth 999
+- `js/scenes/CharacterScene.js`: `_hideSkillTooltip()` 메서드 추가 -- 요소 일괄 destroy + 상태 초기화
+
+### 변경
+- `js/scenes/CharacterScene.js`: 레벨 텍스트 X 위치 330 -> 290으로 이동 (투자 버튼 공간 확보)
+- `js/scenes/CharacterScene.js`: R 잠금 텍스트 lockStr X 위치 330 -> 290으로 이동
+- `js/scenes/CharacterScene.js`: 인디케이터 도트 색상 하드코딩 -> COLORS.TEXT_GRAY 상수 사용
+- `js/scenes/CharacterScene.js`: `create()`에 `_tooltipElements`/`_tooltipVisible` 상태 초기화 추가
+- `js/scenes/CharacterScene.js`: `_refreshDisplay()`에 `_hideSkillTooltip()` 호출 추가 (캐릭터 전환 시 기존 툴팁 정리)
+
+### 수정
+- `js/scenes/CharacterScene.js`: blocker zone에 pointerdown + pointerup 핸들러 모두 추가 (Phase 3.6 QA BUG-1 수정 -- 손가락을 떼도 툴팁이 닫히지 않던 문제)
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-24-skill-invest-tooltip-purpose.md`
+- 스펙: `.claude/specs/2026-03-24-skill-invest-tooltip.md`
+- 구현 리포트: `.claude/specs/2026-03-24-skill-invest-tooltip-report.md`
+- QA: `.claude/specs/2026-03-24-skill-invest-tooltip-qa.md`
+- QA 결과: 수용기준 5/5, 예외 시나리오 15/15 PASS, Playwright 40/40 전체 통과, 시각 검증 14장 통과
+- 변경 파일: `js/scenes/CharacterScene.js` 1개 (722줄 -> 913줄)
+- 스펙 대비 차이:
+  - 효과음 키: 스펙 `SoundSystem.play('upgrade')` -> 구현 `SoundSystem.play('levelup')` -- SoundSystem에 'upgrade' 키 미등록, 기존 'levelup' 키로 대체
+- 알려진 이슈 (LOW): delayedCall 타이머가 zone destroy 후 this.time에 남아 있을 수 있으나, _hideSkillTooltip + _tooltipVisible 체크로 실질적 문제 없음
+
 ## 2026-03-24 -- CharacterDetailScene (Phase 3: 단일 캐릭터 상세 뷰)
 
 ### 추가

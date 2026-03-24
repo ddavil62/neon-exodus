@@ -38,6 +38,12 @@ export default class CharacterScene extends Phaser.Scene {
   create() {
     const centerX = GAME_WIDTH / 2;
 
+    // ── 툴팁 상태 초기화 ──
+    /** @type {Array<Phaser.GameObjects.GameObject>} 현재 열린 툴팁 요소들 */
+    this._tooltipElements = [];
+    /** @type {boolean} 툴팁 표시 중 여부 */
+    this._tooltipVisible = false;
+
     // ── 배경 ──
     this.cameras.main.setBackgroundColor(COLORS.BG_DARK);
 
@@ -103,6 +109,9 @@ export default class CharacterScene extends Phaser.Scene {
    * @private
    */
   _refreshDisplay() {
+    // 열린 툴팁 닫기
+    this._hideSkillTooltip();
+
     // 기존 동적 요소 제거
     this._dynamicElements.forEach(el => {
       if (el && el.destroy) el.destroy();
@@ -339,24 +348,206 @@ export default class CharacterScene extends Phaser.Scene {
       if (isRLocked) {
         const gate = lv < 3 ? [6, 11, 16][lv] : 16;
         const lockStr = '\uD83D\uDD12 ' + t('skill.locked', gate);
-        const lockLabel = this.add.text(330, rowY, lockStr, {
+        const lockLabel = this.add.text(290, rowY, lockStr, {
           fontSize: '10px',
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.textSecondary,
         }).setOrigin(1, 0).setAlpha(0.6);
         this._dynamicElements.push(lockLabel);
       } else {
-        // 레벨 표시
+        // 레벨 표시 (X=290으로 이동 — 투자 버튼 공간 확보)
         const lvStr = `Lv.${lv}/${skill.maxLevel}`;
         const lvColor = lv >= skill.maxLevel ? UI_COLORS.neonGreen : UI_COLORS.textPrimary;
-        const lvLabel = this.add.text(330, rowY, lvStr, {
+        const lvLabel = this.add.text(290, rowY, lvStr, {
           fontSize: '11px',
           fontFamily: 'Galmuri11, monospace',
           color: lvColor,
         }).setOrigin(1, 0);
         this._dynamicElements.push(lvLabel);
       }
+
+      // ── 투자 버튼 [▲+1] ──
+      const canInvest = prog.sp >= 1
+        && lv < skill.maxLevel
+        && (slot !== 'R' || canInvestUlt(prog.level, lv));
+
+      const btnLabel = this.add.text(318, rowY + 8, '\u25B2+1', {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: canInvest ? UI_COLORS.neonCyan : UI_COLORS.textSecondary,
+      }).setOrigin(0.5).setAlpha(canInvest ? 1.0 : 0.3);
+      this._dynamicElements.push(btnLabel);
+
+      // 투자 가능 시 인터랙티브 zone 추가
+      if (canInvest) {
+        const btnZone = this.add.zone(318, rowY + 8, 44, 28)
+          .setInteractive({ useHandCursor: true })
+          .setDepth(10);
+        let pressed = false;
+        btnZone.on('pointerdown', () => { pressed = true; btnLabel.setAlpha(0.5); });
+        btnZone.on('pointerup', () => {
+          btnLabel.setAlpha(1);
+          if (pressed) this._onSkillInvest(charId, slot);
+          pressed = false;
+        });
+        btnZone.on('pointerout', () => { pressed = false; btnLabel.setAlpha(canInvest ? 1.0 : 0.3); });
+        this._dynamicElements.push(btnZone);
+      }
+
+      // ── 롱탭 감지 zone ──
+      const lpZone = this.add.zone(150, rowY + 8, 270, 28)
+        .setInteractive()
+        .setDepth(0);
+
+      let lpTimer = null;
+      let lpStartY = 0;
+      lpZone.on('pointerdown', (pointer) => {
+        lpStartY = pointer.y;
+        lpTimer = this.time.delayedCall(500, () => {
+          this._showSkillTooltip(skill, lv, rowY);
+          lpTimer = null;
+        });
+      });
+      lpZone.on('pointerup', () => {
+        if (lpTimer) { lpTimer.remove(); lpTimer = null; }
+        if (this._tooltipVisible) this._hideSkillTooltip();
+      });
+      lpZone.on('pointermove', (pointer) => {
+        if (lpTimer && Math.abs(pointer.y - lpStartY) > 5) {
+          lpTimer.remove();
+          lpTimer = null;
+        }
+      });
+      this._dynamicElements.push(lpZone);
     });
+  }
+
+  // ── 스킬 투자 ──
+
+  /**
+   * 스킬 포인트를 해당 슬롯에 투자한다.
+   * @param {string} charId - 캐릭터 ID
+   * @param {string} slot - 스킬 슬롯 ('Q'|'W'|'E'|'R')
+   * @private
+   */
+  _onSkillInvest(charId, slot) {
+    const success = SaveManager.allocateSkillPoint(charId, slot);
+    if (success) {
+      SoundSystem.play('levelup');
+      this._refreshDisplay();
+    }
+  }
+
+  // ── 스킬 툴팁 ──
+
+  /**
+   * 스킬 설명 툴팁을 표시한다.
+   * 배경 패널 + 스킬명 + 레벨 + 설명 텍스트를 depth 1000에 렌더링한다.
+   * lv === 0이면 Lv.1 미리보기 안내를 추가한다.
+   * @param {Object} skill - 스킬 정의 객체 (CHARACTER_SKILLS[charId][slot])
+   * @param {number} lv - 현재 스킬 레벨
+   * @param {number} worldY - 스킬 행의 Y 좌표
+   * @private
+   */
+  _showSkillTooltip(skill, lv, worldY) {
+    // 기존 툴팁 닫기
+    if (this._tooltipVisible) this._hideSkillTooltip();
+
+    this._tooltipElements = [];
+    this._tooltipVisible = true;
+
+    const centerX = GAME_WIDTH / 2;
+
+    // blocker zone (depth 999) — 툴팁 외부 터치 시 닫기
+    const blocker = this.add.zone(centerX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT)
+      .setInteractive()
+      .setDepth(999);
+    blocker.on('pointerdown', () => this._hideSkillTooltip());
+    blocker.on('pointerup', () => this._hideSkillTooltip());
+    this._tooltipElements.push(blocker);
+
+    // 설명 텍스트 결정 (lv0이면 Lv.1 미리보기)
+    const descIndex = lv > 0 ? lv - 1 : 0;
+    const descKey = skill.levels[descIndex]?.descKey;
+    const descText = descKey ? t(descKey) : '';
+    const isPreview = lv === 0;
+
+    // 높이 측정용 임시 텍스트
+    const measureText = this.add.text(0, 0, descText, {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      wordWrap: { width: 256 },
+    }).setVisible(false);
+    const descHeight = measureText.height;
+    measureText.destroy();
+
+    // 패널 높이 계산 (padding + name + gap + desc + padding)
+    let panelH = 12 + 18 + 4 + descHeight + 12;
+    if (isPreview) panelH += 16; // 미리보기 안내 텍스트 공간
+    panelH = Math.max(60, panelH);
+
+    // 위치 계산 — 기본 위쪽, 상단 넘침(< 10) 시 아래쪽
+    let tooltipY = worldY - panelH - 8;
+    if (tooltipY < 10) tooltipY = worldY + 32;
+
+    // 배경 패널
+    const bg = this.add.graphics().setDepth(1000);
+    bg.fillStyle(COLORS.UI_PANEL, 0.95);
+    bg.fillRoundedRect(centerX - 140, tooltipY, 280, panelH, 8);
+    bg.lineStyle(1, COLORS.NEON_CYAN, 0.6);
+    bg.strokeRoundedRect(centerX - 140, tooltipY, 280, panelH, 8);
+    this._tooltipElements.push(bg);
+
+    // 스킬명
+    const nameText = this.add.text(centerX - 128, tooltipY + 10, t(skill.nameKey), {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+    }).setDepth(1001);
+    this._tooltipElements.push(nameText);
+
+    // 레벨 표시
+    const lvStr = `Lv.${lv}/${skill.maxLevel}`;
+    const lvText = this.add.text(centerX + 128, tooltipY + 10, lvStr, {
+      fontSize: '10px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+    }).setOrigin(1, 0).setDepth(1001);
+    this._tooltipElements.push(lvText);
+
+    // 설명 텍스트
+    const descColor = isPreview ? UI_COLORS.textSecondary : UI_COLORS.textPrimary;
+    const desc = this.add.text(centerX - 128, tooltipY + 28, descText, {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      color: descColor,
+      wordWrap: { width: 256 },
+    }).setDepth(1001);
+    this._tooltipElements.push(desc);
+
+    // lv0 미리보기 안내
+    if (isPreview) {
+      const previewLabel = this.add.text(centerX - 128, tooltipY + 28 + descHeight + 4, t('skill.tooltip.preview'), {
+        fontSize: '10px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.textSecondary,
+      }).setDepth(1001).setAlpha(0.7);
+      this._tooltipElements.push(previewLabel);
+    }
+  }
+
+  /**
+   * 열려 있는 스킬 설명 툴팁을 닫는다.
+   * 모든 툴팁 요소를 destroy하고 상태를 초기화한다.
+   * @private
+   */
+  _hideSkillTooltip() {
+    if (!this._tooltipElements) return;
+    this._tooltipElements.forEach(el => {
+      if (el && el.destroy) el.destroy();
+    });
+    this._tooltipElements = [];
+    this._tooltipVisible = false;
   }
 
   // ── 인디케이터 도트 ──
@@ -381,7 +572,7 @@ export default class CharacterScene extends Phaser.Scene {
       const dotX = startX + i * dotGap;
       const isCurrent = i === this._currentIndex;
       const isUnlocked = SaveManager.isCharacterUnlocked(charData.id) || !charData.unlockCondition;
-      const dotColor = CHARACTER_COLORS[charData.id] || 0x888888;
+      const dotColor = CHARACTER_COLORS[charData.id] || COLORS.TEXT_GRAY;
 
       if (isCurrent) {
         // 현재 캐릭터: 밝은 채움 원

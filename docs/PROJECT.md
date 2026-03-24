@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-24 (CharacterDetailScene Phase 3 -- 단일 캐릭터 상세 뷰)
+> 최종 업데이트: 2026-03-24 (CharacterScene Phase 4 -- 스킬 투자 버튼 + 롱탭 설명 툴팁)
 
 ## 프로젝트 개요
 
@@ -57,7 +57,7 @@ neon-exodus/
 │   │   ├── MenuScene.js           # 메인 메뉴 (프로시저럴 배경 + 하단 그라디언트 오버레이, 2열 그리드: 캐릭터(fromScene:'MenuScene')/업그레이드/도전과제/일일미션, 보조 행: 도감/자동사냥/설정, CTA 출격)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
-│   │   ├── CharacterScene.js      # 캐릭터 상세 뷰 (단일 캐릭터 초상화+글로우 배경, 이름/레벨/XP/패시브/스킬 요약, 좌우 화살표 전환, 인디케이터 도트, fromScene 분기 뒤로가기)
+│   │   ├── CharacterScene.js      # 캐릭터 상세 뷰 (단일 캐릭터 초상화+글로우 배경, 이름/레벨/XP/패시브/스킬 요약+투자 버튼+롱탭 설명 툴팁, 좌우 화살표 전환, 인디케이터 도트, fromScene 분기 뒤로가기)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, 무기/패시브 인포 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑/파괴 가능 데코)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
 │   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
@@ -255,7 +255,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 일일 미션 매니저 | `js/managers/DailyMissionManager.js` | UTC 자정 리셋, 날짜 시드 PRNG로 3개 미션 선택, 런 결과 기반 진행도 추적, 보상 수령, streak 연속 출석 |
 | 일일 미션 데이터 | `js/data/dailyMissions.js` | 32종 미션 풀 (5카테고리), 전체 완료 보너스/streak 보너스/주기 상수 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
-| 캐릭터 상세 뷰 | `js/scenes/CharacterScene.js` | 단일 캐릭터 상세 뷰 (초상화+글로우 배경, 이름/레벨/XP바/패시브/스킬 요약), 좌우 화살표 순환 전환, 잠금 캐릭터 실루엣+해금 조건, 인디케이터 도트, fromScene 기반 뒤로가기 분기, 출격 |
+| 캐릭터 상세 뷰 | `js/scenes/CharacterScene.js` | 단일 캐릭터 상세 뷰 (초상화+글로우 배경, 이름/레벨/XP바/패시브/스킬 요약+[+1] 투자 버튼+롱탭 설명 툴팁), 좌우 화살표 순환 전환, 잠금 캐릭터 실루엣+해금 조건, 인디케이터 도트, fromScene 기반 뒤로가기 분기, 출격 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 114개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
 | 일일 미션 씬 | `js/scenes/DailyMissionScene.js` | 미션 카드 3개(진행바/수령 버튼), 전체 완료 보너스, streak, 리셋 타이머 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/진화) |
@@ -1073,14 +1073,23 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 레벨업 시 팡파레 연출 + "스킬포인트 +N 획득!" 알림
 - DC=0인 런에서는 UI 건너뜀
 
-##### 스킬 요약 표시 (CharacterScene -- Phase 3 상세 뷰)
-- 스킬 4행 읽기 전용 표시: [Q]/[W]/[E]/[R] 슬롯 라벨(30,Y, 11px neonCyan) + 스킬명(60,Y, 11px) + 레벨(330,Y, 11px 우측 정렬)
+##### 스킬 요약 + 투자 + 툴팁 (CharacterScene -- Phase 3~4 상세 뷰)
+- 스킬 4행: [Q]/[W]/[E]/[R] 슬롯 라벨(30,Y, 11px neonCyan) + 스킬명(60,Y, 11px) + 레벨(290,Y, 11px 우측 정렬) + [+1] 투자 버튼(318,rowY+8, 12px)
 - Y 좌표: Q=384, W=416, E=448, R=480
 - "스킬" 라벨 (30, 362, 13px neonCyan)
 - SP 배지 (330, 362, 11px gold #FFD700, 배경 goldBg #333300) -- sp > 0일 때만 표시
+- 투자 버튼 [+1]: zone 44x28 depth 10. 활성(neonCyan alpha 1.0) / 비활성(textSecondary alpha 0.3)
+  - 활성 조건: sp >= 1 && lv < maxLevel && (R 슬롯: canInvestUlt(charLevel, lv))
+  - 탭 시: SaveManager.allocateSkillPoint() + SoundSystem.play('levelup') + _refreshDisplay()
+- 롱탭 설명 툴팁: 스킬 행(투자 버튼 제외) 500ms 롱탭 시 오버레이 표시
+  - 감지 zone: 270x28 depth 0, pointermove |dy|>5px 시 취소
+  - 패널: depth 1000, 280px, COLORS.UI_PANEL alpha 0.95, NEON_CYAN 1px 테두리, cornerRadius 8
+  - lv=0: levels[0].descKey + "(Lv.1 미리보기)" 안내
+  - lv>=1: levels[lv-1].descKey 현재 레벨 설명
+  - blocker zone: depth 999, 360x640, pointerdown + pointerup 모두 _hideSkillTooltip() (BUG-1 수정)
 - R 스킬 잠금 표시: lv < maxLevel && !canInvestUlt(charLevel, lv) 시 "Lv.N에서 해금" (R 만렙 시에는 정상적으로 "Lv.3/3" 녹색 표시)
 - 만렙 스킬: neonGreen 색상으로 "Lv.N/max" 표시
-- [+1] 투자 버튼 및 롱탭 설명 툴팁은 Phase 4에서 구현 예정
+- 인디케이터 도트 색상: CHARACTER_COLORS[charId] || COLORS.TEXT_GRAY (하드코딩 제거, 상수 사용)
 
 ##### 궁극기 HUD (GameScene)
 - 위치: 우하단 (X: GAME_WIDTH-40, Y: GAME_HEIGHT-140), 56x56px
