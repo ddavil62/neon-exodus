@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-24 (메인 메뉴 레이아웃 개편 Phase 1)
+> 최종 업데이트: 2026-03-24 (메인 메뉴 배경 일러스트 + 그라디언트 오버레이 Phase 2)
 
 ## 프로젝트 개요
 
@@ -53,8 +53,8 @@ neon-exodus/
 │   ├── i18n.js                    # 한국어/영어 번역
 │   ├── main.js                    # Phaser 게임 인스턴스 생성
 │   ├── scenes/
-│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종 + 장식 오브젝트 16종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 배경 타일 128x128 4종 프로시저럴 패턴(_generateBackgroundTile + _regenerateTileTexture), 장식 오브젝트 16종 프로시저럴 폴백(_generateDecoTextures), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
-│   │   ├── MenuScene.js           # 메인 메뉴 (2열 그리드: 캐릭터/업그레이드/도전과제/일일미션, 보조 행: 도감/자동사냥/설정, CTA 출격)
+│   │   ├── BootScene.js           # 에셋 로드(벡터 PNG 20종 image + 6종 캐릭터 idle/walk 12개 spritesheet + Phase 2 아트 에셋 24종 + Phase 4 이펙트 10종 + 장식 오브젝트 16종), 플레이스홀더 폴백, 진화 전용 이펙트 텍스처 10종 코드 생성(_generateEvolvedEffectTextures), 배경 타일 128x128 4종 프로시저럴 패턴(_generateBackgroundTile + _regenerateTileTexture), 장식 오브젝트 16종 프로시저럴 폴백(_generateDecoTextures), 메뉴 배경 프로시저럴 생성(_generateMenuBackground: 시티스케이프 5레이어), 6종x5방향=30개 걷기 anim 등록, SoundSystem 초기화, 저장된 BGM/SFX/햅틱 설정 반영
+│   │   ├── MenuScene.js           # 메인 메뉴 (프로시저럴 배경 + 하단 그라디언트 오버레이, 2열 그리드: 캐릭터/업그레이드/도전과제/일일미션, 보조 행: 도감/자동사냥/설정, CTA 출격)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
 │   │   ├── CharacterScene.js      # 캐릭터 선택 화면 (해금/잠금, 고유 패시브, 스킬 롱탭 설명 툴팁)
@@ -110,7 +110,7 @@ neon-exodus/
 │   │   ├── bg_tile_s2.png         # 128x128 산업 지구 바닥 seamless 타일 (S2, GPT Image API, Phase 3)
 │   │   ├── bg_tile_s3.png         # 128x128 서버 팜 바닥 seamless 타일 (S3, GPT Image API, Phase 3)
 │   │   ├── bg_tile_s4.png         # 128x128 에너지 코어 바닥 타일 (S4, GPT Image API, Phase 3)
-│   │   └── menu_bg.png            # 360x640 사이버 도시 실루엣 배경 (GPT Image API)
+│   │   └── menu_bg.png            # 360x640 사이버 도시 실루엣 배경 (GPT Image API, Phase 2에서 프로시저럴 생성으로 대체됨 -- BootScene._generateMenuBackground()가 로드 후 제거+재생성)
 │   ├── ui/
 │   │   ├── joystick/              # 조이스틱 UI 이미지 (SVG 직접 생성)
 │   │   │   ├── base.png           # 128x128 홀로그램 동심원 베이스
@@ -1273,10 +1273,12 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 진입: MenuScene "설정" 버튼 탭 -> scene.start('SettingsScene')
 - 복귀: 뒤로가기 버튼, ESC 키, Android 하드웨어 백버튼 -> scene.start('MenuScene')
 
-#### MenuScene 레이아웃 (2열 그리드 + CTA + 보조 버튼, Phase 1 개편)
+#### MenuScene 레이아웃 (2열 그리드 + CTA + 보조 버튼, Phase 1 개편 + Phase 2 배경)
 
 ```
-360x640 뷰포트
+360x640 뷰포트 (레이어 스택: 배경 depth -1 → 오버레이 depth 0 → UI depth 기본)
+├── 배경: menu_bg 프로시저럴 텍스처, (180, 320), 360x640, depth -1
+├── 그라디언트 오버레이: Y=300~640, COLORS.BG alpha 0→0.85, depth 0
 ├── 타이틀: (180, 52), 36px, neonCyan
 ├── 부제: (180, 88), 14px, textSecondary
 │
@@ -1304,6 +1306,23 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 - 그리드 버튼: btnPrimary 배경, NEON_CYAN 테두리 1px, radius 8
 - 보조 버튼: btnSecondary 배경, UI_BORDER 테두리 1px, radius 6
 - CTA 버튼: btnPrimary 배경 alpha 0.9, NEON_CYAN 테두리 2px, radius 10, glowColor NEON_CYAN alpha 0.15
+
+#### 메뉴 배경 (BootScene._generateMenuBackground, Phase 2)
+
+프로시저럴 네온 시티스케이프 배경. BootScene.create()에서 Canvas 기반으로 360x640 텍스처를 생성하고, 기존 menu_bg PNG를 제거 후 동일 키로 교체한다.
+
+5개 레이어 구성:
+1. **하늘 그라디언트**: 4단계 색상 보간 (0x060620 → 0x0E0A2A → 0x1A0E3A → 0x0A0A1A, Y=0~250~500~640)
+2. **별/입자**: 흰색 점 18개 (alpha 0.3~0.7, 1~2px), 시안/마젠타 네온 점 6개 (alpha 0.25~0.4), Y=0~300 영역
+3. **네온 시티 스카이라인**: 빌딩 실루엣 11개 (0x0D0D25, skylineBase Y=380), 네온 탑 라인 6개 (시안/마젠타 alpha 0.6), 창문 점 (40% 확률 점등, 3x3px)
+4. **지면 반사**: 빌딩 반전 (alpha 0.15, 높이 40% 또는 최대 80px), 수평 네온 라인 3개 (Y=395/420/450, alpha 0.08)
+5. **하단 암전**: Y=380~640, 0x0A0A1A alpha 0→0.9
+
+MenuScene 오버레이: Y=300~640 범위에서 COLORS.BG(0x0A0A1A) alpha 0→0.85 그라디언트. depth 0으로 배경 위, UI 아래에 렌더링되어 하단 버튼 영역 가독성 확보.
+
+- 관련 파일: `js/scenes/BootScene.js`, `js/scenes/MenuScene.js`
+- 구현 일자: 2026-03-24
+- 스펙 문서: `.claude/specs/2026-03-24-menu-bg-illustration.md`
 
 #### 초기화 (BootScene)
 - SoundSystem.init(settings) 호출 후, settings.bgmEnabled === false 시 setBgmEnabled(false) 호출

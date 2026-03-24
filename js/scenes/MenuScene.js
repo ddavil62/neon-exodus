@@ -33,12 +33,19 @@ export default class MenuScene extends Phaser.Scene {
     // ── 배경 ──
     this.cameras.main.setBackgroundColor(COLORS.BG);
 
-    // menu_bg 텍스처 존재 시 배경 이미지 렌더링 (Group B)
+    // 메뉴 배경 이미지 렌더링 (프로시저럴 생성 또는 PNG 폴백)
     if (this.textures.exists('menu_bg')) {
       this.add.image(centerX, GAME_HEIGHT / 2, 'menu_bg')
         .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-        .setAlpha(0.85)
         .setDepth(-1);
+    }
+
+    // 하단 그라디언트 오버레이 (버튼 영역 가독성 확보)
+    const overlay = this.add.graphics().setDepth(0);
+    for (let y = 300; y < GAME_HEIGHT; y++) {
+      const alpha = Math.min(((y - 300) / (GAME_HEIGHT - 300)) * 0.85, 0.85);
+      overlay.fillStyle(COLORS.BG, alpha);
+      overlay.fillRect(0, y, GAME_WIDTH, 1);
     }
 
     // ── 타이틀 영역 ──

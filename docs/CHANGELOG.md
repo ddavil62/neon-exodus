@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-03-24 -- 메인 메뉴 배경 일러스트 + 그라디언트 오버레이 (Phase 2)
+
+### 추가
+- `js/scenes/BootScene.js`: `_generateMenuBackground()` 메서드 추가 -- 360x640 프로시저럴 네온 시티스케이프 배경 텍스처 생성 (5레이어: 하늘 그라디언트, 별/입자, 빌딩 스카이라인 11개, 지면 반사, 하단 암전)
+- `js/scenes/MenuScene.js`: 하단 그라디언트 오버레이 추가 (Y=300~640, COLORS.BG alpha 0~0.85, depth 0) -- 버튼 영역 가독성 확보
+
+### 변경
+- `js/scenes/BootScene.js`: `create()`에 `_generateMenuBackground()` 호출 추가. 기존 `menu_bg` PNG 로드 후 `textures.remove()` + `generateTexture()` 동일 키 교체
+- `js/scenes/MenuScene.js`: 배경 `setAlpha(0.85)` 제거 (alpha 기본값 1.0 사용, BootScene 내 하단 암전이 대체)
+- `js/scenes/MenuScene.js`: 배경 이미지 depth -1, 오버레이 depth 0 명시 설정
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-24-menu-bg-illustration-purpose.md`
+- 스펙: `.claude/specs/2026-03-24-menu-bg-illustration.md`
+- 구현 리포트: `.claude/specs/2026-03-24-menu-bg-illustration-report.md`
+- QA: `.claude/specs/2026-03-24-menu-bg-illustration-qa.md`
+- QA 결과: 수용기준 4/4, 예외 시나리오 5/5, Playwright 23/23 전체 PASS, 시각 검증 5장 통과
+- 변경 파일: `js/scenes/BootScene.js`, `js/scenes/MenuScene.js` 총 2개
+- 스펙 대비 차이:
+  - 텍스처 키: 스펙 `menu_bg_proc` (폴백 로직) -> 구현 `menu_bg` (기존 제거 후 동일 키 교체) -- 코드 단순화
+  - 배경 alpha: 스펙 `setAlpha(0.9)` -> 구현 alpha 없음 (기본 1.0), BootScene 하단 암전 레이어가 대체
+  - 하늘 그라디언트: 스펙 2단계(Y=0~200, 200~400) -> 구현 4단계(Y=0~250, 250~500, 500~640) -- 세분화
+  - 하단 암전: 스펙 Y=400~640 -> 구현 Y=380~640 -- 스카이라인 베이스(Y=380)와 정합
+- LOW 이슈 2건 (기능 영향 없음): 하단 암전 0x0A0A1A 하드코딩 (COLORS.BG 사용 권장), UI/오버레이 동일 depth 0 (명시적 depth 설정 권장)
+
 ## 2026-03-24 -- 메인 메뉴 레이아웃 개편 (Phase 1)
 
 ### 변경

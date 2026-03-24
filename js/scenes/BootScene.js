@@ -217,6 +217,9 @@ export default class BootScene extends Phaser.Scene {
     // 배경 타일 텍스처 생성
     this._generateBackgroundTile();
 
+    // 메인 메뉴 배경 텍스처 생성
+    this._generateMenuBackground();
+
     // 장식 오브젝트 텍스처 생성 (PNG 미로드 시 폴백)
     this._generateDecoTextures();
 
@@ -847,6 +850,151 @@ export default class BootScene extends Phaser.Scene {
         }
       }
     });
+  }
+
+  /**
+   * 메인 메뉴 배경 텍스처를 프로시저럴 생성한다.
+   * 네온 사이버펑크 시티스케이프: 하늘 그라디언트 + 별 + 빌딩 스카이라인 + 지면 반사.
+   * @private
+   */
+  _generateMenuBackground() {
+    const W = 360, H = 640;
+    const gfx = this.add.graphics();
+
+    // 1. 하늘 그라디언트 (줄 단위)
+    for (let y = 0; y < H; y++) {
+      // 상단 0x060620 → 중간(Y=250) 0x0E0A2A → 하단(Y=500) 0x1A0E3A → 맨아래 0x0A0A1A
+      let r, g, b;
+      if (y < 250) {
+        const t = y / 250;
+        r = Math.floor(0x06 + (0x0E - 0x06) * t);
+        g = Math.floor(0x06 + (0x0A - 0x06) * t);
+        b = Math.floor(0x20 + (0x2A - 0x20) * t);
+      } else if (y < 500) {
+        const t = (y - 250) / 250;
+        r = Math.floor(0x0E + (0x1A - 0x0E) * t);
+        g = Math.floor(0x0A + (0x0E - 0x0A) * t);
+        b = Math.floor(0x2A + (0x3A - 0x2A) * t);
+      } else {
+        const t = (y - 500) / 140;
+        r = Math.floor(0x1A + (0x0A - 0x1A) * t);
+        g = Math.floor(0x0E + (0x0A - 0x0E) * t);
+        b = Math.floor(0x3A + (0x1A - 0x3A) * t);
+      }
+      const color = (r << 16) | (g << 8) | b;
+      gfx.fillStyle(color, 1);
+      gfx.fillRect(0, y, W, 1);
+    }
+
+    // 2. 별/입자 (상단 영역 Y=0~300)
+    // 작은 흰색 점 18개
+    const starPositions = [
+      [45, 20], [120, 35], [200, 15], [280, 40], [330, 25],
+      [70, 80], [160, 65], [250, 90], [310, 70], [30, 130],
+      [140, 120], [220, 140], [290, 110], [50, 200], [180, 180],
+      [260, 210], [340, 190], [100, 250]
+    ];
+    for (const [sx, sy] of starPositions) {
+      const alpha = 0.3 + Math.abs(Math.sin(sx * 0.1 + sy * 0.05)) * 0.4;
+      const size = (sx + sy) % 3 === 0 ? 2 : 1;
+      gfx.fillStyle(0xFFFFFF, alpha);
+      gfx.fillRect(sx, sy, size, size);
+    }
+
+    // 시안/마젠타 점 6개
+    const neonDots = [
+      [85, 50, 0x00FFFF], [175, 100, 0xFF00FF], [260, 60, 0x00FFFF],
+      [310, 150, 0xFF00FF], [40, 170, 0x00FFFF], [230, 230, 0xFF00FF]
+    ];
+    for (const [nx, ny, nc] of neonDots) {
+      gfx.fillStyle(nc, 0.25 + Math.abs(Math.sin(nx * 0.05)) * 0.15);
+      gfx.fillRect(nx, ny, 2, 2);
+    }
+
+    // 3. 네온 시티 스카이라인 (빌딩 실루엣)
+    // 각 빌딩: [x, width, height, hasNeonTop, neonColor, windowColor]
+    const buildings = [
+      [0,   35, 180, true,  0x00FFFF, 0x00FFFF],
+      [30,  28, 220, false, 0,        0xFF6600],
+      [55,  40, 160, true,  0xFF00FF, 0x00FFFF],
+      [90,  25, 200, false, 0,        0xFF00FF],
+      [110, 50, 240, true,  0x00FFFF, 0x00FFFF],
+      [155, 30, 170, false, 0,        0xFF6600],
+      [180, 45, 210, true,  0xFF00FF, 0xFF00FF],
+      [220, 35, 190, false, 0,        0x00FFFF],
+      [250, 28, 230, true,  0x00FFFF, 0x00FFFF],
+      [275, 40, 165, false, 0,        0xFF6600],
+      [310, 50, 200, true,  0xFF00FF, 0xFF00FF],
+    ];
+
+    const skylineBase = 380; // 빌딩 하단 Y
+
+    for (const [bx, bw, bh, hasNeon, neonCol, winCol] of buildings) {
+      const by = skylineBase - bh;
+
+      // 빌딩 몸체 (어두운 실루엣)
+      gfx.fillStyle(0x0D0D25, 0.95);
+      gfx.fillRect(bx, by, bw, bh);
+
+      // 빌딩 윤곽선 (미묘한 보라)
+      gfx.lineStyle(1, 0x1A1A3E, 0.4);
+      gfx.strokeRect(bx, by, bw, bh);
+
+      // 네온 탑 라인
+      if (hasNeon) {
+        gfx.fillStyle(neonCol, 0.6);
+        gfx.fillRect(bx + 2, by, bw - 4, 3);
+        // 글로우
+        gfx.fillStyle(neonCol, 0.15);
+        gfx.fillRect(bx - 2, by - 4, bw + 4, 8);
+      }
+
+      // 창문 (작은 점 무작위 배치)
+      const winRows = Math.floor(bh / 20);
+      const winCols = Math.floor(bw / 12);
+      for (let wr = 0; wr < winRows; wr++) {
+        for (let wc = 0; wc < winCols; wc++) {
+          // 약 40% 확률로 창문 켜짐 (시드 기반)
+          const seed = (bx * 7 + wr * 13 + wc * 31) % 100;
+          if (seed < 40) {
+            const wx = bx + 4 + wc * 12;
+            const wy = by + 8 + wr * 20;
+            gfx.fillStyle(winCol, 0.15 + (seed % 20) * 0.01);
+            gfx.fillRect(wx, wy, 3, 3);
+          }
+        }
+      }
+    }
+
+    // 4. 지면 반사 (Y=380~500) — 빌딩 반전 효과
+    for (const [bx, bw, bh] of buildings) {
+      const reflectH = Math.min(bh * 0.4, 80);
+      // 반사 빌딩 (더 어둡고 투명)
+      gfx.fillStyle(0x0D0D25, 0.15);
+      gfx.fillRect(bx, skylineBase, bw, reflectH);
+    }
+
+    // 수평 네온 반사 라인
+    gfx.lineStyle(1, 0x00FFFF, 0.08);
+    gfx.lineBetween(0, 395, W, 395);
+    gfx.lineStyle(1, 0xFF00FF, 0.08);
+    gfx.lineBetween(0, 420, W, 420);
+    gfx.lineStyle(1, 0x00FFFF, 0.08);
+    gfx.lineBetween(0, 450, W, 450);
+
+    // 5. 하단 암전 (Y=380~640) — BG 색상으로 페이드 (Y=500에서 alpha≈0.90)
+    for (let y = 380; y < H; y++) {
+      const alpha = Math.min(((y - 380) / 120) * 0.9, 0.9);
+      gfx.fillStyle(0x0A0A1A, alpha);
+      gfx.fillRect(0, y, W, 1);
+    }
+
+    // 기존 menu_bg 텍스처를 제거하고 프로시저럴로 교체
+    if (this.textures.exists('menu_bg')) {
+      this.textures.remove('menu_bg');
+    }
+    gfx.generateTexture('menu_bg', W, H);
+    gfx.destroy();
   }
 
   /**
