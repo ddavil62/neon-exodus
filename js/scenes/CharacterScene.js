@@ -387,8 +387,8 @@ export default class CharacterScene extends Phaser.Scene {
       const lv = prog.skills[slot] || 0;
       const isRLocked = slot === 'R' && lv < skill.maxLevel && !canInvestUlt(prog.level, lv);
 
-      // 슬롯 라벨
-      const slotLabel = this.add.text(30, rowY, `[${slot}]`, {
+      // 슬롯 라벨 (순번 표시)
+      const slotLabel = this.add.text(30, rowY, `${i + 1}.`, {
         fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonCyan,
@@ -396,7 +396,7 @@ export default class CharacterScene extends Phaser.Scene {
       this._dynamicElements.push(slotLabel);
 
       // 스킬명
-      const skillName = this.add.text(60, rowY, t(skill.nameKey), {
+      const skillName = this.add.text(50, rowY, t(skill.nameKey), {
         fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.textPrimary,
