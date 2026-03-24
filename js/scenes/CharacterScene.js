@@ -261,8 +261,16 @@ export default class CharacterScene extends Phaser.Scene {
     }).setOrigin(0.5);
     this._dynamicElements.push(xpText);
 
+    // ── DC 통계 ──
+    const dcText = this.add.text(centerX, 320, t('charDetail.totalDc', prog.totalDcEarned || 0), {
+      fontSize: '10px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+    }).setOrigin(0.5);
+    this._dynamicElements.push(dcText);
+
     // ── 패시브 ──
-    const passiveText = this.add.text(centerX, 330, t(charData.passiveKey), {
+    const passiveText = this.add.text(centerX, 344, t(charData.passiveKey), {
       fontSize: '11px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textSecondary,
@@ -324,7 +332,7 @@ export default class CharacterScene extends Phaser.Scene {
    */
   _renderSkillSummary(centerX, charId, prog) {
     // "스킬" 라벨
-    const skillLabel = this.add.text(30, 362, t('charDetail.skills'), {
+    const skillLabel = this.add.text(30, 372, t('charDetail.skills'), {
       fontSize: '13px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonCyan,
@@ -333,7 +341,7 @@ export default class CharacterScene extends Phaser.Scene {
 
     // SP 배지 (sp > 0일 때만)
     if (prog.sp > 0) {
-      const spBadge = this.add.text(330, 362, t('charLevel.sp', prog.sp), {
+      const spBadge = this.add.text(330, 372, t('charLevel.sp', prog.sp), {
         fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.gold,
@@ -348,7 +356,7 @@ export default class CharacterScene extends Phaser.Scene {
     if (!skillDefs) return;
 
     const slots = ['Q', 'W', 'E', 'R'];
-    const rowYPositions = [384, 416, 448, 480];
+    const rowYPositions = [394, 426, 458, 490];
 
     slots.forEach((slot, i) => {
       const skill = skillDefs[slot];

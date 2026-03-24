@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스) 기획서
 
-> 최종 업데이트: 2026-03-24 (CharacterScene Phase 5 -- 스와이프 네비게이션 + 탭 인디케이터)
+> 최종 업데이트: 2026-03-24 (Phase 6 -- 캐릭터별 DC 자동 분배 시스템)
 
 ## 프로젝트 개요
 
@@ -57,10 +57,10 @@ neon-exodus/
 │   │   ├── MenuScene.js           # 메인 메뉴 (프로시저럴 배경 + 하단 그라디언트 오버레이, 2열 그리드: 캐릭터(fromScene:'MenuScene')/업그레이드/도전과제/일일미션, 보조 행: 도감/자동사냥/설정, CTA 출격)
 │   │   ├── SettingsScene.js       # 설정 (BGM/SFX/햅틱 ON/OFF 토글, ESC/뒤로가기 지원)
 │   │   ├── StageSelectScene.js    # 스테이지 선택 화면 (4개 스테이지 카드, 잠금/해금/클리어 상태)
-│   │   ├── CharacterScene.js      # 캐릭터 상세 뷰 (단일 캐릭터 초상화+글로우 배경, 이름/레벨/XP/패시브/스킬 요약+투자 버튼+롱탭 설명 툴팁, 좌우 화살표+스와이프 제스처+도트 탭 전환, 인디케이터 도트, fromScene 분기 뒤로가기)
+│   │   ├── CharacterScene.js      # 캐릭터 상세 뷰 (단일 캐릭터 초상화+글로우 배경, 이름/레벨/XP/DC통계/패시브/스킬 요약+투자 버튼+롱탭 설명 툴팁, 좌우 화살표+스와이프 제스처+도트 탭 전환, 인디케이터 도트, fromScene 분기 뒤로가기)
 │   │   ├── GameScene.js           # 핵심 게임플레이 (전투, HUD, 일시정지, 부활, 진화 모달, 진화 힌트, 엔들리스 모달, 무기/패시브 인포 모달, SFX/VFX, AutoPilot, 보스/미니보스 등장 카메라 연출, 무기 드롭, DroneCompanionSystem 초기화, 배경 장식 오브젝트 배치/래핑/파괴 가능 데코)
 │   │   ├── LevelUpScene.js        # 레벨업 3택 오버레이 (리롤, 새 무기 획득, weaponChoiceBias, 전체 완료 시 스킵)
-│   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
+│   │   ├── ResultScene.js         # 결과/보상 화면 (크레딧/통계 저장, DC 자동 분배 연출, 엔들리스 모드 결과, 콘텐츠 압축 레이아웃)
 │   │   ├── UpgradeScene.js        # 영구 업그레이드 구매 UI (5탭 카드 그리드: 기본/성장/특수/드론/한계돌파)
 │   │   ├── AchievementScene.js    # 도전과제 목록 화면 (114개, 7카테고리, 진행률, 보상 정보)
 │   │   ├── DailyMissionScene.js   # 일일 미션 화면 (미션 카드 3개, 진행바, 보너스, streak, 리셋 타이머)
@@ -84,7 +84,7 @@ neon-exodus/
 │   │   ├── VirtualJoystick.js     # 가상 조이스틱 (Image 텍스처 방식, Graphics 폴백)
 │   │   └── AutoPilotSystem.js     # 자동 사냥 AI 이동 시스템 (긴급 무기 수집 > 위험 회피 > 무기 드롭 > 소모품 > XP 보석 > 적 접근 > 방랑)
 │   ├── managers/
-│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v13, 일일 미션/캐릭터 레벨&스킬/난이도 모드/드론 해금/업그레이드/컷신 포함)
+│   │   ├── SaveManager.js         # 로컬스토리지 세이브/로드 (v14, 일일 미션/캐릭터 레벨&스킬&DC통계/난이도 모드/드론 해금/업그레이드/컷신 포함)
 │   │   ├── DailyMissionManager.js # 일일 미션 매니저 (UTC 자정 리셋, 시드 PRNG, 진행 추적, 보상 수령, streak)
 │   │   ├── HapticManager.js       # 햅틱 진동 관리 (Capacitor, enabled 플래그)
 │   │   ├── MetaManager.js         # 영구 업그레이드 관리
@@ -251,11 +251,11 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 햅틱 | `js/managers/HapticManager.js` | Capacitor Haptics 래퍼, enabled 플래그 제어 |
 | VFX | `js/systems/VFXSystem.js` | Phaser Particles 기반 시각 효과 9종 (기존 6종 + consumableCollect + empBlast + decoBreak), empRing/empBurst 진화 분기 |
 | 캐릭터 스킬 데이터 | `js/data/characterSkills.js` | 6캐릭터 x 4스킬(Q/W/E/R) 정의, CHAR_LEVEL_XP 테이블, ULT_LEVEL_GATES, 유틸리티 함수 |
-| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v13), 크레딧/통계/도감/스테이지 클리어(난이도별)/무기 해금/설정/캐릭터 클리어/미니보스 킬/난이도 선택/캐릭터 레벨&스킬/일일 미션 관리 |
+| 세이브 | `js/managers/SaveManager.js` | 로컬스토리지 영구 저장 (v14), 크레딧/통계/도감/스테이지 클리어(난이도별)/무기 해금/설정/캐릭터 클리어/미니보스 킬/난이도 선택/캐릭터 레벨&스킬&DC통계/일일 미션 관리 |
 | 일일 미션 매니저 | `js/managers/DailyMissionManager.js` | UTC 자정 리셋, 날짜 시드 PRNG로 3개 미션 선택, 런 결과 기반 진행도 추적, 보상 수령, streak 연속 출석 |
 | 일일 미션 데이터 | `js/data/dailyMissions.js` | 32종 미션 풀 (5카테고리), 전체 완료 보너스/streak 보너스/주기 상수 |
 | 업그레이드 | `js/scenes/UpgradeScene.js` | 4탭 카드 그리드 영구 업그레이드 구매/다운그레이드 UI, 카테고리 아이콘 표시 |
-| 캐릭터 상세 뷰 | `js/scenes/CharacterScene.js` | 단일 캐릭터 상세 뷰 (초상화+글로우 배경, 이름/레벨/XP바/패시브/스킬 요약+[+1] 투자 버튼+롱탭 설명 툴팁), 좌우 화살표+스와이프 제스처(30px/0.3px/ms)+도트 탭 순환 전환, 잠금 캐릭터 실루엣+해금 조건, 인디케이터 도트(탭 zone 20x20), fromScene 기반 뒤로가기 분기, 출격 |
+| 캐릭터 상세 뷰 | `js/scenes/CharacterScene.js` | 단일 캐릭터 상세 뷰 (초상화+글로우 배경, 이름/레벨/XP바/DC통계/패시브/스킬 요약+[+1] 투자 버튼+롱탭 설명 툴팁), 좌우 화살표+스와이프 제스처(30px/0.3px/ms)+도트 탭 순환 전환, 잠금 캐릭터 실루엣+해금 조건, 인디케이터 도트(탭 zone 20x20), fromScene 기반 뒤로가기 분기, 출격 |
 | 도전과제 | `js/scenes/AchievementScene.js` | 114개 도전과제 목록 (7카테고리), 진행률/보상 정보 표시 |
 | 일일 미션 씬 | `js/scenes/DailyMissionScene.js` | 미션 카드 3개(진행바/수령 버튼), 전체 완료 보너스, streak, 리셋 타이머 |
 | 도감 | `js/scenes/CollectionScene.js` | 4탭 도감 (무기/패시브/적/진화) |
@@ -1070,18 +1070,28 @@ spawn() -> update() 루프 -> 깜빡임(@7초) -> 소멸(@10초) -> _deactivate(
 | Medic | 회복 배율 1.5~3.5x | 힐 오라 8~5초 | 독 3~5초 | 생명의 파동 (HP회복+피해감소) |
 | Hidden | 무기 데미지 +8~40% | 진화 조건 완화 | 드롭률 +10~30% | 오메가 프로토콜 (전무기 동시 발사+공격 배율) |
 
-##### 경험치 분배 UI (ResultScene)
-- 런 종료 후 DC 보상이 있을 때 "캐릭터 경험치 분배" 섹션 표시
-- 해금된 캐릭터 카드 리스트 (panelH=420, CARD_W=280, CARD_H=48, CARD_GAP=6)
-- 캐릭터 탭 시 해당 캐릭터에 DC 전량 부여
-- 레벨업 시 팡파레 연출 + "스킬포인트 +N 획득!" 알림
-- DC=0인 런에서는 UI 건너뜀
+##### DC 자동 분배 연출 (ResultScene -- Phase 6)
+- 런 종료 시 DC를 플레이한 캐릭터에게 자동 투입 (수동 선택 없음)
+  - `SaveManager.addCharacterXP(characterId, dcReward)` + `SaveManager.addCharacterDcEarned(characterId, dcReward)`
+- 1.5초 후 `_showAutoDistributionUI` 패널 표시 (DC=0인 런에서는 건너뜀)
+  - 반투명 오버레이 (depth 300, 0x000000 alpha 0.7)
+  - 패널: panelW=280, panelH=98(레벨업 없음)/148(레벨업 있음), panelY=200, UI_PANEL alpha 0.95, NEON_CYAN 테두리 2px alpha 0.6, cornerRadius 10
+  - 제목: t('charLevel.autoTitle') "캐릭터 성장" (14px, neonCyan)
+  - 캐릭터명 + DC 투입량: "{이름} +{N} DC" (13px, charColor)
+  - XP 바: 220x8px, 이전→현재 xpRatio 트윈 500ms
+  - 레벨업 시: "Lv.N 달성!" (14px, neonGreen, alpha tween) + "스킬포인트 +N 획득!" (11px, xpYellow)
+- 자동 닫기: 2.5초(레벨업 없음) / 3.5초(레벨업 있음), 오버레이 탭으로 즉시 닫기 가능
+- 만렙 캐릭터: XP=0으로 고정, 패널 자체 생략 (totalDcEarned는 누적)
 
-##### 스킬 요약 + 투자 + 툴팁 (CharacterScene -- Phase 3~4 상세 뷰)
+##### DC 통계 (CharacterScene -- Phase 6)
+- XP 수치 아래에 "투입 DC: {N}" 통계 표시: t('charDetail.totalDc', totalDcEarned || 0) (10px, textSecondary, centerX, Y=320)
+- 패시브 텍스트 Y: 344 (Phase 6 이전 330에서 +14px 이동)
+
+##### 스킬 요약 + 투자 + 툴팁 (CharacterScene -- Phase 3~4~6 상세 뷰)
 - 스킬 4행: [Q]/[W]/[E]/[R] 슬롯 라벨(30,Y, 11px neonCyan) + 스킬명(60,Y, 11px) + 레벨(290,Y, 11px 우측 정렬) + [+1] 투자 버튼(318,rowY+8, 12px)
-- Y 좌표: Q=384, W=416, E=448, R=480
-- "스킬" 라벨 (30, 362, 13px neonCyan)
-- SP 배지 (330, 362, 11px gold #FFD700, 배경 goldBg #333300) -- sp > 0일 때만 표시
+- Y 좌표: Q=394, W=426, E=458, R=490 (Phase 6에서 +10px 조정)
+- "스킬" 라벨 (30, 372, 13px neonCyan)
+- SP 배지 (330, 372, 11px gold #FFD700, 배경 goldBg #333300) -- sp > 0일 때만 표시
 - 투자 버튼 [+1]: zone 44x28 depth 10. 활성(neonCyan alpha 1.0) / 비활성(textSecondary alpha 0.3)
   - 활성 조건: sp >= 1 && lv < maxLevel && (R 슬롯: canInvestUlt(charLevel, lv))
   - 탭 시: SaveManager.allocateSkillPoint() + SoundSystem.play('levelup') + _refreshDisplay()

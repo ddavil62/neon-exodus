@@ -33,12 +33,12 @@ const DEFAULT_SAVE = {
   selectedStage: 'stage_1', // 선택된 스테이지 ID
   characterClears: {},      // { characterId: 클리어 횟수 }
   characterProgression: {   // 캐릭터 레벨 & 스킬 시스템
-    agent:     { xp: 0, level: 1, sp: 0, skills: { Q: 1, W: 0, E: 0, R: 0 } },
-    sniper:    { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
-    engineer:  { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
-    berserker: { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
-    medic:     { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
-    hidden:    { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 } },
+    agent:     { xp: 0, level: 1, sp: 0, skills: { Q: 1, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
+    sniper:    { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
+    engineer:  { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
+    berserker: { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
+    medic:     { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
+    hidden:    { xp: 0, level: 0, sp: 0, skills: { Q: 0, W: 0, E: 0, R: 0 }, totalDcEarned: 0 },
   },
   dailyMissions: {          // 일일 미션 시스템
     date: '',
@@ -659,6 +659,17 @@ export class SaveManager {
   }
 
   /**
+   * 캐릭터의 누적 DC 획득량을 증가시킨다.
+   * @param {string} charId - 캐릭터 ID
+   * @param {number} amount - 추가할 DC 양
+   */
+  static addCharacterDcEarned(charId, amount) {
+    const prog = SaveManager.getCharacterProgression(charId);
+    prog.totalDcEarned = (prog.totalDcEarned || 0) + amount;
+    SaveManager.save();
+  }
+
+  /**
    * 스킬포인트 1개를 소비하여 해당 스킬을 1레벨 올린다.
    * @param {string} charId - 캐릭터 ID
    * @param {string} slot - 스킬 슬롯 ('Q' | 'W' | 'E' | 'R')
@@ -938,6 +949,19 @@ export class SaveManager {
         charsUsedToday: [],
       };
       data.version = 13;
+    }
+
+    // v13 -> v14: 캐릭터별 DC 누적 통계 — totalDcEarned 추가
+    if (data.version < 14) {
+      const chars = ['agent', 'sniper', 'engineer', 'berserker', 'medic', 'hidden'];
+      chars.forEach(id => {
+        if (data.characterProgression?.[id]) {
+          if (data.characterProgression[id].totalDcEarned === undefined) {
+            data.characterProgression[id].totalDcEarned = 0;
+          }
+        }
+      });
+      data.version = 14;
     }
 
     data.version = SAVE_DATA_VERSION;
