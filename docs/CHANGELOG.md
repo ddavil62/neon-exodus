@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-03-24 -- CharacterScene 스와이프 네비게이션 + 탭 인디케이터 (Phase 5)
+
+### 추가
+- `js/scenes/CharacterScene.js`: 씬 레벨 스와이프 제스처 감지 (pointerdown/pointerup 이벤트)
+  - 상태 변수: `_swipeStartX`, `_swipeStartTime`, `_tooltipWasOpenOnDown`
+  - 임계값: 거리 30px 이상 + 속도 0.3px/ms 이상
+  - 좌 스와이프(dx<0) -> 다음 캐릭터(+1), 우 스와이프 -> 이전(-1), 순환 동작
+- `js/scenes/CharacterScene.js`: `_renderIndicatorDots()`에 비현재 도트 탭 zone 추가 (20x20px, pointerup -> _currentIndex 변경 + _refreshDisplay)
+  - 현재 캐릭터 도트는 zone 미생성
+  - zone은 `_dynamicElements`에 push되어 _refreshDisplay 시 자동 정리
+
+### 변경
+- `js/scenes/CharacterScene.js`: 툴팁 가드 방식 변경 -- `_tooltipVisible` 단독 체크에서 `_tooltipWasOpenOnDown` 플래그 병용으로 강화 (QA BUG-1 수정: blocker pointerdown이 먼저 툴팁을 닫아 동일 제스처의 pointerup에서 스와이프 발동되던 문제)
+
+### 참고
+- 목적 정의서: `.claude/specs/2026-03-24-swipe-nav-tab-indicator-purpose.md`
+- 스펙: `.claude/specs/2026-03-24-swipe-nav-tab-indicator.md`
+- QA: `.claude/specs/2026-03-24-swipe-nav-tab-indicator-qa.md`
+- QA 초기 FAIL (AC5 툴팁 열림 중 스와이프 차단 미동작) -> `_tooltipWasOpenOnDown` 플래그 추가로 수정 후 PASS
+- 변경 파일: `js/scenes/CharacterScene.js` 1개
+- 스펙 대비 차이:
+  - `_swiping` 변수: 스펙에 포함 -> 구현에서 제거 (pointerup에서 직접 dx/dt 판단, 기능 동일)
+  - 툴팁 가드: 스펙 `_tooltipVisible` 단독 체크 -> 구현 `_tooltipWasOpenOnDown` 플래그 추가 (QA BUG-1 수정)
+
 ## 2026-03-24 -- CharacterScene 스킬 투자 버튼 + 롱탭 설명 툴팁 (Phase 4)
 
 ### 추가

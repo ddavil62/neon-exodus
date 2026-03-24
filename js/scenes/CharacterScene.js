@@ -90,6 +90,36 @@ export default class CharacterScene extends Phaser.Scene {
     // ── ESC 키로 뒤로가기 ──
     this.input.keyboard.on('keydown-ESC', () => this._onBack());
 
+    // ── 스와이프 제스처 감지 ──
+    /** @type {number} 스와이프 시작 X 좌표 */
+    this._swipeStartX = 0;
+    /** @type {number} 스와이프 시작 시각 */
+    this._swipeStartTime = 0;
+    /** @type {boolean} pointerdown 시점에 툴팁이 열려있었는지 */
+    this._tooltipWasOpenOnDown = false;
+    this.input.on('pointerdown', (pointer) => {
+      this._swipeStartX = pointer.x;
+      this._swipeStartTime = pointer.downTime;
+      this._tooltipWasOpenOnDown = this._tooltipVisible;
+    });
+    this.input.on('pointerup', (pointer) => {
+      // 툴팁이 열려있거나 pointerdown 시점에 열려있었으면 스와이프 무시
+      if (this._tooltipVisible || this._tooltipWasOpenOnDown) return;
+
+      const dx = pointer.x - this._swipeStartX;
+      const dt = pointer.upTime - this._swipeStartTime;
+      if (dt <= 0) return;
+
+      const velocity = Math.abs(dx) / dt;
+      // 임계값: 최소 거리 30px, 최소 속도 0.3px/ms
+      if (Math.abs(dx) >= 30 && velocity >= 0.3) {
+        const direction = dx < 0 ? 1 : -1; // 좌 스와이프 → 다음(+1)
+        const len = this._visibleChars.length;
+        this._currentIndex = (this._currentIndex + direction + len) % len;
+        this._refreshDisplay();
+      }
+    });
+
     // ── 신규 해금 알림 ──
     if (this._newlyUnlocked.length > 0) {
       this._showUnlockNotifications();
@@ -555,6 +585,7 @@ export default class CharacterScene extends Phaser.Scene {
   /**
    * 캐릭터 인디케이터 도트를 렌더링한다.
    * 현재 캐릭터는 밝은 원, 해금 캐릭터는 charColor, 미해금은 dimGray.
+   * 현재 캐릭터가 아닌 도트는 탭하여 해당 캐릭터로 전환할 수 있다.
    * @param {number} centerX - 화면 중심 X
    * @param {number} y - Y 좌표
    * @param {number} currentCharColor - 현재 캐릭터 색상
@@ -586,6 +617,17 @@ export default class CharacterScene extends Phaser.Scene {
         // 미해금: dimGray
         gfx.fillStyle(COLORS.UI_BORDER, 0.5);
         gfx.fillCircle(dotX, y, 4);
+      }
+
+      // 현재 캐릭터가 아닌 도트에 탭 zone 추가
+      if (!isCurrent) {
+        const dotZone = this.add.zone(dotX, y, 20, 20)
+          .setInteractive({ useHandCursor: true });
+        dotZone.on('pointerup', () => {
+          this._currentIndex = i;
+          this._refreshDisplay();
+        });
+        this._dynamicElements.push(dotZone);
       }
     });
   }
