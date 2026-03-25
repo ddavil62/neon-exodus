@@ -84,12 +84,6 @@ export default class CharacterScene extends Phaser.Scene {
     this._createNavArrow(30, 140, '\u25C0', -1);
     this._createNavArrow(330, 140, '\u25B6', 1);
 
-    // ── 하단 버튼 ──
-    // 뒤로가기 버튼 (좌측)
-    this._createBtn(90, 580, t('ui.back'), UI_COLORS.btnSecondary, 100, 40, () => {
-      this._onBack();
-    });
-
     // ── ESC 키로 뒤로가기 ──
     this.input.keyboard.on('keydown-ESC', () => this._onBack());
 
