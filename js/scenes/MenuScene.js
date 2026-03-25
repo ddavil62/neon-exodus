@@ -90,7 +90,7 @@ export default class MenuScene extends Phaser.Scene {
       textColor: UI_COLORS.textPrimary,
       radius: 8,
       callback: () => {
-        this._fadeToScene('CharacterScene', { fromScene: 'MenuScene' });
+        this._fadeToScene('CharacterScene', { stageId: SaveManager.getSelectedStage() || 'stage_1', fromScene: 'MenuScene' });
       },
     });
 
