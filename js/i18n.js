@@ -123,6 +123,7 @@ const TRANSLATIONS = {
 
     // ── 힌트 ──
     'hint.evolutionReady': '{0} MAX! {1} Lv5로 진화!',
+    'hint.evolutionHintTitle': '진화 가능!',
 
     // ── 무기: 블래스터 ──
     'weapon.blaster.name': '블래스터',
@@ -1282,6 +1283,7 @@ const TRANSLATIONS = {
 
     // ── Hints ──
     'hint.evolutionReady': '{0} MAX! Evolves with {1} Lv5!',
+    'hint.evolutionHintTitle': 'Evolution Ready!',
 
     // ── Weapons: Blaster ──
     'weapon.blaster.name': 'Blaster',

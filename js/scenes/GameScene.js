@@ -268,6 +268,9 @@ export default class GameScene extends Phaser.Scene {
     /** 이미 표시한 진화 힌트 ID 세트 (중복 방지) */
     this._shownHints = new Set();
 
+    /** 진화 힌트 팝업 대기 큐 (모달/레벨업 중 발생한 힌트를 순차 표시) */
+    this._evolutionHintQueue = [];
+
     // ── 시스템 초기화 ──
     this.joystick = new VirtualJoystick(this);
 
@@ -1109,8 +1112,8 @@ export default class GameScene extends Phaser.Scene {
           this._showEvolutionPopup(evo);
         }
       } else {
-        // 무기는 Max인데 패시브가 부족(미보유 포함) → 힌트 표시
-        this._showEvolutionHint(evo);
+        // 무기는 Max인데 패시브가 부족(미보유 포함) → 힌트 팝업 표시
+        this._showEvolutionHintModal(evo);
       }
     }
   }
@@ -1245,39 +1248,158 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 무기 Max 달성 시 진화 조건 힌트를 화면 상단에 토스트로 표시한다.
-   * 동일 진화에 대해 한 번만 표시한다.
-   * @param {Object} evo - 진화 레시피 데이터
+   * 무기 Max 달성 시 진화 조건 힌트를 팝업 모달로 표시한다.
+   * 동일 진화에 대해 한 번만 표시하며, 모달/레벨업 중이면 큐에 적재하여 순차 표시한다.
+   * @param {Object} evo - 진화 레시피 데이터 (weaponId, passiveId, resultId 등)
    * @private
    */
-  _showEvolutionHint(evo) {
+  _showEvolutionHintModal(evo) {
     // 이미 힌트를 보여준 진화는 건너뛴다
     if (this._shownHints.has(evo.resultId)) return;
     this._shownHints.add(evo.resultId);
 
+    // 레벨업 중이면 큐에만 적재하고 반환
+    if (this._levelUpActive) {
+      this._evolutionHintQueue.push(evo);
+      return;
+    }
+
+    // 모달이 이미 열려 있으면 큐에 적재 후 반환
+    if (this._modalOpen) {
+      this._evolutionHintQueue.push(evo);
+      return;
+    }
+
+    // 게임 일시정지
+    this.isPaused = true;
+    this.physics.pause();
+    this._modalOpen = true;
+
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
+
+    // 모달 요소를 저장할 배열 (정리 시 사용)
+    const popupElements = [];
+
+    // 무기/패시브 이름 조회
     const weaponName = t(`weapon.${evo.weaponId}.name`);
     const passiveName = t(`passive.${evo.passiveId}.name`);
-    const msg = t('hint.evolutionReady', weaponName, passiveName);
+    const emoji = WEAPON_ICON_MAP[evo.weaponId] || WEAPON_ICON_FALLBACK;
 
-    const hintText = this.add.text(
-      GAME_WIDTH / 2, 30,
-      msg,
-      {
-        fontSize: '12px',
-        fontFamily: 'Galmuri11, monospace',
-        color: UI_COLORS.neonOrange,
-        stroke: '#000000',
-        strokeThickness: 2,
+    // 반투명 검정 오버레이
+    const overlay = this.add.rectangle(
+      centerX, centerY, GAME_WIDTH, GAME_HEIGHT,
+      0x000000, 0.6
+    ).setScrollFactor(0).setDepth(350);
+    popupElements.push(overlay);
+
+    // 중앙 패널 배경 + neonCyan 테두리
+    const panelW = 250;
+    const panelH = 160;
+    const panelX = centerX - panelW / 2;
+    const panelY = centerY - panelH / 2;
+
+    const panelBg = this.add.graphics().setScrollFactor(0).setDepth(351);
+    panelBg.fillStyle(COLORS.UI_PANEL, 0.95);
+    panelBg.fillRoundedRect(panelX, panelY, panelW, panelH, 8);
+    panelBg.lineStyle(2, COLORS.NEON_CYAN, 1);
+    panelBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 8);
+    popupElements.push(panelBg);
+
+    // 타이틀: "진화 가능!"
+    const titleY = centerY - panelH / 2 + 24;
+    const titleText = this.add.text(centerX, titleY, t('hint.evolutionHintTitle'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+      stroke: '#000000',
+      strokeThickness: 1,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(titleText);
+
+    // 아이콘 + 무기 이름 행
+    const headerY = titleY + 28;
+    const iconText = this.add.text(centerX - 50, headerY, emoji, {
+      fontSize: '22px',
+      fontFamily: 'Galmuri11, monospace',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(iconText);
+
+    const nameText = this.add.text(centerX + 10, headerY, weaponName, {
+      fontSize: '16px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonCyan,
+      stroke: '#000000',
+      strokeThickness: 1,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(nameText);
+
+    // "MAX!" 뱃지
+    const badgeY = headerY + 22;
+    const badgeText = this.add.text(centerX, badgeY, 'MAX!', {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.neonOrange,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(352);
+    popupElements.push(badgeText);
+
+    // 조합 안내 문구 (hint.evolutionReady 키 활용)
+    const infoY = badgeY + 20;
+    const infoMsg = t('hint.evolutionReady', weaponName, passiveName);
+    const infoText = this.add.text(centerX, infoY, infoMsg, {
+      fontSize: '11px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textSecondary,
+      wordWrap: { width: 220 },
+      align: 'center',
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(352);
+    popupElements.push(infoText);
+
+    // 닫기 버튼
+    const btnW = 120;
+    const btnH = 36;
+    const btnY = centerY + panelH / 2 - 26;
+
+    const btnBg = this.add.graphics().setScrollFactor(0).setDepth(352);
+    btnBg.fillStyle(COLORS.NEON_CYAN, 0.8);
+    btnBg.fillRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+    popupElements.push(btnBg);
+
+    const btnText = this.add.text(centerX, btnY, t('ui.close'), {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(353);
+    popupElements.push(btnText);
+
+    // 닫기 버튼 인터랙션 Zone
+    const btnZone = this.add.zone(centerX, btnY, btnW, btnH)
+      .setScrollFactor(0).setDepth(353)
+      .setInteractive({ useHandCursor: true });
+
+    btnZone.on('pointerdown', () => {
+      btnText.setAlpha(0.6);
+    });
+    btnZone.on('pointerup', () => {
+      // 모든 모달 요소 제거
+      popupElements.forEach((el) => {
+        if (el && el.destroy) el.destroy();
+      });
+      btnZone.destroy();
+
+      // 게임 재개
+      this.isPaused = false;
+      this.physics.resume();
+      this._modalOpen = false;
+
+      // 큐에 대기 중인 힌트가 있으면 다음 팝업 표시
+      if (this._evolutionHintQueue.length > 0) {
+        const next = this._evolutionHintQueue.shift();
+        this._showEvolutionHintModal(next);
       }
-    ).setOrigin(0.5).setScrollFactor(0).setDepth(250);
-
-    // 2초 후 fade out 후 자동 소멸
-    this.tweens.add({
-      targets: hintText,
-      alpha: 0,
-      duration: 500,
-      delay: 1500,
-      onComplete: () => hintText.destroy(),
+    });
+    btnZone.on('pointerout', () => {
+      btnText.setAlpha(1);
     });
   }
 
