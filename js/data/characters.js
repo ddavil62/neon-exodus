@@ -51,7 +51,7 @@ export const CHARACTERS = [
     },
     unlockCondition: {
       type: 'totalClears',
-      value: 10,
+      value: 5,
     },
     phase: 3,
   },
@@ -89,7 +89,7 @@ export const CHARACTERS = [
     },
     unlockCondition: {
       type: 'totalSurviveMinutes',
-      value: 500,
+      value: 200,
     },
     phase: 3,
   },
