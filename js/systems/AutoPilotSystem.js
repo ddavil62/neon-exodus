@@ -7,6 +7,8 @@
  */
 
 import {
+  GAME_WIDTH,
+  GAME_HEIGHT,
   XP_MAGNET_RADIUS,
   AUTO_HUNT,
 } from '../config.js';
@@ -261,6 +263,9 @@ export default class AutoPilotSystem {
       // 영구 드롭이거나 수명이 긴급 임계 이상이면 무시
       if (item.permanent || item.lifetime > AUTO_HUNT.weaponDropUrgentLifetime) return;
 
+      // 화면 밖 아이템은 무시
+      if (!this._isOnScreen(item.x, item.y)) return;
+
       const dx = item.x - px;
       const dy = item.y - py;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -307,6 +312,9 @@ export default class AutoPilotSystem {
 
     scene.weaponDropPool.forEach((item) => {
       if (!item.active) return;
+
+      // 화면 밖 아이템은 무시
+      if (!this._isOnScreen(item.x, item.y)) return;
 
       const dx = item.x - px;
       const dy = item.y - py;
@@ -355,6 +363,9 @@ export default class AutoPilotSystem {
     scene.consumablePool.forEach((item) => {
       if (!item.active) return;
 
+      // 화면 밖 아이템은 무시
+      if (!this._isOnScreen(item.x, item.y)) return;
+
       const dx = item.x - px;
       const dy = item.y - py;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -402,6 +413,9 @@ export default class AutoPilotSystem {
 
     scene.xpGemPool.forEach((gem) => {
       if (!gem.active) return;
+
+      // 화면 밖 보석은 무시
+      if (!this._isOnScreen(gem.x, gem.y)) return;
 
       const dx = gem.x - px;
       const dy = gem.y - py;
@@ -581,6 +595,21 @@ export default class AutoPilotSystem {
     });
 
     return closestDist;
+  }
+
+  /**
+   * 대상이 현재 화면(카메라 뷰포트) 안에 있는지 판별한다.
+   * @param {number} x - 대상 월드 X 좌표
+   * @param {number} y - 대상 월드 Y 좌표
+   * @returns {boolean} 화면 내 여부
+   * @private
+   */
+  _isOnScreen(x, y) {
+    const halfW = GAME_WIDTH / 2;
+    const halfH = GAME_HEIGHT / 2;
+    const px = this.player.x;
+    const py = this.player.y;
+    return Math.abs(x - px) <= halfW && Math.abs(y - py) <= halfH;
   }
 
   /**
