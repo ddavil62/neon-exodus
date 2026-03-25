@@ -2,7 +2,7 @@
  * @fileoverview Phaser 게임 설정 및 부트. 모든 씬을 등록하고 게임 인스턴스를 생성한다.
  * Phase 5: 멀티 스테이지 + 스테이지별 신규 무기 해금.
  * BootScene → MenuScene ↔ UpgradeScene/StageSelectScene/AchievementScene/CollectionScene,
- * StageSelectScene → CharacterScene → GameScene ↔ LevelUpScene → ResultScene.
+ * StageSelectScene → DeployCharSelectScene → GameScene ↔ LevelUpScene → ResultScene.
  */
 
 import { GAME_WIDTH, GAME_HEIGHT } from './config.js';
@@ -20,6 +20,7 @@ import CollectionScene from './scenes/CollectionScene.js';
 import CutsceneScene from './scenes/CutsceneScene.js';
 import DailyMissionScene from './scenes/DailyMissionScene.js';
 import DroneChipScene from './scenes/DroneChipScene.js';
+import DeployCharSelectScene from './scenes/DeployCharSelectScene.js';
 
 // ── Phaser 게임 설정 ──
 
@@ -30,7 +31,7 @@ const config = {
   height: GAME_HEIGHT,
   backgroundColor: '#0A0A1A',
   parent: 'game',
-  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene, CutsceneScene, DailyMissionScene, DroneChipScene],
+  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, DeployCharSelectScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene, CutsceneScene, DailyMissionScene, DroneChipScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
