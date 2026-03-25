@@ -90,9 +90,6 @@ export default class CharacterScene extends Phaser.Scene {
       this._onBack();
     });
 
-    // 출격 버튼 (우측) — 동적으로 활성/비활성 전환
-    this._sortieBtn = this._createSortieBtn(270, 580);
-
     // ── ESC 키로 뒤로가기 ──
     this.input.keyboard.on('keydown-ESC', () => this._onBack());
 
@@ -172,8 +169,6 @@ export default class CharacterScene extends Phaser.Scene {
     // ── 캐릭터 인디케이터 도트 ──
     this._renderIndicatorDots(centerX, 520, charColor);
 
-    // ── 출격 버튼 활성/비활성 갱신 (캐릭터 대표색 적용) ──
-    this._updateSortieBtn(isUnlocked, charColor, charColorStr);
   }
 
   // ── 초상화 렌더링 ──
@@ -742,104 +737,6 @@ export default class CharacterScene extends Phaser.Scene {
    */
   _onBack() {
     this._fadeToScene(this._fromScene);
-  }
-
-  // ── 출격 ──
-
-  /**
-   * 출격 버튼을 생성한다.
-   * @param {number} x - 중심 X
-   * @param {number} y - 중심 Y
-   * @returns {Object} 버튼 참조 객체 (bg, text, zone)
-   * @private
-   */
-  _createSortieBtn(x, y) {
-    const btnW = 140;
-    const btnH = 40;
-
-    const bg = this.add.graphics();
-    const text = this.add.text(x, y, t('menu.start'), {
-      fontSize: '14px',
-      fontFamily: 'Galmuri11, monospace',
-      color: UI_COLORS.neonCyan,
-    }).setOrigin(0.5);
-
-    const zone = this.add.zone(x, y, btnW, btnH)
-      .setInteractive({ useHandCursor: true });
-
-    let pressed = false;
-    zone.on('pointerdown', () => {
-      if (!this._sortieEnabled) return;
-      pressed = true;
-      text.setAlpha(0.6);
-    });
-    zone.on('pointerup', () => {
-      text.setAlpha(1);
-      if (pressed && this._sortieEnabled) this._onSortie();
-      pressed = false;
-    });
-    zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
-
-    return { bg, text, zone, x, y, w: btnW, h: btnH };
-  }
-
-  /**
-   * 출격 버튼의 활성/비활성 상태를 갱신한다.
-   * 활성 시 캐릭터 대표색으로 테두리+텍스트를 테마 적용한다.
-   * @param {boolean} enabled - 활성 여부
-   * @param {number} [charColor=0x00FFFF] - 캐릭터 고유 색상 (hex number)
-   * @param {string} [charColorStr='#00FFFF'] - 캐릭터 색상 CSS 문자열
-   * @private
-   */
-  _updateSortieBtn(enabled, charColor = COLORS.NEON_CYAN, charColorStr = UI_COLORS.neonCyan) {
-    this._sortieEnabled = enabled;
-    const { bg, text, x, y, w, h } = this._sortieBtn;
-
-    bg.clear();
-    if (enabled) {
-      bg.fillStyle(charColor, 0.15);
-      bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
-      bg.lineStyle(2, charColor, 0.8);
-      bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
-      text.setAlpha(1);
-      text.setColor(charColorStr);
-    } else {
-      bg.fillStyle(UI_COLORS.btnDisabled, 0.4);
-      bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
-      text.setAlpha(0.3);
-      text.setColor(UI_COLORS.textSecondary);
-    }
-  }
-
-  /**
-   * 출격 로직을 실행한다. 기존 CharacterScene의 출격 로직과 동일.
-   * @private
-   */
-  _onSortie() {
-    const charData = this._visibleChars[this._currentIndex];
-    SaveManager.setSelectedCharacter(charData.id);
-    const stageNum = this._stageId.replace('stage_', '');
-    const introId = `stage_${stageNum}_intro`;
-
-    const selectedDifficulty = SaveManager.getSelectedDifficulty();
-    if (!SaveManager.isCutsceneViewed(introId)) {
-      this._fadeToScene('CutsceneScene', {
-        cutsceneId: introId,
-        nextScene: 'GameScene',
-        nextSceneData: {
-          characterId: charData.id,
-          stageId: this._stageId,
-          difficulty: selectedDifficulty,
-        },
-        characterId: charData.id,
-      });
-    } else {
-      this._fadeToScene('GameScene', {
-        characterId: charData.id,
-        stageId: this._stageId,
-        difficulty: selectedDifficulty,
-      });
-    }
   }
 
   // ── 신규 해금 알림 ──
