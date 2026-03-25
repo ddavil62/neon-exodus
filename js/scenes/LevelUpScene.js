@@ -231,7 +231,7 @@ export default class LevelUpScene extends Phaser.Scene {
    * @private
    */
   _skipLevelUp() {
-    this.events.emit('levelupDone', { rerollsLeft: this.rerollsLeft });
+    this.events.emit('levelupDone', { rerollsLeft: this.rerollsLeft, choicesExhausted: true });
     this.scene.resume('GameScene');
     this.scene.stop();
   }

@@ -401,6 +401,9 @@ export default class GameScene extends Phaser.Scene {
     /** 레벨업 씬 활성 상태 (카메라 이펙트 충돌 방지용) */
     this._levelUpActive = false;
 
+    /** 모든 레벨업 선택지 소진 여부 (무기+패시브 전부 맥스 시 true) */
+    this._allChoicesExhausted = false;
+
     // ── 스테이지 무기 맵 배치 ──
     this._placeWeaponOnMap();
 
@@ -520,6 +523,9 @@ export default class GameScene extends Phaser.Scene {
    * 플레이어 레벨업 시 호출된다. LevelUpScene을 오버레이로 띄운다.
    */
   onLevelUp() {
+    // 모든 선택지가 소진되었으면 레벨업 UI를 열지 않는다
+    if (this._allChoicesExhausted) return;
+
     // 레벨업 플래그 ON — 같은 프레임의 보스/미니보스 카메라 이펙트 차단
     this._levelUpActive = true;
 
@@ -550,6 +556,11 @@ export default class GameScene extends Phaser.Scene {
 
       if (data && data.rerollsLeft !== undefined) {
         this.rerollsLeft = data.rerollsLeft;
+      }
+
+      // 선택지 소진 플래그 — 다음 레벨업부터 UI를 열지 않는다
+      if (data && data.choicesExhausted) {
+        this._allChoicesExhausted = true;
       }
       // 무기/패시브 변경 후 진화 조건 체크
       this._tryEvolutionCheck();
