@@ -1,13 +1,13 @@
 # NEON EXODUS (네온 엑소더스)
 
-> 최종 업데이트: 2026-03-24
+> 최종 업데이트: 2026-03-25
 
 ## 개요
 
 SF/사이버펑크 세계관의 뱀서라이크 자동 공격 서바이벌 게임. 조이스틱으로 이동하며 자동 공격으로 적을 처치하고, 레벨업 3택으로 무기/패시브를 강화하여 15분간 생존 후 최종 보스를 격파한다.
 
 - **플랫폼**: Android (Capacitor APK/AAB), 세로 360x640
-- **세이브**: localStorage v14 (마이그레이션 체인 v1~v14)
+- **세이브**: localStorage v15 (마이그레이션 체인 v1~v15)
 
 ## 기술 스택
 
@@ -37,11 +37,12 @@ neon-exodus/
 │   ├── config.js               # 게임 상수, 밸런스, COLORS, UI_COLORS
 │   ├── i18n.js                 # ko/en 다국어 (~390키)
 │   ├── main.js                 # Phaser 인스턴스 생성
-│   ├── scenes/                 # 10개 씬 (아래 씬 흐름 참조)
+│   ├── scenes/                 # 11개 씬 (아래 씬 흐름 참조)
 │   ├── entities/               # Player, Enemy, EnemyTypes, Projectile, Consumable, WeaponDropItem, XPGem
 │   ├── systems/                # ObjectPool, VirtualJoystick, WeaponSystem, DroneCompanionSystem, WaveSystem, SoundSystem, VFXSystem, AutoPilotSystem
+│   │   └── chipStrategies/     # 드론 칩 전략 10종 (Default + 8종 칩 + index 레지스트리)
 │   ├── managers/               # SaveManager, MetaManager, AchievementManager, DailyMissionManager, HapticManager, AdManager, IAPManager
-│   └── data/                   # weapons, enemies, stages, passives, waves, upgrades, consumables, characters, characterSkills, dailyMissions, achievements, droneUpgrades
+│   └── data/                   # weapons, enemies, stages, passives, waves, upgrades, consumables, characters, characterSkills, dailyMissions, achievements, droneUpgrades, droneChips
 ├── assets/                     # sprites/, backgrounds/, ui/ (GPT Image API + SVG 생성)
 ├── scripts/                    # 에셋 생성 스크립트, 빌드 스크립트
 ├── tests/                      # Playwright E2E 테스트
@@ -55,6 +56,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
                │                                                    ↓
                ├── CharacterScene (직접)                       ResultScene
                ├── UpgradeScene
+               ├── DroneChipScene
                ├── AchievementScene
                ├── DailyMissionScene
                ├── CollectionScene
@@ -70,12 +72,13 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 플레이어 | `entities/Player.js` | 캐릭터별 스프라이트, 8방향 걷기, HP/XP, 메타 보너스, 버프 |
 | 적 | `entities/Enemy.js` + `EnemyTypes.js` | 잡몹 10종 + 미니보스 2종 + 보스 6종, 15종 AI 패턴 |
 | 무기 | `systems/WeaponSystem.js` | 10종 무기 타입, 자동 발사, 진화, 킬/데미지 추적 |
-| 드론 | `systems/DroneCompanionSystem.js` | 메타 드론 동반자 (스테이지 2 해금) |
+| 드론 | `systems/DroneCompanionSystem.js` | 메타 드론 동반자 (스테이지 2 해금), Strategy Pattern 기반 칩 행동 위임 |
+| 드론 칩 | `data/droneChips.js` + `systems/chipStrategies/` | 8종 칩 정의, C/B/A/S 등급, 10개 전략 클래스 |
 | 스폰 | `systems/WaveSystem.js` | 시간대별 스폰, 보스 스케줄, 난이도 배율 |
 | 사운드 | `systems/SoundSystem.js` | AudioContext SFX 10종 + BGM 2곡 |
 | VFX | `systems/VFXSystem.js` | Phaser Particles 9종 |
 | AI 이동 | `systems/AutoPilotSystem.js` | 자동 사냥 AI (위험 회피 > 아이템 수집 > 적 접근) |
-| 세이브 | `managers/SaveManager.js` | localStorage v14, 전체 진행 상태 영구 저장 |
+| 세이브 | `managers/SaveManager.js` | localStorage v15, 전체 진행 상태 영구 저장, 드론 칩 CRUD |
 | 메타 | `managers/MetaManager.js` | 영구 업그레이드 구매/다운그레이드/보너스 계산 |
 | 도전과제 | `managers/AchievementManager.js` | 114종 달성 조건 검사/보상 |
 | 일일 미션 | `managers/DailyMissionManager.js` | UTC 자정 리셋, 시드 PRNG 미션 선택, streak |
@@ -115,12 +118,13 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 
 | 기능 | 설명 | 상태 |
 |---|---|---|
-| 재화 2종 | 크레딧(적 드롭/보상) + 데이터코어(난이도 보상/도전과제) | 완료 |
+| 재화 3종 | 크레딧(적 드롭/보상) + 데이터코어(난이도 보상/도전과제) + 칩 가루(분해 획득) | 완료 |
 | 영구 업그레이드 22종 | 4탭(기본/성장/특수/한계돌파), 구매/다운그레이드 | 완료 |
 | 부활 시스템 | 메타 업그레이드로 해금, HP 50% 회복 + 2초 무적 | 완료 |
 | 도전과제 114종 | 7카테고리(kill/survive/clear/weapon/character/growth/explore) | 완료 |
 | 일일 미션 | UTC 자정 리셋, 3개 미션, streak 보너스, 32종 풀 | 완료 |
 | 도감 4탭 | 무기/패시브/적/진화, 자동 등록, 미발견 마스킹 | 완료 |
+| 드론 칩 | 3스테이지 해금, 8종 칩(공격4+유틸4), C/B/A/S 등급, 분해/합성/변환 | 완료 |
 | 자동 사냥 | IAP 영구 해금, AI 자동 이동, 우선순위 기반 | 완료 |
 
 ### UI/HUD
@@ -131,6 +135,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 인벤토리 HUD | 무기(32x32)/패시브(28x28) 슬롯, 탭 시 인포 모달 | 완료 |
 | 레벨업 오버레이 | 3택 카드, 리롤, 전체 완료 시 스킵 | 완료 |
 | 결과 화면 | 무기별 리포트, 난이도 보상, DC 분배 연출, 콘텐츠 압축 | 완료 |
+| 진화 힌트 팝업 | 무기 Max(Lv8) 도달 시 조합 유물 안내 팝업 모달, 큐 기반 순차 표시 | 완료 |
 | 진화/엔들리스 모달 | 게임 일시정지 + 정보 패널 | 완료 |
 | 설정 | BGM/SFX/햅틱 ON/OFF 토글 | 완료 |
 
@@ -165,6 +170,9 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 
 ## 향후 계획
 
+- 드론 칩 상점 (칩 획득 경로)
+- 드론 칩 SFX 추가 ('select', 'explosion' 미등록)
+- 드론 칩 인벤토리 스크롤 개선 (관성 스크롤, 스크롤바)
 - 스토리 컷신 확장
 - 신규 스테이지/보스 추가
 - 폰트 파일 적용 (Galmuri11)

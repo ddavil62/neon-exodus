@@ -1,5 +1,92 @@
 # Changelog
 
+## 2026-03-25 -- 진화 힌트 팝업 모달 교체
+
+### 변경
+- `js/scenes/GameScene.js`: `_showEvolutionHint` (자동 소멸 토스트) 제거, `_showEvolutionHintModal` (팝업 모달)로 교체
+  - `_showWeaponInfoModal`과 동일 스타일 (오버레이, neonCyan 테두리, depth 350-353)
+  - 팝업 내용: 무기 아이콘 + 무기 이름(neonCyan), "MAX!" 뱃지(neonOrange), 조합 유물 안내(textSecondary)
+  - 팝업 열림 시 게임 일시정지 (`isPaused`, `physics.pause()`, `_modalOpen`)
+  - `_evolutionHintQueue` 큐 시스템 추가: `_modalOpen` 또는 `_levelUpActive` 중 발생한 힌트는 큐에 적재, 닫기 시 순차 표시
+  - `_shownHints` 중복 방지 로직 유지
+- `js/scenes/GameScene.js`: `_tryEvolutionCheck` 내 호출을 `_showEvolutionHintModal`로 변경
+- `js/i18n.js`: `hint.evolutionHintTitle` 키 추가 (ko: '진화 가능!', en: 'Evolution Ready!')
+
+### 참고
+- 스펙: `.claude/specs/2026-03-25-neon-exodus-evolution-hint-popup.md`
+- QA: `.claude/specs/2026-03-25-neon-exodus-evolution-hint-popup-qa.md`
+- 알려진 제약: `_showEvolutionPopup` 닫기 핸들러에 `_evolutionHintQueue` 드레인 코드 미포함 (심각도 LOW, 다음 레벨업 시 자연 복구)
+
+## 2026-03-24 -- 드론 칩 시스템
+
+### 추가
+- `js/data/droneChips.js` (신규): 칩 8종 정의 (pierce/multishot/laser/kamikaze/xp_magnet/taunt/repair/radar), C/B/A/S 4등급 체계, 등급별 수치 테이블, 유틸 함수 (getChipDef, getGradeInfo, getNextGrade, UUID 생성)
+- `js/systems/chipStrategies/` (신규 디렉토리): Strategy Pattern 기반 드론 행동 전략 10개 클래스
+  - DefaultStrategy (기존 선회 공격), PierceStrategy (관통), MultishotStrategy (부채꼴 N방향), LaserStrategy (고정 빔 DPS), KamikazeStrategy (돌진+폭발+리스폰), XpMagnetStrategy (XP 젬 흡수), TauntStrategy (적 어그로 유인), RepairStrategy (5초 주기 HP 회복), RadarStrategy (탐지 범위 확장)
+  - `index.js`: chipId -> Strategy 매핑 레지스트리, createStrategy 팩토리 함수
+- `js/scenes/DroneChipScene.js` (신규): 드론 칩 장착/관리 UI 씬
+  - 드론 슬롯 3개 (미보유 드론 잠금 표시)
+  - 4탭: 장착(칩 선택+드론 선택), 분해(복수 선택+가루 획득), 합성(같은 종류+등급 3개->상위), 변환(랜덤 다른 종류)
+  - 칩 카드 80x100px (텍스트 아이콘, 등급 색상 테두리, 장착 뱃지)
+  - 가루 잔액 실시간 표시
+- `js/managers/SaveManager.js`: 칩 CRUD 메서드 14개 추가 (isDroneChipUnlocked, setDroneChipUnlocked, getDroneChipInventory, addChip, removeChip, getEquippedChips, equipChip, unequipChip, getDroneChipDust, addDroneChipDust, dismantleChip, synthesizeChips, convertChip 등)
+- `js/managers/SaveManager.js`: v14->v15 마이그레이션 (droneChipUnlocked, droneChipInventory, droneChipDust, equippedChips 필드 추가, 3스테이지 클리어 이력 시 자동 해금)
+- `js/scenes/ResultScene.js`: stage_3 첫 도전 종료 시 drone_chip_unlock 컷신 발동 + setDroneChipUnlocked() 호출
+- `js/data/story.js`: drone_chip_unlock 컷신 플레이스홀더 (engineer 대사 3줄)
+- `js/main.js`: 디버그 콘솔 함수 4개 (__debugAddChip, __debugAddDust, __debugUnlockDroneChip, __debugChipTestSet)
+- `js/main.js`: DroneChipScene import + Phaser scene 배열 등록
+- `js/i18n.js`: 칩 이름 8종, 설명 8종, UI 라벨 (탭/드론/가루/등급/액션), 메뉴 버튼, 컷신 텍스트 ko/en 추가
+
+### 변경
+- `js/config.js`: SAVE_DATA_VERSION 14->15, 칩 관련 상수 추가 (CHIP_MAX_INVENTORY=30, 카미카제/수리/레이저 설정)
+- `js/systems/DroneCompanionSystem.js`: Strategy Pattern 리팩토링
+  - _droneFire() -> fireDrone() public 추출 (options: pierceCount, overrideDir, damageMultiplier, skipSound)
+  - _findClosestEnemy() -> findClosestEnemy() public 추출
+  - droneHoverAngle getter 추가
+  - init()에서 equippedChips 로딩 + _assignChipStrategies() 전략 할당
+  - update()에서 chipStrategy.execute() 위임
+  - destroy()에서 전략 onDestroy() 호출
+- `js/scenes/MenuScene.js`: droneChipUnlocked 시 조건부 3행 확장 (row0=355, row1=410, 드론칩=465, 보조=505), 시안+마젠타 그라데이션 드론 칩 버튼 (전체 너비 310px 중앙)
+- `js/entities/Enemy.js`: tauntTarget 속성 추가, moveToPlayer()에서 tauntTarget 분기, _resetBehaviorState에서 초기화
+
+### 수정
+- `js/systems/DroneCompanionSystem.js`: findClosestEnemy()에서 `enemy.hp` -> `enemy.currentHp`로 수정 (기존 잠재적 버그, 동작 영향 없었음)
+
+### 등급 수치 테이블
+| 등급 | 색상 | 분해 가루 | 합성 비용 | 합성 입력 | 변환 비용 |
+|---|---|---|---|---|---|
+| C | 회색 #AAAAAA | 1 | 불가 | -- | 2 |
+| B | 시안 #00FFFF | 3 | 5 | 3개 | 6 |
+| A | 마젠타 #FF00FF | 8 | 15 | 3개 | 16 |
+| S | 골드 #FFD700 | 20 | 불가 | -- | 30 |
+
+### 칩 8종
+| ID | 계열 | 행동 | 등급별 핵심 수치 |
+|---|---|---|---|
+| pierce | 공격 | 관통 투사체 | C=2/B=3/A=4/S=5 관통 수 |
+| multishot | 공격 | N방향 동시 발사 (70% 데미지) | C=2/B=3/A=4/S=5 방향 |
+| laser | 공격 | 고정 빔 DPS | C=15/B=25/A=40/S=60 DPS |
+| kamikaze | 공격 | 돌진+폭발+리스폰 | C=60/B=80/A=100/S=130px 반경 |
+| xp_magnet | 유틸 | XP 젬 광역 흡수 (공격 X) | C=150/B=220/A=300/S=400px 반경 |
+| taunt | 유틸 | 적 어그로 드론으로 유인 | C=80/B=120/A=160/S=200px 반경 |
+| repair | 유틸 | 5초 주기 HP 회복 | C=2/B=4/A=7/S=12 회복량 |
+| radar | 유틸 | 탐지 범위 배율 확장 | C=1.3/B=1.6/A=2.0/S=2.5x |
+
+### 참고
+- 스펙: `.claude/specs/2026-03-24-neon-exodus-drone-chip.md`
+- 목적 정의서: `.claude/specs/2026-03-24-neon-exodus-drone-chip-purpose.md`
+- 구현 리포트: `.claude/specs/2026-03-24-neon-exodus-drone-chip-phase1-2-report.md`, `.claude/specs/2026-03-24-neon-exodus-drone-chip-phase3-4-report.md`
+- QA: `.claude/specs/2026-03-24-neon-exodus-drone-chip-qa.md`
+- UI 검수: `.claude/specs/2026-03-24-neon-exodus-drone-chip-ui-review.md`, `.claude/specs/2026-03-24-neon-exodus-drone-chip-ui-review-2.md`
+- 스펙 대비 차이:
+  - xp_magnet 합성 그룹키 파싱: 스펙 `split('_').pop()` -> 구현 `lastIndexOf('_')` (언더스코어 포함 chipId 대응)
+  - KamikazeStrategy 폭발 SFX: 전용 'explosion' 미존재, 'emp_blast' 매핑 (후속 SFX 추가 권장)
+  - 인벤토리 스크롤: pointer drag 기반 구현, 관성 스크롤/스크롤바 미포함 (후속 개선 권장)
+  - findClosestEnemy `enemy.hp` -> `enemy.currentHp` 잠재 버그 수정
+- QA 조건부 PASS: INFO 수준 이슈 3건 (미등록 SFX 무음 처리, 인벤토리 스크롤 미완, 액션 버튼 y=612 하단 근접)
+- 세이브 버전: v14 -> v15
+- 신규 파일 12개, 수정 파일 8개
+
 ## 2026-03-24 -- CharacterScene 스와이프 네비게이션 + 탭 인디케이터 (Phase 5)
 
 ### 추가
