@@ -985,7 +985,7 @@ export default class GameScene extends Phaser.Scene {
       // 일시정지 해제 후 결과 화면 전환
       this.isPaused = false;
       this.physics.resume();
-      this._goToResult(false);
+      this._goToResult(this.isEndlessMode);
     };
 
     // 10초 타임아웃 → 자동 포기
