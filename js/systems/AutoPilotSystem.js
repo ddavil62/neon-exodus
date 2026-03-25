@@ -363,9 +363,6 @@ export default class AutoPilotSystem {
     scene.consumablePool.forEach((item) => {
       if (!item.active) return;
 
-      // 화면 밖 아이템은 무시
-      if (!this._isOnScreen(item.x, item.y)) return;
-
       const dx = item.x - px;
       const dy = item.y - py;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -413,9 +410,6 @@ export default class AutoPilotSystem {
 
     scene.xpGemPool.forEach((gem) => {
       if (!gem.active) return;
-
-      // 화면 밖 보석은 무시
-      if (!this._isOnScreen(gem.x, gem.y)) return;
 
       const dx = gem.x - px;
       const dy = gem.y - py;
