@@ -377,7 +377,11 @@ export default class ResultScene extends Phaser.Scene {
     // ── 버튼 ──
     // 다시 도전 버튼
     this._createButton(centerX, retryBtnY, t('result.retry'), UI_COLORS.btnPrimary, () => {
-      this._fadeToScene('GameScene');
+      this._fadeToScene('GameScene', {
+        stageId: this.stageId,
+        characterId: this.characterId,
+        difficulty: this.difficulty,
+      });
     }, 1200);
 
     // 메인 메뉴 버튼 — 클리어 컷신 미시청 시 컷신 재생 후 메뉴로
