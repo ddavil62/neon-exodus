@@ -118,8 +118,8 @@ export default class CutsceneScene extends Phaser.Scene {
     dialogBg.strokeRoundedRect(10, 460, 340, 160, 8);
     dialogBg.setDepth(5);
 
-    // 화자 이름
-    this._nameText = this.add.text(80, 438, '', {
+    // 화자 이름 (왼쪽 끝 정렬)
+    this._nameText = this.add.text(18, 448, '', {
       fontSize: '14px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonCyan,
@@ -211,8 +211,9 @@ export default class CutsceneScene extends Phaser.Scene {
 
     if (!portraitKey) return; // narrator는 초상화 없음
 
-    const x = side === 'left' ? 45 : 315;
-    const y = 440;
+    // 항상 오른쪽 끝, 대사창 위에 배치
+    const x = 310;
+    const y = 395;
 
     // 텍스처 존재 확인 → 없거나 로드 실패(__MISSING) 시 폴백
     const tex = this.textures.exists(portraitKey) ? this.textures.get(portraitKey) : null;
