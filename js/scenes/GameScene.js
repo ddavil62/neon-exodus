@@ -15,6 +15,7 @@ import {
   RUN_DURATION,
   CAMERA_LERP,
   WEAPON_SLOTS,
+  PASSIVE_SLOTS,
   ENDLESS_SCALE_INTERVAL,
   ADMOB_UNITS,
   AD_LIMITS,
@@ -174,6 +175,9 @@ export default class GameScene extends Phaser.Scene {
 
     /** 최대 무기 슬롯 수 (기본 6 + 한도돌파 보너스) */
     this.maxWeaponSlots = WEAPON_SLOTS + (bonuses.extraWeaponSlots || 0);
+
+    /** 최대 패시브 슬롯 수 (기본 6 + 한도돌파 보너스) */
+    this.maxPassiveSlots = PASSIVE_SLOTS + (bonuses.extraPassiveSlots || 0);
 
     // 플레이어에 메타 업그레이드 스탯 반영
     this.player.applyMetaUpgrades({
@@ -533,6 +537,7 @@ export default class GameScene extends Phaser.Scene {
       level: this.player.level,
       rerollsLeft: this.rerollsLeft,
       maxWeaponSlots: this.maxWeaponSlots,
+      maxPassiveSlots: this.maxPassiveSlots,
       weaponChoiceBias: this.player.weaponChoiceBias,
     });
 
@@ -2437,12 +2442,20 @@ export default class GameScene extends Phaser.Scene {
 
     // ── 패시브 행 (Y = GAME_HEIGHT - 46 = 594) ──
     const passiveY = GAME_HEIGHT - 46;  // 중심 Y
-    const passiveSize = 28;             // 슬롯 크기 (px)
     const passiveRadius = 4;            // 둥근 모서리 반경
-    const passiveStride = 36;           // 슬롯 간격 (px)
-    const passiveStartX = 18;           // 첫 슬롯 중심 X
 
     const passives = this.player ? (this.player._passives || {}) : {};
+    const pCount = Object.keys(passives).length || 1;
+
+    // 패시브 수에 따라 슬롯 크기·간격 동적 조절
+    const passiveSize = pCount > 8 ? 22 : 28;
+    const maxPassiveStride = pCount > 8 ? 30 : 36;
+    const passiveTotalWidth = GAME_WIDTH - 20;
+    const passiveStride = Math.min(maxPassiveStride, passiveTotalWidth / pCount);
+    const passiveStartX = 10 + passiveStride / 2;
+    const passiveIconSize = pCount > 8 ? '12px' : '15px';
+    const passiveLvlSize = pCount > 8 ? '9px' : '11px';
+
     Object.entries(passives).forEach(([pid, plevel], idx) => {
       const cx = passiveStartX + idx * passiveStride;
 
@@ -2459,7 +2472,7 @@ export default class GameScene extends Phaser.Scene {
       const passiveData = getPassiveById(pid);
       const emoji = passiveData?.icon ?? '?';
       const icon = this.add.text(cx, passiveY, emoji, {
-        fontSize: '15px',
+        fontSize: passiveIconSize,
         fontFamily: 'Galmuri11, monospace',
       }).setOrigin(0.5).setScrollFactor(0).setDepth(106);
 
@@ -2469,7 +2482,7 @@ export default class GameScene extends Phaser.Scene {
         passiveY + passiveSize / 2 - 1,   // 하단 기준 1px 안쪽
         `${plevel}`,
         {
-          fontSize: '11px',
+          fontSize: passiveLvlSize,
           fontFamily: 'Galmuri11, monospace',
           color: UI_COLORS.neonCyan,
         }

@@ -21,7 +21,7 @@ export default class LevelUpScene extends Phaser.Scene {
 
   /**
    * 초기 데이터를 전달받는다.
-   * @param {{ player: import('../entities/Player.js').default, weaponSystem: import('../systems/WeaponSystem.js').default, level: number, rerollsLeft: number, maxWeaponSlots: number }} data
+   * @param {{ player: import('../entities/Player.js').default, weaponSystem: import('../systems/WeaponSystem.js').default, level: number, rerollsLeft: number, maxWeaponSlots: number, maxPassiveSlots: number }} data
    */
   init(data) {
     this.player = data.player;
@@ -34,6 +34,9 @@ export default class LevelUpScene extends Phaser.Scene {
 
     /** 최대 무기 슬롯 수 */
     this.maxWeaponSlots = data.maxWeaponSlots || 6;
+
+    /** 최대 패시브 슬롯 수 */
+    this.maxPassiveSlots = data.maxPassiveSlots || 6;
 
     /** 레벨업 무기 추천 가중치 (hidden 캐릭터: 2.0) */
     this.weaponChoiceBias = data.weaponChoiceBias || this.player?.weaponChoiceBias || 1.0;
@@ -282,17 +285,20 @@ export default class LevelUpScene extends Phaser.Scene {
       }
     }
 
-    // 3. 새 패시브 획득 (미보유 것들)
-    for (const pData of PASSIVES) {
-      if (playerPassives[pData.id]) continue;
-      candidates.push({
-        type: 'new_passive',
-        id: pData.id,
-        name: t(pData.nameKey),
-        desc: t(pData.detailKey),
-        icon: pData.icon || '✨',
-        label: t('levelup.newPassive'),
-      });
+    // 3. 새 패시브 획득 (미보유 + 슬롯 여유 있을 때만)
+    const currentPassiveCount = Object.keys(playerPassives).length;
+    if (currentPassiveCount < this.maxPassiveSlots) {
+      for (const pData of PASSIVES) {
+        if (playerPassives[pData.id]) continue;
+        candidates.push({
+          type: 'new_passive',
+          id: pData.id,
+          name: t(pData.nameKey),
+          desc: t(pData.detailKey),
+          icon: pData.icon || '✨',
+          label: t('levelup.newPassive'),
+        });
+      }
     }
 
     // 4. 새 무기 획득 (Phase 4 이하 + 해금된 스테이지 무기, 미장착, 슬롯 여유 있음)
