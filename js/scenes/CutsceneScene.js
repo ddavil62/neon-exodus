@@ -212,7 +212,7 @@ export default class CutsceneScene extends Phaser.Scene {
     if (!portraitKey) return; // narrator는 초상화 없음
 
     // 오른쪽 끝, 초상화 하단이 대사창 상단(y=460)에 정확히 닿도록 배치
-    const x = 280;
+    const x = 290;
     const y = 410;
 
     // 텍스처 존재 확인 → 없거나 로드 실패(__MISSING) 시 폴백
