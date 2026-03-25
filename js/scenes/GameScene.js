@@ -1295,7 +1295,7 @@ export default class GameScene extends Phaser.Scene {
 
     // 중앙 패널 배경 + neonCyan 테두리
     const panelW = 250;
-    const panelH = 160;
+    const panelH = 180;
     const panelX = centerX - panelW / 2;
     const panelY = centerY - panelH / 2;
 
@@ -1307,7 +1307,7 @@ export default class GameScene extends Phaser.Scene {
     popupElements.push(panelBg);
 
     // 타이틀: "진화 가능!"
-    const titleY = centerY - panelH / 2 + 24;
+    const titleY = centerY - panelH / 2 + 20;
     const titleText = this.add.text(centerX, titleY, t('hint.evolutionHintTitle'), {
       fontSize: '14px',
       fontFamily: 'Galmuri11, monospace',
@@ -1318,7 +1318,7 @@ export default class GameScene extends Phaser.Scene {
     popupElements.push(titleText);
 
     // 아이콘 + 무기 이름 행
-    const headerY = titleY + 28;
+    const headerY = titleY + 22;
     const iconText = this.add.text(centerX - 50, headerY, emoji, {
       fontSize: '22px',
       fontFamily: 'Galmuri11, monospace',
@@ -1335,7 +1335,7 @@ export default class GameScene extends Phaser.Scene {
     popupElements.push(nameText);
 
     // "MAX!" 뱃지
-    const badgeY = headerY + 22;
+    const badgeY = headerY + 20;
     const badgeText = this.add.text(centerX, badgeY, 'MAX!', {
       fontSize: '12px',
       fontFamily: 'Galmuri11, monospace',
@@ -1344,7 +1344,7 @@ export default class GameScene extends Phaser.Scene {
     popupElements.push(badgeText);
 
     // 조합 안내 문구 (hint.evolutionReady 키 활용)
-    const infoY = badgeY + 20;
+    const infoY = badgeY + 16;
     const infoMsg = t('hint.evolutionReady', weaponName, passiveName);
     const infoText = this.add.text(centerX, infoY, infoMsg, {
       fontSize: '11px',
@@ -1357,8 +1357,8 @@ export default class GameScene extends Phaser.Scene {
 
     // 닫기 버튼
     const btnW = 120;
-    const btnH = 36;
-    const btnY = centerY + panelH / 2 - 26;
+    const btnH = 44;
+    const btnY = centerY + panelH / 2 - 30;
 
     const btnBg = this.add.graphics().setScrollFactor(0).setDepth(352);
     btnBg.fillStyle(COLORS.NEON_CYAN, 0.8);
