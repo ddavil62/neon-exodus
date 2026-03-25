@@ -98,7 +98,7 @@ export const LEVELUP_CHOICES = 3;
 export const WEAPON_SLOTS = 6;
 
 /** 기본 패시브 슬롯 수 */
-export const PASSIVE_SLOTS = 6;
+export const PASSIVE_SLOTS = 10;
 
 // ── 스폰 설정 ──
 
