@@ -957,7 +957,7 @@ export default class GameScene extends Phaser.Scene {
 
     const adBtnLabel = limitReached
       ? t('ad.reviveBtn')
-      : `${t('ad.reviveBtn')} ${t('ad.reviveBtnCount', used, limit)}`;
+      : `${t('ad.reviveBtn')} ${t('ad.reviveBtnCount', remaining, limit)}`;
 
     const adBtnText = this.add.text(centerX, adBtnY, adBtnLabel, {
       fontSize: '14px',

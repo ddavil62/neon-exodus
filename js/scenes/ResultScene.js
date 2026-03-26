@@ -543,7 +543,7 @@ export default class ResultScene extends Phaser.Scene {
     // 버튼 텍스트
     const labelText = limitReached
       ? `${t('ad.creditDouble')} ${t('ad.creditDoubleUsed')}`
-      : `${t('ad.creditDouble')} ${t('ad.creditDoubleCount', used, limit)}`;
+      : `${t('ad.creditDouble')} ${t('ad.creditDoubleCount', remaining, limit)}`;
 
     this._adBtnText = this.add.text(x, y, labelText, {
       fontSize: '13px',
