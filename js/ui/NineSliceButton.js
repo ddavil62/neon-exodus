@@ -6,8 +6,12 @@
 
 // ── 9-slice 좌표 (에셋별 코너 영역 크기) ──
 const SLICE_CONFIGS = {
-  /** 범용 버튼 프레임 (200x82) — 코너 21x17 */
+  /** CTA 버튼 — 화려한 회로 패널 프레임 (200x82, 코너 21x17) */
   btn: { texture: 'ui_btn_frame', left: 21, right: 21, top: 17, bottom: 17 },
+  /** Primary 버튼 — 글로우 라인 프레임 (200x82, 코너 16x14) */
+  primary: { texture: 'ui_btn_primary', left: 16, right: 16, top: 14, bottom: 14 },
+  /** Secondary 버튼 — 미니멀 얇은 라인 (200x82, 코너 14x12) */
+  secondary: { texture: 'ui_btn_secondary', left: 14, right: 14, top: 12, bottom: 12 },
   /** 카드/패널 프레임 (200x296) — 코너 20x21 */
   card: { texture: 'ui_card_frame', left: 20, right: 20, top: 21, bottom: 21 },
   /** 탭 프레임 (128x72) — 코너 15x10 */

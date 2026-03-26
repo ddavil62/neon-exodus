@@ -79,8 +79,9 @@ export default class MenuScene extends Phaser.Scene {
     const row1Y = droneChipUnlocked ? 400 : 434;
     const auxBtnY = droneChipUnlocked ? 510 : 498;
 
-    // 캐릭터 버튼 (0,0)
+    // 캐릭터 버튼 (0,0) — Primary 등급
     this._createButton(96, row0Y, t('menu.character'), {
+      frameType: 'primary',
       callback: () => {
         this._fadeToScene('CharacterScene', { stageId: SaveManager.getSelectedStage() || 'stage_1', fromScene: 'MenuScene' });
       },
@@ -89,25 +90,28 @@ export default class MenuScene extends Phaser.Scene {
     // 업그레이드 버튼 (1,0) — 조건부 비활성
     const upgradeUnlocked = SaveManager.isUpgradeUnlocked();
     this._createButton(264, row0Y, t('menu.upgrade'), {
+      frameType: 'primary',
       disabled: !upgradeUnlocked,
       callback: () => {
         this._fadeToScene('UpgradeScene');
       },
     });
 
-    // 도전과제 버튼 (0,1)
+    // 도전과제 버튼 (0,1) — Primary 등급
     this._createButton(96, row1Y, t('menu.achievements'), {
+      frameType: 'primary',
       callback: () => {
         this._fadeToScene('AchievementScene');
       },
     });
 
-    // 일일 미션 버튼 (1,1) — 미완료 시 (!) 표시
+    // 일일 미션 버튼 (1,1) — Primary 등급
     DailyMissionManager.init();
     const dailyLabel = DailyMissionManager.hasUnclaimedMissions()
       ? `${t('menu.dailyMission')} (!)`
       : t('menu.dailyMission');
     this._createButton(264, row1Y, dailyLabel, {
+      frameType: 'primary',
       callback: () => {
         this._fadeToScene('DailyMissionScene');
       },
@@ -125,7 +129,7 @@ export default class MenuScene extends Phaser.Scene {
       // 자동사냥 해금됨: 도감/설정 2개 + 자동사냥 ON 텍스트 (넓은 간격)
       this._createButton(56, auxBtnY, t('menu.collection'), {
         width: 96, height: 36, fontSize: '12px',
-        textColor: UI_COLORS.textSecondary, alpha: 0.7,
+        frameType: 'secondary', textColor: UI_COLORS.textSecondary,
         callback: () => { this._fadeToScene('CollectionScene'); },
       });
 
@@ -138,29 +142,29 @@ export default class MenuScene extends Phaser.Scene {
 
       this._createButton(304, auxBtnY, t('menu.settings'), {
         width: 96, height: 36, fontSize: '12px',
-        textColor: UI_COLORS.textSecondary, alpha: 0.7,
+        frameType: 'secondary', textColor: UI_COLORS.textSecondary,
         callback: () => { this._fadeToScene('SettingsScene'); },
       });
     } else {
       // 자동사냥 미해금: 3개 버튼 (도감, 자동사냥 구매, 설정)
       this._createButton(56, auxBtnY, t('menu.collection'), {
         width: 96, height: 36, fontSize: '12px',
-        textColor: UI_COLORS.textSecondary, alpha: 0.7,
+        frameType: 'secondary', textColor: UI_COLORS.textSecondary,
         callback: () => { this._fadeToScene('CollectionScene'); },
       });
 
-      // 자동사냥 구매 버튼 (오렌지 틴트)
+      // 자동사냥 구매 버튼 (Primary + 오렌지 틴트)
       const price = IAPManager.getLocalizedPrice();
       const btnLabel = `${t('autoHunt.purchase')} (${price})`;
       this._createButton(180, auxBtnY, btnLabel, {
-        width: 120, height: 36, fontSize: '12px',
-        tint: 0xFF6600,
+        width: 140, height: 36, fontSize: '10px',
+        frameType: 'primary', tint: 0xFF6600,
         callback: () => { this._showAutoHuntPurchase(); },
       });
 
       this._createButton(304, auxBtnY, t('menu.settings'), {
         width: 96, height: 36, fontSize: '12px',
-        textColor: UI_COLORS.textSecondary, alpha: 0.7,
+        frameType: 'secondary', textColor: UI_COLORS.textSecondary,
         callback: () => { this._fadeToScene('SettingsScene'); },
       });
     }

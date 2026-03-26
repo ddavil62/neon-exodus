@@ -147,6 +147,8 @@ export default class BootScene extends Phaser.Scene {
 
     // UI 버튼/카드/탭 프레임 (NineSlice용, GPT Image 생성 회로 패널)
     this.load.image('ui_btn_frame', 'assets/ui/buttons/ui_btn_frame.png');
+    this.load.image('ui_btn_primary', 'assets/ui/buttons/ui_btn_primary.png');
+    this.load.image('ui_btn_secondary', 'assets/ui/buttons/ui_btn_secondary.png');
     this.load.image('ui_card_frame', 'assets/ui/buttons/ui_card_frame.png');
     this.load.image('ui_tab_frame', 'assets/ui/buttons/ui_tab_frame.png');
 
