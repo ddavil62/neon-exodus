@@ -156,6 +156,9 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('ui_btn_frame', 'assets/ui/buttons/ui_btn_frame.png');
     this.load.image('ui_btn_primary', 'assets/ui/buttons/ui_btn_primary.png');
     this.load.image('ui_btn_secondary', 'assets/ui/buttons/ui_btn_secondary.png');
+    this.load.image('ui_btn_retry', 'assets/ui/buttons/ui_btn_retry.png');
+    this.load.image('ui_btn_menu', 'assets/ui/buttons/ui_btn_menu.png');
+    this.load.image('ui_btn_ad', 'assets/ui/buttons/ui_btn_ad.png');
     this.load.image('ui_card_frame', 'assets/ui/buttons/ui_card_frame.png');
     this.load.image('ui_tab_frame', 'assets/ui/buttons/ui_tab_frame.png');
 

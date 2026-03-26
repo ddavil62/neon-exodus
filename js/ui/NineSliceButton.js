@@ -12,6 +12,12 @@ const SLICE_CONFIGS = {
   primary: { texture: 'ui_btn_primary', left: 16, right: 16, top: 14, bottom: 14 },
   /** Secondary 버튼 — 미니멀 얇은 라인 (200x82, 코너 14x12) */
   secondary: { texture: 'ui_btn_secondary', left: 14, right: 14, top: 12, bottom: 12 },
+  /** Retry 버튼 — 시안 글로우 터미널 프레임 (200x82, 코너 18x15) */
+  retry: { texture: 'ui_btn_retry', left: 18, right: 18, top: 15, bottom: 15 },
+  /** Menu 버튼 — 그레이 절제 프레임 (200x82, 코너 14x12) */
+  menu: { texture: 'ui_btn_menu', left: 14, right: 14, top: 12, bottom: 12 },
+  /** Ad 버튼 — 앰버 글로우 프레임 (200x82, 코너 16x14) */
+  ad: { texture: 'ui_btn_ad', left: 16, right: 16, top: 14, bottom: 14 },
   /** 카드/패널 프레임 (200x296) — 코너 20x21 */
   card: { texture: 'ui_card_frame', left: 20, right: 20, top: 21, bottom: 21 },
   /** 탭 프레임 (128x72) — 코너 15x10 */

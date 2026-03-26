@@ -16,6 +16,7 @@ import { getWeaponById } from '../data/weapons.js';
 import { STAGES, DIFFICULTY_MODES, DC_REWARD_BASE, STAGE_DC_BONUS } from '../data/stages.js';
 import { CHARACTERS } from '../data/characters.js';
 import { CHARACTER_COLORS, getXpForNextLevel, MAX_CHAR_LEVEL } from '../data/characterSkills.js';
+import { createNineSliceButton } from '../ui/NineSliceButton.js';
 
 // ── ResultScene 클래스 ──
 
@@ -384,20 +385,30 @@ export default class ResultScene extends Phaser.Scene {
     // ── 광고 보고 2배 버튼 ──
     this._createAdDoubleButton(centerX, adBtnY, 1000);
 
-    // ── 버튼 ──
+    // ── 버튼 (NineSlice) ──
     // 다시 도전 버튼
-    this._createButton(centerX, retryBtnY, t('result.retry'), UI_COLORS.btnPrimary, () => {
-      this._fadeToScene('GameScene', {
-        stageId: this.stageId,
-        characterId: this.characterId,
-        difficulty: this.difficulty,
-      });
-    }, 1200);
+    const retryBtn = createNineSliceButton(this, centerX, retryBtnY, t('result.retry'), {
+      width: 180, height: 40, fontSize: '14px',
+      frameType: 'retry',
+      callback: () => {
+        this._fadeToScene('GameScene', {
+          stageId: this.stageId,
+          characterId: this.characterId,
+          difficulty: this.difficulty,
+        });
+      },
+    });
+    retryBtn.bg.setAlpha(0); retryBtn.text.setAlpha(0);
+    this.tweens.add({ targets: [retryBtn.bg, retryBtn.text], alpha: 1, duration: 400, delay: 1200 });
 
     // 메인 메뉴 버튼 — 클리어 컷신 미시청 시 컷신 재생 후 메뉴로
-    this._createButton(centerX, menuBtnY, t('result.toMenu'), UI_COLORS.btnSecondary, () => {
-      this._goToMenu();
-    }, 1400);
+    const menuBtn = createNineSliceButton(this, centerX, menuBtnY, t('result.toMenu'), {
+      width: 180, height: 40, fontSize: '14px',
+      frameType: 'menu',
+      callback: () => { this._goToMenu(); },
+    });
+    menuBtn.bg.setAlpha(0); menuBtn.text.setAlpha(0);
+    this.tweens.add({ targets: [menuBtn.bg, menuBtn.text], alpha: 1, duration: 400, delay: 1400 });
 
     // ── 컷신 판정 (upgrade_unlock > drone_unlock > 클리어 컷신 순) ──
     /** @type {string|null} 대기 중인 컷신 ID */
@@ -541,14 +552,17 @@ export default class ResultScene extends Phaser.Scene {
     const limit = AD_LIMITS.creditDouble;
     const used = limit - remaining;
 
-    // 버튼 배경
-    this._adBtnBg = this.add.graphics();
-    const bgColor = limitReached ? UI_COLORS.btnDisabled : COLORS.NEON_ORANGE;
-    this._adBtnBg.fillStyle(bgColor, 0.8);
-    this._adBtnBg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6);
-    this._adBtnBg.lineStyle(1, COLORS.NEON_CYAN, 0.3);
-    this._adBtnBg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6);
-    this._adBtnBg.setAlpha(0);
+    // 버튼 배경 (NineSlice 앰버 프레임)
+    const adSlice = { texture: 'ui_btn_ad', left: 16, right: 16, top: 14, bottom: 14 };
+    this._adBtnBg = this.add.nineslice(
+      x, y, adSlice.texture, null,
+      btnWidth, btnHeight,
+      adSlice.left, adSlice.right, adSlice.top, adSlice.bottom
+    ).setOrigin(0.5).setAlpha(0);
+    if (limitReached) {
+      this._adBtnBg.setTint(0x333344);
+      this._adBtnBg.setAlpha(0);
+    }
 
     // 버튼 텍스트
     const labelText = limitReached
