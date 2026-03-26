@@ -12,6 +12,7 @@ import { SaveManager } from '../managers/SaveManager.js';
 import { IAPManager } from '../managers/IAPManager.js';
 import { DailyMissionManager } from '../managers/DailyMissionManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
+import { createNineSliceButton } from '../ui/NineSliceButton.js';
 
 // ── MenuScene 클래스 ──
 
@@ -80,15 +81,6 @@ export default class MenuScene extends Phaser.Scene {
 
     // 캐릭터 버튼 (0,0)
     this._createButton(96, row0Y, t('menu.character'), {
-      width: 156,
-      height: 52,
-      fontSize: '14px',
-      bgColor: UI_COLORS.btnPrimary,
-      borderColor: COLORS.NEON_CYAN,
-      borderAlpha: 0.5,
-      borderWidth: 1,
-      textColor: UI_COLORS.textPrimary,
-      radius: 8,
       callback: () => {
         this._fadeToScene('CharacterScene', { stageId: SaveManager.getSelectedStage() || 'stage_1', fromScene: 'MenuScene' });
       },
@@ -97,15 +89,6 @@ export default class MenuScene extends Phaser.Scene {
     // 업그레이드 버튼 (1,0) — 조건부 비활성
     const upgradeUnlocked = SaveManager.isUpgradeUnlocked();
     this._createButton(264, row0Y, t('menu.upgrade'), {
-      width: 156,
-      height: 52,
-      fontSize: '14px',
-      bgColor: upgradeUnlocked ? UI_COLORS.btnPrimary : UI_COLORS.btnDisabled,
-      borderColor: COLORS.NEON_CYAN,
-      borderAlpha: 0.5,
-      borderWidth: 1,
-      textColor: upgradeUnlocked ? UI_COLORS.textPrimary : UI_COLORS.textSecondary,
-      radius: 8,
       disabled: !upgradeUnlocked,
       callback: () => {
         this._fadeToScene('UpgradeScene');
@@ -114,15 +97,6 @@ export default class MenuScene extends Phaser.Scene {
 
     // 도전과제 버튼 (0,1)
     this._createButton(96, row1Y, t('menu.achievements'), {
-      width: 156,
-      height: 52,
-      fontSize: '14px',
-      bgColor: UI_COLORS.btnPrimary,
-      borderColor: COLORS.NEON_CYAN,
-      borderAlpha: 0.5,
-      borderWidth: 1,
-      textColor: UI_COLORS.textPrimary,
-      radius: 8,
       callback: () => {
         this._fadeToScene('AchievementScene');
       },
@@ -134,15 +108,6 @@ export default class MenuScene extends Phaser.Scene {
       ? `${t('menu.dailyMission')} (!)`
       : t('menu.dailyMission');
     this._createButton(264, row1Y, dailyLabel, {
-      width: 156,
-      height: 52,
-      fontSize: '14px',
-      bgColor: UI_COLORS.btnPrimary,
-      borderColor: COLORS.NEON_CYAN,
-      borderAlpha: 0.5,
-      borderWidth: 1,
-      textColor: UI_COLORS.textPrimary,
-      radius: 8,
       callback: () => {
         this._fadeToScene('DailyMissionScene');
       },
@@ -159,18 +124,9 @@ export default class MenuScene extends Phaser.Scene {
     if (autoHuntUnlocked) {
       // 자동사냥 해금됨: 도감/설정 2개 + 자동사냥 ON 텍스트 (넓은 간격)
       this._createButton(56, auxBtnY, t('menu.collection'), {
-        width: 96,
-        height: 36,
-        fontSize: '12px',
-        bgColor: UI_COLORS.btnSecondary,
-        borderColor: COLORS.UI_BORDER,
-        borderAlpha: 0.5,
-        borderWidth: 1,
-        textColor: UI_COLORS.textSecondary,
-        radius: 6,
-        callback: () => {
-          this._fadeToScene('CollectionScene');
-        },
+        width: 96, height: 36, fontSize: '12px',
+        textColor: UI_COLORS.textSecondary, alpha: 0.7,
+        callback: () => { this._fadeToScene('CollectionScene'); },
       });
 
       // 자동사냥 ON 텍스트 (버튼 없이)
@@ -181,67 +137,31 @@ export default class MenuScene extends Phaser.Scene {
       }).setOrigin(0.5);
 
       this._createButton(304, auxBtnY, t('menu.settings'), {
-        width: 96,
-        height: 36,
-        fontSize: '12px',
-        bgColor: UI_COLORS.btnSecondary,
-        borderColor: COLORS.UI_BORDER,
-        borderAlpha: 0.5,
-        borderWidth: 1,
-        textColor: UI_COLORS.textSecondary,
-        radius: 6,
-        callback: () => {
-          this._fadeToScene('SettingsScene');
-        },
+        width: 96, height: 36, fontSize: '12px',
+        textColor: UI_COLORS.textSecondary, alpha: 0.7,
+        callback: () => { this._fadeToScene('SettingsScene'); },
       });
     } else {
       // 자동사냥 미해금: 3개 버튼 (도감, 자동사냥 구매, 설정)
       this._createButton(56, auxBtnY, t('menu.collection'), {
-        width: 96,
-        height: 36,
-        fontSize: '12px',
-        bgColor: UI_COLORS.btnSecondary,
-        borderColor: COLORS.UI_BORDER,
-        borderAlpha: 0.5,
-        borderWidth: 1,
-        textColor: UI_COLORS.textSecondary,
-        radius: 6,
-        callback: () => {
-          this._fadeToScene('CollectionScene');
-        },
+        width: 96, height: 36, fontSize: '12px',
+        textColor: UI_COLORS.textSecondary, alpha: 0.7,
+        callback: () => { this._fadeToScene('CollectionScene'); },
       });
 
-      // 자동사냥 구매 버튼
+      // 자동사냥 구매 버튼 (오렌지 틴트)
       const price = IAPManager.getLocalizedPrice();
       const btnLabel = `${t('autoHunt.purchase')} (${price})`;
       this._createButton(180, auxBtnY, btnLabel, {
-        width: 120,
-        height: 36,
-        fontSize: '12px',
-        bgColor: COLORS.NEON_ORANGE,
-        borderColor: COLORS.UI_BORDER,
-        borderAlpha: 0.5,
-        borderWidth: 1,
-        textColor: UI_COLORS.textPrimary,
-        radius: 6,
-        callback: () => {
-          this._showAutoHuntPurchase();
-        },
+        width: 120, height: 36, fontSize: '12px',
+        tint: 0xFF6600,
+        callback: () => { this._showAutoHuntPurchase(); },
       });
 
       this._createButton(304, auxBtnY, t('menu.settings'), {
-        width: 96,
-        height: 36,
-        fontSize: '12px',
-        bgColor: UI_COLORS.btnSecondary,
-        borderColor: COLORS.UI_BORDER,
-        borderAlpha: 0.5,
-        borderWidth: 1,
-        textColor: UI_COLORS.textSecondary,
-        radius: 6,
-        callback: () => {
-          this._fadeToScene('SettingsScene');
-        },
+        width: 96, height: 36, fontSize: '12px',
+        textColor: UI_COLORS.textSecondary, alpha: 0.7,
+        callback: () => { this._fadeToScene('SettingsScene'); },
       });
     }
 
@@ -250,17 +170,9 @@ export default class MenuScene extends Phaser.Scene {
       width: 310,
       height: 56,
       fontSize: '20px',
-      bgColor: UI_COLORS.btnPrimary,
-      bgAlpha: 0.9,
-      borderColor: COLORS.NEON_CYAN,
-      borderAlpha: 0.8,
-      borderWidth: 2,
       textColor: UI_COLORS.neonCyan,
       textStroke: UI_COLORS.neonMagenta,
       textStrokeThickness: 1,
-      radius: 10,
-      glowColor: COLORS.NEON_CYAN,
-      glowPadding: 4,
       callback: () => {
         SoundSystem.resume();
         if (!SaveManager.isCutsceneViewed('prologue')) {
@@ -501,77 +413,20 @@ export default class MenuScene extends Phaser.Scene {
       width = 156,
       height = 52,
       fontSize = '14px',
-      bgColor = UI_COLORS.btnPrimary,
-      bgAlpha = 0.8,
-      borderColor = COLORS.NEON_CYAN,
-      borderAlpha = 0.5,
-      borderWidth = 1,
       textColor = UI_COLORS.textPrimary,
       textStroke = null,
       textStrokeThickness = 0,
-      radius = 8,
       disabled = false,
       callback = null,
-      glowColor = null,
-      glowPadding = 4,
+      tint = null,
+      alpha = 1,
+      frameType = 'btn',
     } = options;
 
-    const bg = this.add.graphics();
-
-    // 글로우 효과 (CTA 버튼용)
-    if (glowColor !== null) {
-      const glowW = width + glowPadding * 2;
-      const glowH = height + glowPadding * 2;
-      bg.fillStyle(glowColor, 0.15);
-      bg.fillRoundedRect(
-        x - glowW / 2, y - glowH / 2,
-        glowW, glowH, radius + 2
-      );
-    }
-
-    // 배경 사각형
-    bg.fillStyle(bgColor, disabled ? 0.4 : bgAlpha);
-    bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, radius);
-
-    // 테두리 (비활성 시 생략)
-    if (!disabled) {
-      bg.lineStyle(borderWidth, borderColor, borderAlpha);
-      bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, radius);
-    }
-
-    // 텍스트 스타일 구성
-    const textStyle = {
-      fontSize,
-      fontFamily: 'Galmuri11, monospace',
-      color: disabled ? UI_COLORS.textSecondary : textColor,
-    };
-
-    // 텍스트 스트로크 (CTA 버튼용)
-    if (textStroke) {
-      textStyle.stroke = textStroke;
-      textStyle.strokeThickness = textStrokeThickness;
-    }
-
-    const text = this.add.text(x, y, label, textStyle).setOrigin(0.5);
-
-    if (disabled) return;
-
-    // 터치 영역 (투명 Zone)
-    const zone = this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true });
-
-    zone.on('pointerover', () => {
-      text.setAlpha(0.8);
+    return createNineSliceButton(this, x, y, label, {
+      width, height, fontSize, textColor,
+      textStroke, textStrokeThickness,
+      disabled, callback, tint, alpha, frameType,
     });
-    zone.on('pointerout', () => {
-      text.setAlpha(1);
-    });
-    let pressed = false;
-    zone.on('pointerdown', () => { pressed = true; text.setAlpha(0.6); });
-    zone.on('pointerup', () => {
-      text.setAlpha(1);
-      if (pressed && callback) callback();
-      pressed = false;
-    });
-    zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
   }
 }
