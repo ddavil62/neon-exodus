@@ -56,14 +56,9 @@ export default class LevelUpScene extends Phaser.Scene {
     this.add.rectangle(centerX, centerY, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.75)
       .setDepth(0);
 
-    // ── "LEVEL UP!" 텍스트 ──
-    this.add.text(centerX, 100, t('levelup.title'), {
-      fontSize: '28px',
-      fontFamily: 'Galmuri11, monospace',
-      color: UI_COLORS.neonCyan,
-      stroke: UI_COLORS.neonMagenta,
-      strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(1);
+    // ── "LEVEL UP!" 이미지 ──
+    this.add.image(centerX, 100, 'text_levelup')
+      .setOrigin(0.5).setDepth(1).setScale(0.4);
 
     // 현재 레벨 표시
     this.add.text(centerX, 135, t('hud.level', this.playerLevel), {

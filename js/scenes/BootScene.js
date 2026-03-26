@@ -145,6 +145,13 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('joystick_base', 'assets/ui/joystick/base.png');
     this.load.image('joystick_thumb', 'assets/ui/joystick/thumb.png');
 
+    // UI 텍스트 이미지 (GPT Image 생성 네온 타이포그래피)
+    this.load.image('title_logo', 'assets/ui/text/title_logo.png');
+    this.load.image('text_levelup', 'assets/ui/text/text_levelup.png');
+    this.load.image('text_victory', 'assets/ui/text/text_victory.png');
+    this.load.image('text_defeated', 'assets/ui/text/text_defeated.png');
+    this.load.image('text_endless', 'assets/ui/text/text_endless.png');
+
     // UI 버튼/카드/탭 프레임 (NineSlice용, GPT Image 생성 회로 패널)
     this.load.image('ui_btn_frame', 'assets/ui/buttons/ui_btn_frame.png');
     this.load.image('ui_btn_primary', 'assets/ui/buttons/ui_btn_primary.png');

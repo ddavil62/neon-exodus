@@ -216,18 +216,28 @@ export default class ResultScene extends Phaser.Scene {
     // ── 배경 ──
     this.cameras.main.setBackgroundColor(COLORS.BG_DARK);
 
-    // ── 승리/패배 타이틀 ──
-    let titleKey = this.victory ? 'result.victory' : 'result.defeat';
-    if (this.isEndless) titleKey = 'result.endlessOver';
-    const titleColor = this.victory ? UI_COLORS.neonGreen : UI_COLORS.hpRed;
+    // ── 승리/패배 타이틀 (AI 생성 텍스트 이미지) ──
+    const titleTexture = this.isEndless
+      ? 'text_endless'
+      : (this.victory ? 'text_victory' : 'text_defeated');
 
-    const title = this.add.text(centerX, 80, t(titleKey), {
-      fontSize: '32px',
-      fontFamily: 'Galmuri11, monospace',
-      color: titleColor,
-      stroke: '#000000',
-      strokeThickness: 3,
-    }).setOrigin(0.5).setAlpha(0);
+    let title;
+    if (titleTexture && this.textures.exists(titleTexture)) {
+      title = this.add.image(centerX, 80, titleTexture)
+        .setOrigin(0.5).setScale(0.5).setAlpha(0);
+    } else {
+      // 폴백: 엔드리스 또는 이미지 미존재 시 텍스트
+      let titleKey = this.victory ? 'result.victory' : 'result.defeat';
+      if (this.isEndless) titleKey = 'result.endlessOver';
+      const titleColor = this.victory ? UI_COLORS.neonGreen : UI_COLORS.hpRed;
+      title = this.add.text(centerX, 80, t(titleKey), {
+        fontSize: '32px',
+        fontFamily: 'Galmuri11, monospace',
+        color: titleColor,
+        stroke: '#000000',
+        strokeThickness: 3,
+      }).setOrigin(0.5).setAlpha(0);
+    }
     this._page1Elements.push(title);
 
     // 타이틀 등장 애니메이션

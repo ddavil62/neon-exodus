@@ -55,17 +55,11 @@ export default class MenuScene extends Phaser.Scene {
       overlay.fillRect(0, y, GAME_WIDTH, 1);
     }
 
-    // ── 타이틀 영역 ──
-    this.add.text(centerX, 52, t('menu.title'), {
-      fontSize: '36px',
-      fontFamily: 'Galmuri11, monospace',
-      color: UI_COLORS.neonCyan,
-      stroke: UI_COLORS.neonMagenta,
-      strokeThickness: 2,
-    }).setOrigin(0.5);
+    // ── 타이틀 영역 (AI 생성 네온 로고) ──
+    this.add.image(centerX, 52, 'title_logo').setOrigin(0.5).setScale(0.6);
 
     // 부제
-    this.add.text(centerX, 88, t('menu.subtitle'), {
+    this.add.text(centerX, 95, t('menu.subtitle'), {
       fontSize: '14px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textSecondary,
