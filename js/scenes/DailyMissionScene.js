@@ -117,9 +117,17 @@ export default class DailyMissionScene extends Phaser.Scene {
     });
 
     // ── ESC 키로 메뉴 복귀 ──
-    this.input.keyboard.on('keydown-ESC', () => {
-      this._fadeToScene('MenuScene');
-    });
+    this.input.keyboard.on('keydown-ESC', () => this._onBack());
+  }
+
+  // ── 뒤로가기 ──
+
+  /**
+   * 하드웨어 뒤로가기 / ESC 키 핸들러.
+   * @private
+   */
+  _onBack() {
+    this._fadeToScene('MenuScene');
   }
 
   // ── 씬 전환 ──

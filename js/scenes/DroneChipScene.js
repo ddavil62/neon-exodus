@@ -663,6 +663,15 @@ export default class DroneChipScene extends Phaser.Scene {
   }
 
   /**
+   * 하드웨어 뒤로가기 / ESC 키 핸들러.
+   * BootScene 글로벌 backButton 리스너에서 호출된다.
+   * @private
+   */
+  _onBack() {
+    this._goBack();
+  }
+
+  /**
    * 뒤로가기.
    * @private
    */
