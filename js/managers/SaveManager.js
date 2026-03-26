@@ -1222,6 +1222,26 @@ export class SaveManager {
       data.version = 15;
     }
 
+    // v15 -> v16: stats.totalClears를 stageClears 합산과 동기화
+    // GameScene에서 clearStage()는 호출되었으나 ResultScene까지 도달하지 못해
+    // stats.totalClears가 실제 클리어 수보다 적을 수 있는 문제 보정
+    if (data.version < 16) {
+      if (data.stageClears && data.stats) {
+        let sumClears = 0;
+        for (const entry of Object.values(data.stageClears)) {
+          if (typeof entry === 'number') {
+            sumClears += entry;
+          } else if (entry && typeof entry === 'object') {
+            sumClears += (entry.normal || 0) + (entry.hard || 0) + (entry.nightmare || 0);
+          }
+        }
+        if ((data.stats.totalClears || 0) < sumClears) {
+          data.stats.totalClears = sumClears;
+        }
+      }
+      data.version = 16;
+    }
+
     data.version = SAVE_DATA_VERSION;
     return data;
   }
