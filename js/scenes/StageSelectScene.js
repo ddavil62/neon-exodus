@@ -61,16 +61,13 @@ export default class StageSelectScene extends Phaser.Scene {
 
     this._renderCards(centerX);
 
-    // ── 하단 버튼 ──
+    // ── 뒤로가기 (상단 좌측 ←) ──
+    this._createBackArrow(30, 30);
+
+    // ── 하단 출격 버튼 ──
     const btnY = GAME_HEIGHT - 60;
 
-    // 뒤로가기 버튼 (좌)
-    this._createBtn(centerX - 60, btnY, t('ui.back'), UI_COLORS.btnSecondary, () => {
-      this._onBack();
-    });
-
-    // 출격 버튼 (우)
-    this._createBtn(centerX + 60, btnY, t('menu.start'), UI_COLORS.btnPrimary, () => {
+    this._createBtn(centerX, btnY, t('menu.start'), UI_COLORS.btnPrimary, () => {
       SaveManager.setSelectedStage(this._selectedId);
       SaveManager.setSelectedDifficulty(this._selectedDifficulty);
       this._fadeToScene('DeployCharSelectScene', { stageId: this._selectedId, difficulty: this._selectedDifficulty });
@@ -97,7 +94,29 @@ export default class StageSelectScene extends Phaser.Scene {
     });
   }
 
-  // ── 뒤로가기 ──
+  // ── 뒤로 화살표 ──
+
+  /**
+   * 상단 좌측 뒤로 화살표 버튼을 생성한다.
+   * @param {number} x - 중심 X
+   * @param {number} y - 중심 Y
+   * @private
+   */
+  _createBackArrow(x, y) {
+    const size = 36;
+    const text = this.add.text(x, y, '\u2190', {
+      fontSize: '20px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5);
+
+    const zone = this.add.zone(x, y, size, size)
+      .setInteractive({ useHandCursor: true });
+
+    zone.on('pointerdown', () => { text.setAlpha(0.5); });
+    zone.on('pointerup', () => { text.setAlpha(1); this._onBack(); });
+    zone.on('pointerout', () => { text.setAlpha(1); });
+  }
 
   /** 메뉴 화면으로 돌아간다. */
   _onBack() {

@@ -57,8 +57,8 @@ export default class SettingsScene extends Phaser.Scene {
     // ── 궁극기 버튼 위치 (좌/우) ──
     this._createSideToggleRow(490);
 
-    // ── 뒤로가기 버튼 ──
-    this._createBackButton(centerX, 590);
+    // ── 뒤로가기 (상단 좌측 ←) ──
+    this._createBackArrow(30, 30);
 
     // ── ESC 키 리스너 ──
     this.input.keyboard.on('keydown-ESC', () => this._onBack());
@@ -169,42 +169,27 @@ export default class SettingsScene extends Phaser.Scene {
     });
   }
 
-  // ── 뒤로가기 버튼 생성 ──
+  // ── 뒤로 화살표 ──
 
   /**
-   * 뒤로가기 버튼을 생성한다.
-   * @param {number} x - 중심 X 좌표
-   * @param {number} y - 중심 Y 좌표
+   * 상단 좌측 뒤로 화살표 버튼을 생성한다.
+   * @param {number} x - 중심 X
+   * @param {number} y - 중심 Y
    * @private
    */
-  _createBackButton(x, y) {
-    const btnWidth = 200;
-    const btnHeight = 44;
-
-    // 배경 사각형
-    const bg = this.add.graphics();
-    bg.fillStyle(UI_COLORS.btnSecondary, 0.8);
-    bg.fillRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6);
-    bg.lineStyle(1, COLORS.NEON_CYAN, 0.5);
-    bg.strokeRoundedRect(x - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 6);
-
-    // 텍스트
-    const text = this.add.text(x, y, t('ui.back'), {
-      fontSize: '16px',
+  _createBackArrow(x, y) {
+    const size = 36;
+    const text = this.add.text(x, y, '\u2190', {
+      fontSize: '20px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
     }).setOrigin(0.5);
 
-    // 터치 영역
-    const zone = this.add.zone(x, y, btnWidth, btnHeight).setInteractive({ useHandCursor: true });
+    const zone = this.add.zone(x, y, size, size)
+      .setInteractive({ useHandCursor: true });
 
-    let pressed = false;
-    zone.on('pointerdown', () => { pressed = true; text.setAlpha(0.6); });
-    zone.on('pointerup', () => {
-      text.setAlpha(1);
-      if (pressed) this._onBack();
-      pressed = false;
-    });
-    zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
+    zone.on('pointerdown', () => { text.setAlpha(0.5); });
+    zone.on('pointerup', () => { text.setAlpha(1); this._onBack(); });
+    zone.on('pointerout', () => { text.setAlpha(1); });
   }
 }

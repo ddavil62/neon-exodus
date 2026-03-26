@@ -111,10 +111,8 @@ export default class DailyMissionScene extends Phaser.Scene {
       }).setOrigin(0.5);
     }
 
-    // ── 뒤로가기 버튼 ──
-    this._createButton(centerX, 560, t('daily.back'), UI_COLORS.btnSecondary, () => {
-      this._fadeToScene('MenuScene');
-    });
+    // ── 뒤로가기 (상단 좌측 ←) ──
+    this._createBackArrow(30, 25);
 
     // ── ESC 키로 메뉴 복귀 ──
     this.input.keyboard.on('keydown-ESC', () => this._onBack());
@@ -128,6 +126,30 @@ export default class DailyMissionScene extends Phaser.Scene {
    */
   _onBack() {
     this._fadeToScene('MenuScene');
+  }
+
+  // ── 뒤로 화살표 ──
+
+  /**
+   * 상단 좌측 뒤로 화살표 버튼을 생성한다.
+   * @param {number} x - 중심 X
+   * @param {number} y - 중심 Y
+   * @private
+   */
+  _createBackArrow(x, y) {
+    const size = 36;
+    const text = this.add.text(x, y, '\u2190', {
+      fontSize: '20px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5);
+
+    const zone = this.add.zone(x, y, size, size)
+      .setInteractive({ useHandCursor: true });
+
+    zone.on('pointerdown', () => { text.setAlpha(0.5); });
+    zone.on('pointerup', () => { text.setAlpha(1); this._onBack(); });
+    zone.on('pointerout', () => { text.setAlpha(1); });
   }
 
   // ── 씬 전환 ──

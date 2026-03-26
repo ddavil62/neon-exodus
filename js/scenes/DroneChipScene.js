@@ -82,13 +82,19 @@ export default class DroneChipScene extends Phaser.Scene {
    * @private
    */
   _createTitleBar(centerX) {
-    // 뒤로 버튼
-    const backBtn = this.add.text(20, 30, '\u2190 ' + t('chip.back'), {
-      fontSize: '13px',
+    // 뒤로 화살표 (상단 좌측 ←)
+    const backText = this.add.text(30, 30, '\u2190', {
+      fontSize: '20px',
       fontFamily: 'Galmuri11, monospace',
-      color: UI_COLORS.textSecondary,
-    }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
-    backBtn.on('pointerdown', () => this._goBack());
+      color: UI_COLORS.textPrimary,
+    }).setOrigin(0.5);
+
+    const backZone = this.add.zone(30, 30, 36, 36)
+      .setInteractive({ useHandCursor: true });
+
+    backZone.on('pointerdown', () => { backText.setAlpha(0.5); });
+    backZone.on('pointerup', () => { backText.setAlpha(1); this._goBack(); });
+    backZone.on('pointerout', () => { backText.setAlpha(1); });
 
     // 타이틀
     this.add.text(centerX, 30, '\u26A1 ' + t('chip.title'), {
