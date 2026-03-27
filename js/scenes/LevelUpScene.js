@@ -11,6 +11,7 @@ import { t } from '../i18n.js';
 import { PASSIVES, getPassiveById } from '../data/passives.js';
 import { getAvailableWeapons, WEAPONS } from '../data/weapons.js';
 import { SaveManager } from '../managers/SaveManager.js';
+import { IAPManager } from '../managers/IAPManager.js';
 
 // ── LevelUpScene 클래스 ──
 
@@ -82,6 +83,9 @@ export default class LevelUpScene extends Phaser.Scene {
 
     // ── 카드 렌더링 ──
     this._renderCards();
+
+    // ── 자동 레벨업 토글 버튼 (Auto Hunt 구매자 전용) ──
+    this._createAutoToggleButton();
 
     // ── 리롤 버튼 ──
     this._createRerollButton();
@@ -179,6 +183,78 @@ export default class LevelUpScene extends Phaser.Scene {
     }
   }
 
+  // ── 자동 레벨업 토글 ──
+
+  /**
+   * Auto Hunt 구매자에게 자동 레벨업 ON/OFF 토글 버튼을 표시한다.
+   * autoLevelUp ON이면 create() 초반에서 즉시 리턴하므로,
+   * 이 메서드가 호출될 때는 항상 OFF 상태이다.
+   * @private
+   */
+  _createAutoToggleButton() {
+    // Auto Hunt 미구매 시 버튼 미표시
+    if (!IAPManager.isAutoHuntUnlocked()) return;
+
+    this._autoToggleElements = [];
+
+    const centerX = GAME_WIDTH / 2;
+    const btnY = 520;
+    const btnW = 140;
+    const btnH = 32;
+
+    // 현재 상태 (항상 OFF일 것이나 방어적으로 처리)
+    let isOn = SaveManager.getSetting('autoLevelUp');
+
+    // 배경
+    const bg = this.add.graphics().setDepth(1);
+    const borderColor = isOn ? COLORS.NEON_GREEN : COLORS.TEXT_GRAY;
+    bg.fillStyle(COLORS.UI_PANEL, 0.9);
+    bg.fillRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+    bg.lineStyle(1, borderColor, 0.5);
+    bg.strokeRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+    this._autoToggleElements.push(bg);
+
+    // 레이블
+    const labelColor = isOn ? UI_COLORS.neonGreen : UI_COLORS.textSecondary;
+    const labelStr = `${t('settings.autoLevelUp')} ${isOn ? t('settings.on') : t('settings.off')}`;
+    const text = this.add.text(centerX, btnY, labelStr, {
+      fontSize: '12px',
+      fontFamily: 'Galmuri11, monospace',
+      color: labelColor,
+    }).setOrigin(0.5).setDepth(2);
+    this._autoToggleElements.push(text);
+
+    // 터치 영역
+    const zone = this.add.zone(centerX, btnY, btnW, btnH)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(3);
+    this._autoToggleElements.push(zone);
+
+    zone.on('pointerdown', () => {
+      isOn = !isOn;
+      SaveManager.setSetting('autoLevelUp', isOn);
+
+      if (isOn) {
+        // ON 전환: 즉시 첫 번째 선택지 자동 적용 후 씬 종료
+        const choices = this._generateChoices();
+        if (choices.length > 0) {
+          this._applyChoice(choices[0], true);
+        } else {
+          this._skipLevelUp();
+        }
+      } else {
+        // OFF 전환 (방어적 처리): 텍스트/색상만 갱신
+        text.setText(`${t('settings.autoLevelUp')} ${t('settings.off')}`);
+        text.setColor(UI_COLORS.textSecondary);
+        bg.clear();
+        bg.fillStyle(COLORS.UI_PANEL, 0.9);
+        bg.fillRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+        bg.lineStyle(1, COLORS.TEXT_GRAY, 0.5);
+        bg.strokeRoundedRect(centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 6);
+      }
+    });
+  }
+
   // ── 스킵 UI ──
 
   /**
@@ -192,6 +268,12 @@ export default class LevelUpScene extends Phaser.Scene {
 
     // 리롤 버튼 숨김 플래그
     this._skipMode = true;
+
+    // 토글 버튼 제거
+    if (this._autoToggleElements) {
+      for (const el of this._autoToggleElements) el.destroy();
+      this._autoToggleElements = [];
+    }
 
     // 안내 텍스트
     const msg = this.add.text(centerX, centerY - 10, t('levelup.allMaxed'), {
