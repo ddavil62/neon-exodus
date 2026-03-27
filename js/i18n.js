@@ -59,6 +59,7 @@ const TRANSLATIONS = {
     'levelup.noReroll': '리롤 불가',
     'levelup.allMaxed': '모든 업그레이드 완료!',
     'levelup.skip': '스킵',
+    'levelup.autoSelected': '\u26A1 자동선택: {0}',
 
     // ── 난이도 ──
     'difficulty.normal': '일반',
@@ -839,6 +840,7 @@ const TRANSLATIONS = {
     'settings.ultRight': '오른쪽 ▶',
     'settings.on': 'ON',
     'settings.off': 'OFF',
+    'settings.autoLevelUp': '자동 레벨업',
 
     // ── 엔들리스 모드 ──
     'game.endlessMode': 'ENDLESS MODE!',
@@ -1220,6 +1222,7 @@ const TRANSLATIONS = {
     'levelup.noReroll': 'No Reroll',
     'levelup.allMaxed': 'All Upgrades Maxed!',
     'levelup.skip': 'Skip',
+    'levelup.autoSelected': '\u26A1 Auto: {0}',
 
     // ── Difficulty ──
     'difficulty.normal': 'Normal',
@@ -2000,6 +2003,7 @@ const TRANSLATIONS = {
     'settings.ultRight': 'Right ▶',
     'settings.on': 'ON',
     'settings.off': 'OFF',
+    'settings.autoLevelUp': 'Auto Level Up',
 
     // ── Endless Mode ──
     'game.endlessMode': 'ENDLESS MODE!',

@@ -49,6 +49,19 @@ export default class LevelUpScene extends Phaser.Scene {
     // 이전 스킵 상태 초기화 (Phaser는 scene.stop() 후 재실행 시 인스턴스를 재사용)
     this._skipMode = false;
 
+    // ── 자동 레벨업 처리 ──
+    // 설정에서 자동선택이 ON이면 UI를 렌더링하지 않고 첫 번째 선택지를 즉시 적용
+    if (SaveManager.getSetting('autoLevelUp')) {
+      const choices = this._generateChoices();
+      if (choices.length > 0) {
+        // 첫 번째 선택지 자동 적용 — _applyChoice가 levelupDone 이벤트 발생 + 씬 종료 처리
+        this._applyChoice(choices[0], true);
+      } else {
+        this._skipLevelUp();
+      }
+      return;
+    }
+
     const centerX = GAME_WIDTH / 2;
     const centerY = GAME_HEIGHT / 2;
 
@@ -356,10 +369,11 @@ export default class LevelUpScene extends Phaser.Scene {
 
   /**
    * 선택한 카드의 효과를 적용한다.
-   * @param {{ type: string, id: string }} choice - 선택한 카드 데이터
+   * @param {{ type: string, id: string, name?: string }} choice - 선택한 카드 데이터
+   * @param {boolean} [autoSelected=false] - 자동선택으로 호출되었는지 여부
    * @private
    */
-  _applyChoice(choice) {
+  _applyChoice(choice, autoSelected = false) {
     switch (choice.type) {
       case 'weapon_upgrade':
         this.weaponSystem.upgradeWeapon(choice.id);
@@ -378,8 +392,13 @@ export default class LevelUpScene extends Phaser.Scene {
         break;
     }
 
-    // 남은 리롤 수를 GameScene에 반환
-    this.events.emit('levelupDone', { rerollsLeft: this.rerollsLeft });
+    // 남은 리롤 수를 GameScene에 반환 (자동선택 시 선택된 항목명도 전달)
+    const eventData = { rerollsLeft: this.rerollsLeft };
+    if (autoSelected) {
+      eventData.autoSelected = true;
+      eventData.choiceName = choice.name || choice.id;
+    }
+    this.events.emit('levelupDone', eventData);
 
     // GameScene 재개 및 이 씬 종료
     this.scene.resume('GameScene');

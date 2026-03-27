@@ -562,6 +562,12 @@ export default class GameScene extends Phaser.Scene {
       if (data && data.choicesExhausted) {
         this._allChoicesExhausted = true;
       }
+
+      // 자동선택 피드백 표시 — 어떤 업그레이드가 자동 적용되었는지 알림
+      if (data && data.autoSelected && data.choiceName) {
+        this._showWarning(t('levelup.autoSelected', data.choiceName), 'info');
+      }
+
       // 무기/패시브 변경 후 진화 조건 체크
       this._tryEvolutionCheck();
       // 인벤토리 HUD 갱신 (레벨업, 진화 반영)
@@ -2198,19 +2204,27 @@ export default class GameScene extends Phaser.Scene {
       });
     }
 
-    // ── HP 바 ──
+    // ── HP 바 (AI 생성 프레임 + 필 이미지) ──
     const hpBarX = 42;
     const hpBarY = 12;
     const hpBarW = 220;
     const hpBarH = 14;
+    const hpFrameW = 232;
+    const hpFrameH = 20;
 
-    hud.hpBarBg = this.add.graphics()
-      .setScrollFactor(0).setDepth(100);
-    hud.hpBarBg.fillStyle(0x333333, 0.8);
-    hud.hpBarBg.fillRect(hpBarX, hpBarY, hpBarW, hpBarH);
-
-    hud.hpBar = this.add.graphics()
+    // HP 필 이미지 (cropRect로 비율 표시)
+    hud.hpBarFill = this.add.image(hpBarX, hpBarY, 'hp_bar_fill')
+      .setOrigin(0, 0).setDisplaySize(hpBarW, hpBarH)
       .setScrollFactor(0).setDepth(101);
+    hud.hpBarFill.setCrop(0, 0, hud.hpBarFill.width, hud.hpBarFill.height);
+
+    // HP 프레임 (NineSlice)
+    hud.hpBarFrame = this.add.nineslice(
+      hpBarX + hpBarW / 2, hpBarY + hpBarH / 2,
+      'hp_bar_frame', null,
+      hpFrameW, hpFrameH,
+      20, 20, 4, 4
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(102);
 
     hud.hpBarX = hpBarX;
     hud.hpBarY = hpBarY;
@@ -2222,7 +2236,7 @@ export default class GameScene extends Phaser.Scene {
       fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
-    }).setScrollFactor(0).setDepth(102);
+    }).setScrollFactor(0).setDepth(103);
 
     // ── 레벨 표시 ──
     hud.levelText = this.add.text(GAME_WIDTH - 12, 12, t('hud.level', 1), {
@@ -2231,19 +2245,27 @@ export default class GameScene extends Phaser.Scene {
       color: UI_COLORS.neonCyan,
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
 
-    // ── XP 바 ──
-    const xpBarY = 32;
+    // ── XP 바 (AI 생성 프레임 + 필 이미지) ──
+    const xpBarY = 36;
     const xpBarW = 250;
     const xpBarH = 8;
     const xpBarX = 12;
+    const xpFrameW = 260;
+    const xpFrameH = 14;
 
-    hud.xpBarBg = this.add.graphics()
-      .setScrollFactor(0).setDepth(100);
-    hud.xpBarBg.fillStyle(0x333333, 0.6);
-    hud.xpBarBg.fillRect(xpBarX, xpBarY, xpBarW, xpBarH);
-
-    hud.xpBar = this.add.graphics()
+    // XP 필 이미지 (cropRect로 비율 표시)
+    hud.xpBarFill = this.add.image(xpBarX, xpBarY, 'xp_bar_fill')
+      .setOrigin(0, 0).setDisplaySize(xpBarW, xpBarH)
       .setScrollFactor(0).setDepth(101);
+    hud.xpBarFill.setCrop(0, 0, 0, hud.xpBarFill.height);
+
+    // XP 프레임 (NineSlice)
+    hud.xpBarFrame = this.add.nineslice(
+      xpBarX + xpBarW / 2, xpBarY + xpBarH / 2,
+      'xp_bar_frame', null,
+      xpFrameW, xpFrameH,
+      16, 16, 3, 3
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(102);
 
     hud.xpBarX = xpBarX;
     hud.xpBarY = xpBarY;
@@ -2311,25 +2333,17 @@ export default class GameScene extends Phaser.Scene {
 
     const p = this.player;
 
-    // HP 바 갱신
+    // HP 바 갱신 (이미지 crop으로 비율 표시)
     const hpRatio = Math.max(0, p.currentHp / p.maxHp);
-    hud.hpBar.clear();
-    // HP 비율에 따라 색상 변경 (50% 이하: 빨강)
-    const hpColor = hpRatio > 0.5 ? COLORS.NEON_GREEN : COLORS.HP_RED;
-    hud.hpBar.fillStyle(hpColor, 0.9);
-    hud.hpBar.fillRect(
-      hud.hpBarX, hud.hpBarY,
-      hud.hpBarW * hpRatio, hud.hpBarH
-    );
+    const hpFillW = hud.hpBarFill.width;
+    hud.hpBarFill.setCrop(0, 0, hpFillW * hpRatio, hud.hpBarFill.height);
+    // HP 50% 이하: 레드 틴트
+    hud.hpBarFill.setTint(hpRatio > 0.5 ? 0xffffff : 0xff4444);
 
-    // XP 바 갱신
+    // XP 바 갱신 (이미지 crop으로 비율 표시)
     const xpRatio = Math.min(1, p.xp / p.xpToNext);
-    hud.xpBar.clear();
-    hud.xpBar.fillStyle(COLORS.XP_YELLOW, 0.9);
-    hud.xpBar.fillRect(
-      hud.xpBarX, hud.xpBarY,
-      hud.xpBarW * xpRatio, hud.xpBarH
-    );
+    const xpFillW = hud.xpBarFill.width;
+    hud.xpBarFill.setCrop(0, 0, xpFillW * xpRatio, hud.xpBarFill.height);
 
     // 레벨 텍스트
     hud.levelText.setText(t('hud.level', p.level));

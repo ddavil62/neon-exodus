@@ -54,8 +54,14 @@ export default class SettingsScene extends Phaser.Scene {
       SaveManager.setSetting('hapticEnabled', val);
     });
 
+    // ── 자동 레벨업 토글 ──
+    this._createToggleRow(490, t('settings.autoLevelUp'),
+      () => !!SaveManager.getSetting('autoLevelUp'),
+      (val) => { SaveManager.setSetting('autoLevelUp', val); }
+    );
+
     // ── 궁극기 버튼 위치 (좌/우) ──
-    this._createSideToggleRow(490);
+    this._createSideToggleRow(580);
 
     // ── 뒤로가기 (상단 좌측 ←) ──
     this._createBackArrow(30, 30);
