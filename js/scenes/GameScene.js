@@ -2216,7 +2216,7 @@ export default class GameScene extends Phaser.Scene {
     hud.hpBarFill = this.add.image(hpBarX, hpBarY, 'hp_bar_fill')
       .setOrigin(0, 0).setDisplaySize(hpBarW, hpBarH)
       .setScrollFactor(0).setDepth(101);
-    hud.hpBarFill.setCrop(0, 0, hud.hpBarFill.width, hud.hpBarFill.height);
+    hud.hpBarFill.setCrop(0, 0, hud.hpBarFill.displayWidth, hud.hpBarFill.displayHeight);
 
     // HP 프레임 (NineSlice)
     hud.hpBarFrame = this.add.nineslice(
@@ -2257,7 +2257,7 @@ export default class GameScene extends Phaser.Scene {
     hud.xpBarFill = this.add.image(xpBarX, xpBarY, 'xp_bar_fill')
       .setOrigin(0, 0).setDisplaySize(xpBarW, xpBarH)
       .setScrollFactor(0).setDepth(101);
-    hud.xpBarFill.setCrop(0, 0, 0, hud.xpBarFill.height);
+    hud.xpBarFill.setCrop(0, 0, 0, hud.xpBarFill.displayHeight);
 
     // XP 프레임 (NineSlice)
     hud.xpBarFrame = this.add.nineslice(
@@ -2335,15 +2335,15 @@ export default class GameScene extends Phaser.Scene {
 
     // HP 바 갱신 (이미지 crop으로 비율 표시)
     const hpRatio = Math.max(0, p.currentHp / p.maxHp);
-    const hpFillW = hud.hpBarFill.width;
-    hud.hpBarFill.setCrop(0, 0, hpFillW * hpRatio, hud.hpBarFill.height);
+    const hpFillW = hud.hpBarFill.displayWidth;
+    hud.hpBarFill.setCrop(0, 0, hpFillW * hpRatio, hud.hpBarFill.displayHeight);
     // HP 50% 이하: 레드 틴트
     hud.hpBarFill.setTint(hpRatio > 0.5 ? 0xffffff : 0xff4444);
 
     // XP 바 갱신 (이미지 crop으로 비율 표시)
     const xpRatio = Math.min(1, p.xp / p.xpToNext);
-    const xpFillW = hud.xpBarFill.width;
-    hud.xpBarFill.setCrop(0, 0, xpFillW * xpRatio, hud.xpBarFill.height);
+    const xpFillW = hud.xpBarFill.displayWidth;
+    hud.xpBarFill.setCrop(0, 0, xpFillW * xpRatio, hud.xpBarFill.displayHeight);
 
     // 레벨 텍스트
     hud.levelText.setText(t('hud.level', p.level));
