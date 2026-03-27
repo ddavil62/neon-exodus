@@ -65,13 +65,13 @@ export default class MenuScene extends Phaser.Scene {
       color: UI_COLORS.textSecondary,
     }).setOrigin(0.5);
 
-    // ── 2열 그리드 (메인 버튼 4개 + 조건부 드론 칩) ──
-    // 드론 칩 해금 시 3행 확장: row0=340, row1=400, row2(드론칩)=466
-    // 미해금 시: row0=370, row1=434 (기존)
+    // ── 2열 그리드 (메인 버튼 4개 + 드론 칩 + 상점) ──
+    // 드론 칩 해금 시: row0=320, row1=376, row2(드론칩)=432, row3(상점)=480
+    // 미해금 시: row0=370, row1=434
     const droneChipUnlocked = SaveManager.isDroneChipUnlocked();
-    const row0Y = droneChipUnlocked ? 340 : 370;
-    const row1Y = droneChipUnlocked ? 400 : 434;
-    const auxBtnY = droneChipUnlocked ? 510 : 498;
+    const row0Y = droneChipUnlocked ? 320 : 370;
+    const row1Y = droneChipUnlocked ? 376 : 434;
+    const auxBtnY = droneChipUnlocked ? 524 : 498;
 
     // 캐릭터 버튼 (0,0) — Primary 등급
     this._createButton(96, row0Y, t('menu.character'), {
@@ -111,43 +111,33 @@ export default class MenuScene extends Phaser.Scene {
       },
     });
 
-    // ── 드론 칩 버튼 (해금 시만 표시, 3행 중앙) ──
+    // ── 드론 칩 버튼 (해금 시만 표시) ──
     if (droneChipUnlocked) {
-      this._createDroneChipButton(centerX, 466);
+      this._createDroneChipButton(centerX, 432);
     }
 
-    // ── 보조 버튼 행 ──
+    // ── 상점 버튼 (항상 표시, 드론 칩 미해금 시 비활성) ──
+    this._createShopButton(centerX, droneChipUnlocked ? 480 : 480, droneChipUnlocked);
+
+    // ── 보조 버튼 행 (도감 + Auto Hunt + 설정) ──
     const autoHuntUnlocked = IAPManager.isAutoHuntUnlocked();
 
-    if (autoHuntUnlocked) {
-      // 자동사냥 해금됨: 도감/설정 2개 + 자동사냥 ON 텍스트 (넓은 간격)
-      this._createButton(56, auxBtnY, t('menu.collection'), {
-        width: 96, height: 36, fontSize: '12px',
-        frameType: 'secondary', textColor: UI_COLORS.textSecondary,
-        callback: () => { this._fadeToScene('CollectionScene'); },
-      });
+    // 도감 버튼 (좌측)
+    this._createButton(56, auxBtnY, t('menu.collection'), {
+      width: 96, height: 36, fontSize: '12px',
+      frameType: 'secondary', textColor: UI_COLORS.textSecondary,
+      callback: () => { this._fadeToScene('CollectionScene'); },
+    });
 
-      // 자동사냥 ON 텍스트 (버튼 없이)
+    if (autoHuntUnlocked) {
+      // 자동사냥 ON 텍스트 (중앙)
       this.add.text(centerX, auxBtnY, t('autoHunt.on'), {
         fontSize: '12px',
         fontFamily: 'Galmuri11, monospace',
         color: UI_COLORS.neonGreen,
       }).setOrigin(0.5);
-
-      this._createButton(304, auxBtnY, t('menu.settings'), {
-        width: 96, height: 36, fontSize: '12px',
-        frameType: 'secondary', textColor: UI_COLORS.textSecondary,
-        callback: () => { this._fadeToScene('SettingsScene'); },
-      });
     } else {
-      // 자동사냥 미해금: 3개 버튼 (도감, 자동사냥 구매, 설정)
-      this._createButton(56, auxBtnY, t('menu.collection'), {
-        width: 96, height: 36, fontSize: '12px',
-        frameType: 'secondary', textColor: UI_COLORS.textSecondary,
-        callback: () => { this._fadeToScene('CollectionScene'); },
-      });
-
-      // 자동사냥 구매 버튼 (Primary + 오렌지 틴트)
+      // 자동사냥 구매 버튼 (중앙, Primary + 오렌지 틴트)
       const price = IAPManager.getLocalizedPrice();
       const btnLabel = `${t('autoHunt.purchase')} (${price})`;
       this._createButton(180, auxBtnY, btnLabel, {
@@ -155,16 +145,17 @@ export default class MenuScene extends Phaser.Scene {
         frameType: 'primary', tint: 0xFF6600,
         callback: () => { this._showAutoHuntPurchase(); },
       });
-
-      this._createButton(304, auxBtnY, t('menu.settings'), {
-        width: 96, height: 36, fontSize: '12px',
-        frameType: 'secondary', textColor: UI_COLORS.textSecondary,
-        callback: () => { this._fadeToScene('SettingsScene'); },
-      });
     }
 
+    // 설정 버튼 (우측)
+    this._createButton(304, auxBtnY, t('menu.settings'), {
+      width: 96, height: 36, fontSize: '12px',
+      frameType: 'secondary', textColor: UI_COLORS.textSecondary,
+      callback: () => { this._fadeToScene('SettingsScene'); },
+    });
+
     // ── CTA 출격 버튼 ──
-    this._createButton(centerX, 560, t('menu.start'), {
+    this._createButton(centerX, 572, t('menu.start'), {
       width: 310,
       height: 56,
       fontSize: '20px',
@@ -185,11 +176,13 @@ export default class MenuScene extends Phaser.Scene {
       },
     });
 
-    // ── 하단: 크레딧/데이터코어 보유량 (한 줄로 표시) ──
-    /** @type {Phaser.GameObjects.Text} 크레딧 표시 텍스트 */
-    this._creditText = this.add.text(
-      60, 604,
-      t('menu.credits', SaveManager.getCredits()),
+    // ── 하단: 스크랩 / 크레딧 / 크리스탈 보유량 (3열) ──
+    const bottomY = GAME_HEIGHT - 24;
+
+    /** @type {Phaser.GameObjects.Text} 스크랩 표시 텍스트 */
+    this._scrapText = this.add.text(
+      45, bottomY,
+      t('menu.scrap', SaveManager.getScrap()),
       {
         fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
@@ -197,10 +190,21 @@ export default class MenuScene extends Phaser.Scene {
       }
     ).setOrigin(0.5);
 
-    /** @type {Phaser.GameObjects.Text} 데이터코어 표시 텍스트 */
-    this._dataCoreText = this.add.text(
-      300, 604,
-      t('menu.dataCores', SaveManager.getDataCores()),
+    /** @type {Phaser.GameObjects.Text} 크레딧 표시 텍스트 */
+    this._creditText = this.add.text(
+      180, bottomY,
+      t('menu.credits', SaveManager.getCredits()),
+      {
+        fontSize: '11px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonCyan,
+      }
+    ).setOrigin(0.5);
+
+    /** @type {Phaser.GameObjects.Text} 크리스탈 표시 텍스트 */
+    this._crystalText = this.add.text(
+      315, bottomY,
+      t('menu.crystal', SaveManager.getCrystal()),
       {
         fontSize: '11px',
         fontFamily: 'Galmuri11, monospace',
@@ -317,15 +321,18 @@ export default class MenuScene extends Phaser.Scene {
   // ── 내부 메서드 ──
 
   /**
-   * 크레딧/데이터코어 표시를 갱신한다 (씬 재개 시 호출).
+   * 하단 리소스 표시줄을 갱신한다 (씬 재개 시 호출).
    * @private
    */
   _refreshCredits() {
+    if (this._scrapText) {
+      this._scrapText.setText(t('menu.scrap', SaveManager.getScrap()));
+    }
     if (this._creditText) {
       this._creditText.setText(t('menu.credits', SaveManager.getCredits()));
     }
-    if (this._dataCoreText) {
-      this._dataCoreText.setText(t('menu.dataCores', SaveManager.getDataCores()));
+    if (this._crystalText) {
+      this._crystalText.setText(t('menu.crystal', SaveManager.getCrystal()));
     }
   }
 
@@ -379,6 +386,94 @@ export default class MenuScene extends Phaser.Scene {
       pressed = false;
     });
     zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
+  }
+
+  /**
+   * 상점 버튼을 생성한다 (오렌지/골드 그라데이션 테두리).
+   * 드론 칩 미해금 시 비활성 상태로 표시하고 탭 시 토스트를 표시한다.
+   * @param {number} x - 중심 X
+   * @param {number} y - 중심 Y
+   * @param {boolean} enabled - 드론 칩 해금 여부
+   * @private
+   */
+  _createShopButton(x, y, enabled) {
+    const width = 310;
+    const height = 48;
+    const radius = 8;
+
+    const bg = this.add.graphics();
+
+    if (enabled) {
+      // 오렌지 글로우
+      bg.fillStyle(COLORS.NEON_ORANGE, 0.1);
+      bg.fillRoundedRect(x - width / 2 - 2, y - height / 2 - 2, width + 4, height + 4, radius + 2);
+
+      // 배경
+      bg.fillStyle(UI_COLORS.btnPrimary, 0.9);
+      bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, radius);
+
+      // 오렌지 테두리
+      bg.lineStyle(1, COLORS.NEON_ORANGE, 0.6);
+      bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, radius);
+
+      // 골드 내부 테두리 (2px 안쪽)
+      bg.lineStyle(1, 0xFFD700, 0.3);
+      bg.strokeRoundedRect(x - width / 2 + 2, y - height / 2 + 2, width - 4, height - 4, radius - 1);
+    } else {
+      // 비활성 — grayed out
+      bg.fillStyle(UI_COLORS.btnDisabled, 0.5);
+      bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, radius);
+
+      bg.lineStyle(1, COLORS.DARK_GRAY, 0.4);
+      bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, radius);
+    }
+
+    const text = this.add.text(x, y, t('menu.shop'), {
+      fontSize: '15px',
+      fontFamily: 'Galmuri11, monospace',
+      color: enabled ? UI_COLORS.neonOrange : UI_COLORS.textSecondary,
+      stroke: enabled ? '#000000' : undefined,
+      strokeThickness: enabled ? 1 : 0,
+    }).setOrigin(0.5);
+
+    const zone = this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true });
+
+    if (enabled) {
+      zone.on('pointerover', () => { text.setAlpha(0.8); });
+      zone.on('pointerout', () => { text.setAlpha(1); });
+      let pressed = false;
+      zone.on('pointerdown', () => { pressed = true; text.setAlpha(0.6); });
+      zone.on('pointerup', () => {
+        text.setAlpha(1);
+        if (pressed) this._fadeToScene('ShopScene');
+        pressed = false;
+      });
+      zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
+    } else {
+      // 비활성 탭 시 토스트 표시
+      zone.on('pointerdown', () => {
+        this._showLockedToast(t('shop.locked'));
+      });
+    }
+  }
+
+  /**
+   * 잠금 콘텐츠 안내 토스트를 표시한다.
+   * @param {string} message - 토스트 메시지
+   * @private
+   */
+  _showLockedToast(message) {
+    const toast = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, message, {
+      fontSize: '14px',
+      fontFamily: 'Galmuri11, monospace',
+      color: UI_COLORS.hpRed,
+      stroke: UI_COLORS.strokeBlack,
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(500);
+
+    this.time.delayedCall(1500, () => {
+      if (toast && toast.active) toast.destroy();
+    });
   }
 
   /**
