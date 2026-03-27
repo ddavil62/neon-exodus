@@ -346,6 +346,9 @@ export class DailyMissionManager {
     if (poolData.reward.credits) {
       SaveManager.addCredits(poolData.reward.credits);
     }
+    if (poolData.reward.scrap) {
+      SaveManager.addScrap(poolData.reward.scrap);
+    }
     if (poolData.reward.dataCores) {
       SaveManager.addDataCores(poolData.reward.dataCores);
       // 선택된 캐릭터에 XP로 자동 투자

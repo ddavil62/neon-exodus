@@ -20,6 +20,7 @@ import CollectionScene from './scenes/CollectionScene.js';
 import CutsceneScene from './scenes/CutsceneScene.js';
 import DailyMissionScene from './scenes/DailyMissionScene.js';
 import DroneChipScene from './scenes/DroneChipScene.js';
+import ShopScene from './scenes/ShopScene.js';
 import DeployCharSelectScene from './scenes/DeployCharSelectScene.js';
 
 // ── Phaser 게임 설정 ──
@@ -31,7 +32,7 @@ const config = {
   height: GAME_HEIGHT,
   backgroundColor: '#0A0A1A',
   parent: 'game',
-  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, DeployCharSelectScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene, CutsceneScene, DailyMissionScene, DroneChipScene],
+  scene: [BootScene, MenuScene, SettingsScene, StageSelectScene, CharacterScene, DeployCharSelectScene, GameScene, LevelUpScene, ResultScene, UpgradeScene, AchievementScene, CollectionScene, CutsceneScene, DailyMissionScene, DroneChipScene, ShopScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

@@ -80,6 +80,7 @@ const TRANSLATIONS = {
     'result.creditMult': '크레딧: +{0} (x{1})',
     'result.dataCores': '데이터코어: +{0}',
     'result.bonusCredit': '클리어 보너스: +{0}',
+    'result.scrapEarned': '획득 스크랩: +{0}',
     'result.continue': '계속',
     'result.retry': '재도전',
     'result.toMenu': '메인 메뉴',
@@ -1036,6 +1037,7 @@ const TRANSLATIONS = {
     'daily.streakBonus': '{0}일째 보너스!',
     'daily.missionComplete': '일일 미션 완료!',
     'daily.reward.credits': '\uD83D\uDCB0 {0}',
+    'daily.reward.scrap': '\uD83D\uDD29 {0}',
     'daily.reward.dataCores': '\uD83D\uDC8E {0}',
     'daily.back': '뒤로가기',
 
@@ -1167,6 +1169,22 @@ const TRANSLATIONS = {
     'cutscene.drone_chip_unlock.1': '이 드론, 칩 슬롯이 있어!\n프로그래밍 칩을 장착하면 행동 양식을 바꿀 수 있어.',
     'cutscene.drone_chip_unlock.2': '관통, 레이저, 자폭, 수리...\n각종 칩을 조합해보자.',
     'cutscene.drone_chip_unlock.3': '드론 칩 시스템이 해금되었다.',
+
+    // ── 상점 ──
+    'menu.shop': '상점',
+    'menu.scrap': '스크랩: {0}',
+    'menu.crystal': '크리스탈: {0}',
+    'shop.title': '상점',
+    'shop.back': '뒤로',
+    'shop.tabChip': '드론 칩',
+    'shop.nextRotation': '갱신까지: {0}',
+    'shop.buy': '구매 — {0} 스크랩',
+    'shop.insufficientScrap': '스크랩이 부족합니다',
+    'shop.inventoryFull': '인벤토리가 가득 찼습니다',
+    'shop.purchased': '구매 완료!',
+    'shop.scrapBalance': '스크랩: {0}',
+    'shop.crystalBalance': '크리스탈: {0}',
+    'shop.locked': '드론 칩 해금 후 이용 가능',
   },
 
   en: {
@@ -1243,6 +1261,7 @@ const TRANSLATIONS = {
     'result.creditMult': 'Credits: +{0} (x{1})',
     'result.dataCores': 'Data Cores: +{0}',
     'result.bonusCredit': 'Clear Bonus: +{0}',
+    'result.scrapEarned': 'Scrap Earned: +{0}',
     'result.continue': 'Continue',
     'result.retry': 'Retry',
     'result.toMenu': 'Main Menu',
@@ -2199,6 +2218,7 @@ const TRANSLATIONS = {
     'daily.streakBonus': '{0}-day bonus!',
     'daily.missionComplete': 'Mission Complete!',
     'daily.reward.credits': '\uD83D\uDCB0 {0}',
+    'daily.reward.scrap': '\uD83D\uDD29 {0}',
     'daily.reward.dataCores': '\uD83D\uDC8E {0}',
     'daily.back': 'Back',
 
@@ -2330,6 +2350,22 @@ const TRANSLATIONS = {
     'cutscene.drone_chip_unlock.1': 'This drone has chip slots!\nWe can change its behavior by installing programming chips.',
     'cutscene.drone_chip_unlock.2': 'Pierce, laser, kamikaze, repair...\nLet\'s try combining different chips.',
     'cutscene.drone_chip_unlock.3': 'Drone Chip System unlocked.',
+
+    // ── Shop ──
+    'menu.shop': 'Shop',
+    'menu.scrap': 'Scrap: {0}',
+    'menu.crystal': 'Crystal: {0}',
+    'shop.title': 'Shop',
+    'shop.back': 'Back',
+    'shop.tabChip': 'Drone Chips',
+    'shop.nextRotation': 'Refreshes in: {0}',
+    'shop.buy': 'Buy — {0} Scrap',
+    'shop.insufficientScrap': 'Not enough Scrap',
+    'shop.inventoryFull': 'Inventory Full',
+    'shop.purchased': 'Purchased!',
+    'shop.scrapBalance': 'Scrap: {0}',
+    'shop.crystalBalance': 'Crystal: {0}',
+    'shop.locked': 'Unlock Drone Chips first',
   },
 };
 

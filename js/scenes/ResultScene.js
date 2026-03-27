@@ -127,6 +127,16 @@ export default class ResultScene extends Phaser.Scene {
     const adjustedCredits = this._adjustedCredits;
     SaveManager.addCredits(adjustedCredits);
 
+    // ── 스크랩 보상 ──
+    const SCRAP_BY_DIFFICULTY = { normal: 50, hard: 100, nightmare: 200 };
+    const baseScrap = SCRAP_BY_DIFFICULTY[this.difficulty] || 50;
+    const clearScrap = this.victory ? baseScrap : 0;
+    const timeScrap = Math.max(1, Math.floor(Math.min(this.runTime, 900) / 900 * baseScrap * 0.5));
+    const totalScrap = clearScrap + timeScrap;
+    SaveManager.addScrap(totalScrap);
+    /** @type {number} 이번 런의 총 스크랩 보상 */
+    this._totalScrap = totalScrap;
+
     // 데이터코어 보상 — 승리 시에만 지급, 스테이지/난이도별 보너스 가산
     const dcReward = this.victory
       ? DC_REWARD_BASE + (STAGE_DC_BONUS[this.stageId] || 0) + (DIFFICULTY_MODES[this.difficulty]?.dcBonus || 0)
@@ -341,11 +351,30 @@ export default class ResultScene extends Phaser.Scene {
       delay: 900,
     });
 
+    // 스크랩 보상 표시
+    const scrapText = this.add.text(
+      centerX, rewardY + 44,
+      t('result.scrapEarned', this._totalScrap),
+      {
+        fontSize: '12px',
+        fontFamily: 'Galmuri11, monospace',
+        color: UI_COLORS.neonOrange,
+      }
+    ).setOrigin(0.5).setAlpha(0);
+    this._page1Elements.push(scrapText);
+
+    this.tweens.add({
+      targets: scrapText,
+      alpha: 1,
+      duration: 500,
+      delay: 950,
+    });
+
     // 클리어 보너스 (승리 시)
-    let rewardEndY = rewardY + 42;
+    let rewardEndY = rewardY + 60;
     if (this.victory) {
       const bonusText = this.add.text(
-        centerX, rewardY + 44,
+        centerX, rewardY + 62,
         t('result.bonusCredit', 100),
         {
           fontSize: '12px',
@@ -361,7 +390,7 @@ export default class ResultScene extends Phaser.Scene {
         duration: 500,
         delay: 1000,
       });
-      rewardEndY = rewardY + 60;
+      rewardEndY = rewardY + 78;
     }
 
     // ── 무기 해금 배너 (스테이지 클리어 시) ──

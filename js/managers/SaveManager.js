@@ -49,6 +49,12 @@ const DEFAULT_SAVE = {
     1: null,
     2: null,
   },
+  scrap: 0,                 // 스크랩 (상점 구매용 연화)
+  crystal: 0,               // 크리스탈 (프리미엄 경화, 향후 용도)
+  shopRotation: {            // 상점 로테이션 상태
+    lastRotationTime: 0,
+    slots: [],
+  },
   dailyMissions: {          // 일일 미션 시스템
     date: '',
     seed: 0,
@@ -852,6 +858,84 @@ export class SaveManager {
     return SaveManager.addChip(newChipDef.id, chip.grade);
   }
 
+  // ── 스크랩 (상점 재화) ──
+
+  /**
+   * 현재 스크랩을 반환한다.
+   * @returns {number} 스크랩 수량
+   */
+  static getScrap() {
+    return SaveManager.getData().scrap || 0;
+  }
+
+  /**
+   * 스크랩을 추가(또는 차감)한다.
+   * @param {number} amount - 추가할 양 (음수면 차감)
+   */
+  static addScrap(amount) {
+    const data = SaveManager.getData();
+    data.scrap = Math.max(0, (data.scrap || 0) + amount);
+    SaveManager.save();
+  }
+
+  /**
+   * 스크랩을 소비한다. 잔액 부족 시 실패.
+   * @param {number} amount - 소비할 양
+   * @returns {boolean} 성공 여부
+   */
+  static spendScrap(amount) {
+    const data = SaveManager.getData();
+    const current = data.scrap || 0;
+    if (amount > current) return false;
+    data.scrap = current - amount;
+    SaveManager.save();
+    return true;
+  }
+
+  // ── 크리스탈 (프리미엄 재화) ──
+
+  /**
+   * 현재 크리스탈을 반환한다.
+   * @returns {number} 크리스탈 수량
+   */
+  static getCrystal() {
+    return SaveManager.getData().crystal || 0;
+  }
+
+  /**
+   * 크리스탈을 추가(또는 차감)한다.
+   * @param {number} amount - 추가할 양 (음수면 차감)
+   */
+  static addCrystal(amount) {
+    const data = SaveManager.getData();
+    data.crystal = Math.max(0, (data.crystal || 0) + amount);
+    SaveManager.save();
+  }
+
+  // ── 상점 로테이션 ──
+
+  /**
+   * 상점 로테이션 데이터를 반환한다.
+   * @returns {{ lastRotationTime: number, slots: Array }} 로테이션 데이터
+   */
+  static getShopRotation() {
+    const data = SaveManager.getData();
+    if (!data.shopRotation) {
+      data.shopRotation = { lastRotationTime: 0, slots: [] };
+    }
+    return data.shopRotation;
+  }
+
+  /**
+   * 상점 로테이션 데이터를 저장한다.
+   * @param {Object} rotation - 로테이션 데이터
+   */
+  static setShopRotation(rotation) {
+    const data = SaveManager.getData();
+    data.shopRotation = rotation;
+    SaveManager.save();
+  }
+
   // ── 캐릭터 레벨 & 스킬 ──
 
   /**
@@ -1240,6 +1324,16 @@ export class SaveManager {
         }
       }
       data.version = 16;
+    }
+
+    // v16 -> v17: 상점 시스템 — scrap, crystal, shopRotation 추가
+    if (data.version < 17) {
+      if (data.scrap === undefined) data.scrap = 0;
+      if (data.crystal === undefined) data.crystal = 0;
+      if (!data.shopRotation) {
+        data.shopRotation = { lastRotationTime: 0, slots: [] };
+      }
+      data.version = 17;
     }
 
     data.version = SAVE_DATA_VERSION;

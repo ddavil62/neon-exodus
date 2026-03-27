@@ -172,10 +172,24 @@ export const EMP_SCREEN_MARGIN = 50;
 export const SAVE_KEY = 'neon-exodus-save';
 
 /** 세이브 데이터 버전 */
-export const SAVE_DATA_VERSION = 16;
+export const SAVE_DATA_VERSION = 17;
 
 /** 엔들리스 모드 스케일링 간격 (ms). 60초마다 적 HP/데미지 +10% */
 export const ENDLESS_SCALE_INTERVAL = 60000;
+
+// ── 상점 시스템 설정 ──
+
+/** 상점 로테이션 갱신 간격 (ms) — 1시간 */
+export const SHOP_ROTATION_INTERVAL = 3_600_000;
+
+/** 상점 진열 슬롯 수 */
+export const SHOP_SLOT_COUNT = 6;
+
+/** 상점 칩 등급별 가격 (스크랩) */
+export const SHOP_CHIP_PRICES = { C: 100, B: 400, A: 1500, S: 5000 };
+
+/** 상점 로테이션 등급 가중치 */
+export const SHOP_GRADE_WEIGHTS = { C: 80, B: 15, A: 4, S: 1 };
 
 // ── 드론 칩 시스템 설정 ──
 

@@ -248,12 +248,14 @@ export default class DailyMissionScene extends Phaser.Scene {
       color: UI_COLORS.textSecondary,
     }).setOrigin(0, 0);
 
-    // 보상 텍스트
-    const rewardStr = mission.reward
-      ? (mission.reward.credits
-        ? t('daily.reward.credits', mission.reward.credits)
-        : t('daily.reward.dataCores', mission.reward.dataCores))
-      : '';
+    // 보상 텍스트 (복수 보상 병합 표시)
+    const rewardParts = [];
+    if (mission.reward) {
+      if (mission.reward.credits) rewardParts.push(t('daily.reward.credits', mission.reward.credits));
+      if (mission.reward.scrap) rewardParts.push(t('daily.reward.scrap', mission.reward.scrap));
+      if (mission.reward.dataCores) rewardParts.push(t('daily.reward.dataCores', mission.reward.dataCores));
+    }
+    const rewardStr = rewardParts.join('  ');
     this.add.text(cardX + 8, topY + CARD_H - 20, rewardStr, {
       fontSize: '10px',
       fontFamily: 'Galmuri11, monospace',

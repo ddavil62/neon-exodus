@@ -12,8 +12,8 @@
  */
 export const DAILY_MISSION_POOL = [
   // ── kill (8종) ──
-  { id: 'kill_100',        category: 'kill',       nameKey: 'daily.kill100.name',        descKey: 'daily.kill100.desc',        target: 100,   reward: { credits: 200 } },
-  { id: 'kill_300',        category: 'kill',       nameKey: 'daily.kill300.name',        descKey: 'daily.kill300.desc',        target: 300,   reward: { credits: 400 } },
+  { id: 'kill_100',        category: 'kill',       nameKey: 'daily.kill100.name',        descKey: 'daily.kill100.desc',        target: 100,   reward: { credits: 150, scrap: 30 } },
+  { id: 'kill_300',        category: 'kill',       nameKey: 'daily.kill300.name',        descKey: 'daily.kill300.desc',        target: 300,   reward: { credits: 300, scrap: 50 } },
   { id: 'kill_500',        category: 'kill',       nameKey: 'daily.kill500.name',        descKey: 'daily.kill500.desc',        target: 500,   reward: { credits: 600 } },
   { id: 'kill_1000',       category: 'kill',       nameKey: 'daily.kill1000.name',       descKey: 'daily.kill1000.desc',       target: 1000,  reward: { credits: 1000 } },
   { id: 'kill_boss_1',     category: 'kill',       nameKey: 'daily.killBoss1.name',      descKey: 'daily.killBoss1.desc',      target: 1,     reward: { credits: 300 } },
@@ -22,12 +22,12 @@ export const DAILY_MISSION_POOL = [
   { id: 'kill_miniboss_5', category: 'kill',       nameKey: 'daily.killMiniboss5.name',  descKey: 'daily.killMiniboss5.desc',  target: 5,     reward: { credits: 600 } },
 
   // ── survival (6종) ──
-  { id: 'survive_5min',    category: 'survival',   nameKey: 'daily.survive5.name',       descKey: 'daily.survive5.desc',       target: 300,   reward: { credits: 200 } },
-  { id: 'survive_10min',   category: 'survival',   nameKey: 'daily.survive10.name',      descKey: 'daily.survive10.desc',      target: 600,   reward: { credits: 400 } },
+  { id: 'survive_5min',    category: 'survival',   nameKey: 'daily.survive5.name',       descKey: 'daily.survive5.desc',       target: 300,   reward: { credits: 150, scrap: 25 } },
+  { id: 'survive_10min',   category: 'survival',   nameKey: 'daily.survive10.name',      descKey: 'daily.survive10.desc',      target: 600,   reward: { credits: 300, scrap: 50 } },
   { id: 'survive_15min',   category: 'survival',   nameKey: 'daily.survive15.name',      descKey: 'daily.survive15.desc',      target: 900,   reward: { credits: 600 } },
-  { id: 'clear_1',         category: 'survival',   nameKey: 'daily.clear1.name',         descKey: 'daily.clear1.desc',         target: 1,     reward: { credits: 500 } },
-  { id: 'clear_2',         category: 'survival',   nameKey: 'daily.clear2.name',         descKey: 'daily.clear2.desc',         target: 2,     reward: { credits: 800 } },
-  { id: 'run_3',           category: 'survival',   nameKey: 'daily.run3.name',           descKey: 'daily.run3.desc',           target: 3,     reward: { credits: 400 } },
+  { id: 'clear_1',         category: 'survival',   nameKey: 'daily.clear1.name',         descKey: 'daily.clear1.desc',         target: 1,     reward: { credits: 400, scrap: 80 } },
+  { id: 'clear_2',         category: 'survival',   nameKey: 'daily.clear2.name',         descKey: 'daily.clear2.desc',         target: 2,     reward: { credits: 600, scrap: 120 } },
+  { id: 'run_3',           category: 'survival',   nameKey: 'daily.run3.name',           descKey: 'daily.run3.desc',           target: 3,     reward: { credits: 300, scrap: 50 } },
 
   // ── collection (6종) ──
   { id: 'earn_credits_500',  category: 'collection', nameKey: 'daily.earnCredits500.name',  descKey: 'daily.earnCredits500.desc',  target: 500,   reward: { credits: 200 } },
