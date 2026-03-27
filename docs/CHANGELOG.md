@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-03-27 -- 인게임 자동 레벨업 토글
+
+### 추가
+
+- `js/scenes/LevelUpScene.js`에 `_createAutoToggleButton()` 메서드 추가
+  - Auto Hunt 구매자 전용 (`IAPManager.isAutoHuntUnlocked()` 체크)
+  - 토글 ON 시: 즉시 첫 번째 선택지를 자동 적용하고 씬 종료
+  - 토글 OFF 시: 기존 수동 3택 카드 선택 유지
+  - 리롤 버튼 위쪽(Y=520)에 배치
+
+### 참고
+
+- 자동 사냥(Auto Hunt) IAP 기능의 확장으로, 이동 자동화에 더해 레벨업 선택도 자동화
+- 기존 레벨업 3택/리롤 UI에 영향 없음 (토글 OFF 시 동일 동작)
+
+---
+
 ## 2026-03-25 -- 진화 힌트 팝업 모달 교체
 
 ### 변경
