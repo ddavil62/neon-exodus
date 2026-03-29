@@ -94,7 +94,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 가상 조이스틱 | 터치 기반 이동, 데드존 8px, 최대 50px | 완료 |
 | 자동 공격 | 사거리 내 가장 가까운 적 자동 발사 | 완료 |
 | 무기 10종 | blaster/laser/plasma_orb/chain/missile/drone/emp/force_blade/nanoswarm/vortex_cannon | 완료 |
-| 무기 진화 11종 | 무기 Lv8 + 패시브 Lv5 조합으로 상위 무기 진화 | 완료 |
+| 무기 진화 11종 | 무기 Lv8 + 패시브 Lv5 조합으로 상위 무기 진화, 4종 고유 동작 패턴 | 완료 |
 | 패시브 11종 | 이속/방어/HP/공속/자석/재생/사거리/크리/쿨다운/행운/데미지앰프 | 완료 |
 | 적 15종 AI | 잡몹 10종 + 미니보스 2종 + 보스 6종 | 완료 |
 | 소모성 아이템 6종 | 수리킷/자기펄스/EMP/크레딧칩/오버클럭/쉴드, 적 드롭 | 완료 |
@@ -146,7 +146,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 글로우 벡터 아트 | GPT Image API 벡터 PNG 20종 + SVG 3종, SPRITE_SCALE=1 | 완료 |
 | 시각적 인지성 | 적/플레이어 탄환 글로우, 플레이어 발밑 글로우, 피격 플래시 | 완료 |
 | 배경 시스템 | 스테이지별 128x128 타일 + 장식 오브젝트 16종, 파괴 가능 데코 | 완료 |
-| 무기 이펙트 | SVG 생성 10종 + 진화 전용 프로시저럴 10종 | 완료 |
+| 무기 이펙트 | SVG 생성 10종 + 진화 전용 프로시저럴 10종, 4종 고유 패턴(부채꼴/트레일/균열/부메랑) | 완료 |
 | 사운드 | AudioContext SFX 10종 + BGM 2곡, 외부 파일 없음 | 완료 |
 
 ### 수익화/배포

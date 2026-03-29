@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-03-29 -- 진화 무기 4종 이펙트 리디자인
+
+### 변경
+- `js/scenes/BootScene.js`: `_generateEvolvedEffectTextures()` 4종 텍스처 Canvas 재작성
+  - Perpetual EMP: 원형 → 64x64 부채꼴 형태 (시안+보라)
+  - Bioplasma: 원형 → 48x24 직사각형 독 웅덩이 (녹색 글로우)
+  - Event Horizon: 원형 → 16x96 세로 균열선 (보라+흰색)
+  - Death Blossom: 원형 → 32x24 크레센트 형태 (진홍)
+- `js/systems/WeaponSystem.js`: 4종 동작 패턴 + 렌더링 전면 재구현
+  - Perpetual EMP: `_triggerEmp()` 부채꼴 분기, 전방 120도 충격파 + 방향 자동 조준 + 둔화
+  - Bioplasma: `_updateCloud()` 트레일 분기, 이동 경로에 독 궤적 세그먼트 60px마다 생성 (최대 5개)
+  - Event Horizon: `_updateGravity()` 균열 분기, 적 밀집 방향에 직선 균열 280px + 수직 흡인
+  - Death Blossom: `_updateRotatingBlade()` 부메랑 분기, 상태 머신(idle→burst→return→idle), 5개 낫 72도 간격 방사+커브 귀환
+  - 9개 신규 메서드 추가 (부채꼴 VFX, 트레일 관리, 균열 렌더링, 부메랑 물리 등)
+  - 생성자에 5개 신규 데이터 구조 추가, `_applyEvolvedTextures()` 진화 전환 시 기존 이펙트 정리, `destroy()` 정리 코드
+- `js/i18n.js`: 4종 진화 무기 설명 ko/en 갱신 (부채꼴/충격파, 궤적/독, 균열/끌어당김, 별/부메랑)
+
+### 알려진 이슈 (LOW)
+- `_empConeGraphics` 필드 선언 후 미사용 (destroy에서만 참조, 기능 영향 없음)
+- `_showEmpConeEffect` 내 Graphics scaleX/Y 트윈이 원점(0,0) 기준 확대 (300ms 효과, 시각적 미미)
+- Death Blossom hitTag가 적 오브젝트 풀 재활용 시 잔류 가능 (기존 패턴과 동일, 실질 영향 희소)
+
+### 참고
+- 스펙: `.claude/specs/2026-03-29-evolved-weapon-redesign-spec.md`
+- 리포트: `.claude/specs/2026-03-29-evolved-weapon-redesign-report.md`
+- QA: `.claude/specs/2026-03-29-evolved-weapon-redesign-qa.md` (PASS, 27/27 테스트 통과)
+- 목적 정의: `.claude/specs/2026-03-29-evolved-weapon-redesign-purpose.md`
+
+---
+
 ## 2026-03-29 -- SettingsScene 통계 탭 추가
 
 ### 추가
