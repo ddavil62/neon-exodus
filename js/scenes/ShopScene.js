@@ -195,11 +195,11 @@ export default class ShopScene extends Phaser.Scene {
     const remaining = ShopManager.getTimeUntilNextRotation();
 
     if (remaining <= 0) {
-      // 슬롯 새로고침
+      // 슬롯 새로고침 (create() 중 호출 시 UI가 아직 없을 수 있으므로 null 체크)
       this._selectedSlotIndex = null;
       this._renderCards();
-      this._refreshBuyButton();
-      this._refreshCurrencyDisplay();
+      if (this._buyBtnBg) this._refreshBuyButton();
+      if (this._scrapBalanceText) this._refreshCurrencyDisplay();
     }
 
     const totalSecs = Math.ceil(remaining / 1000);
