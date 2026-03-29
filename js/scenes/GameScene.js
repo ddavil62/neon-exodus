@@ -1156,6 +1156,14 @@ export default class GameScene extends Phaser.Scene {
     // 이미 모달이 열려 있으면 중복 표시 방지
     if (this._modalOpen) return;
 
+    // 자동 레벨업 모드이면 모달 없이 HUD 워닝으로 대체
+    if (SaveManager.getSetting('autoLevelUp')) {
+      const resultName = t(evo.resultNameKey);
+      this._showWarning(`${resultName} EVOLVED!`, 'info');
+      this._refreshInventoryHUD();
+      return;
+    }
+
     const centerX = GAME_WIDTH / 2;
     const centerY = GAME_HEIGHT / 2;
 
@@ -1284,6 +1292,9 @@ export default class GameScene extends Phaser.Scene {
     // 이미 힌트를 보여준 진화는 건너뛴다
     if (this._shownHints.has(evo.resultId)) return;
     this._shownHints.add(evo.resultId);
+
+    // 자동 레벨업 모드이면 진화 힌트 팝업을 스킵한다
+    if (SaveManager.getSetting('autoLevelUp')) return;
 
     // 레벨업 중이면 큐에만 적재하고 반환
     if (this._levelUpActive) {
