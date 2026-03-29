@@ -844,6 +844,12 @@ const TRANSLATIONS = {
     'settings.autoLevelUp': '자동 레벨업',
     'settings.tabSettings': '설정',
     'settings.tabStats': '통계',
+    'settings.sectionSound': '사운드',
+    'settings.sectionGameplay': '게임플레이',
+    'settings.sectionSystem': '시스템',
+    'settings.version': '버전',
+    'settings.resetData': '데이터 초기화',
+    'settings.resetConfirm': '정말 초기화?',
 
     // ── 통계 ──
     'stats.totalRuns': '총 런 수',
@@ -2039,6 +2045,12 @@ const TRANSLATIONS = {
     'settings.autoLevelUp': 'Auto Level Up',
     'settings.tabSettings': 'Settings',
     'settings.tabStats': 'Stats',
+    'settings.sectionSound': 'Sound',
+    'settings.sectionGameplay': 'Gameplay',
+    'settings.sectionSystem': 'System',
+    'settings.version': 'Version',
+    'settings.resetData': 'Reset Data',
+    'settings.resetConfirm': 'Really Reset?',
 
     // ── Stats ──
     'stats.totalRuns': 'Total Runs',
