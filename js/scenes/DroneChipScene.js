@@ -245,7 +245,6 @@ export default class DroneChipScene extends Phaser.Scene {
   _refreshList() {
     // 기존 목록 정리
     this._listContainer.removeAll(true);
-    this._selectedChips.clear();
 
     const inventory = SaveManager.getDroneChipInventory();
     const equippedChips = SaveManager.getEquippedChips();
