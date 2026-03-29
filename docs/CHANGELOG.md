@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-29 -- SettingsScene 통계 탭 추가
+
+### 추가
+- `js/scenes/SettingsScene.js`: [설정]/[통계] 탭 헤더 UI 추가
+  - Y=110 타이틀을 2탭 헤더로 교체 (활성: neon cyan + 밑줄, 비활성: dim)
+  - 탭 전환 시 콘텐츠 show/hide, 기존 5개 토글은 설정 탭에 그대로 유지
+- `js/scenes/SettingsScene.js`: 통계 탭 콘텐츠 렌더링
+  - 전체 통계 7항목: totalRuns, totalClears, totalKills, longestSurvival(분:초), maxLevel, maxKillsInRun, totalBossKills
+  - 스테이지별 클리어: stage_1~4 x normal/hard/nightmare (12셀)
+  - 캐릭터별 클리어: 6캐릭터 (characterClears 데이터)
+  - 데이터 없을 때 "아직 기록이 없습니다" 안내 표시
+  - 콘텐츠 초과 시 마스크+드래그 스크롤 (STATS_START_Y=160px 기준)
+- `js/i18n.js`: ko/en 14키 추가 (settings.tabSettings, settings.tabStats, stats.* 12개)
+
+### 알려진 이슈 (LOW)
+- `this.input.off()` 호출 시 `_onStatsPointerMove` 미정의 가능성 (실제 동작 영향 없음, `off` no-op)
+- `tabGap = 80` 매직넘버가 `_createTabHeader`와 `_showTab`에 중복 정의 (상수 추출 권장)
+- 영어 로케일 stage_3 "Underground Server Farm" 텍스트가 난이도 카운트와 시각적 겹침 (한국어 정상, 텍스트 말줄임 권장)
+
+### 참고
+- 스펙: `.claude/specs/2026-03-29-neon-exodus-stats-screen-purpose.md`
+- 리포트: `.claude/specs/2026-03-29-neon-exodus-settings-stats-tab-report.md`
+- QA: `.claude/specs/2026-03-29-neon-exodus-stats-screen-qa.md` (PASS, 19/19 테스트 통과)
+
+---
+
 ## 2026-03-27 -- 인게임 자동 레벨업 토글
 
 ### 추가

@@ -1,6 +1,6 @@
 # NEON EXODUS (네온 엑소더스)
 
-> 최종 업데이트: 2026-03-27
+> 최종 업데이트: 2026-03-29
 
 ## 개요
 
@@ -68,7 +68,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 모듈 | 파일 | 역할 |
 |---|---|---|
 | 게임 설정 | `config.js` | 해상도, 월드, 밸런스 상수, SPRITE_SCALE=1 |
-| 다국어 | `i18n.js` | ko/en ~390키, `t()` 함수 |
+| 다국어 | `i18n.js` | ko/en ~404키, `t()` 함수 |
 | 플레이어 | `entities/Player.js` | 캐릭터별 스프라이트, 8방향 걷기, HP/XP, 메타 보너스, 버프 |
 | 적 | `entities/Enemy.js` + `EnemyTypes.js` | 잡몹 10종 + 미니보스 2종 + 보스 6종, 15종 AI 패턴 |
 | 무기 | `systems/WeaponSystem.js` | 10종 무기 타입, 자동 발사, 진화, 킬/데미지 추적 |
@@ -137,7 +137,7 @@ BootScene → MenuScene ─→ StageSelectScene ─→ CharacterScene ─→ Gam
 | 결과 화면 | 무기별 리포트, 난이도 보상, DC 분배 연출, 콘텐츠 압축 | 완료 |
 | 진화 힌트 팝업 | 무기 Max(Lv8) 도달 시 조합 유물 안내 팝업 모달, 큐 기반 순차 표시 | 완료 |
 | 진화/엔들리스 모달 | 게임 일시정지 + 정보 패널 | 완료 |
-| 설정 | BGM/SFX/햅틱 ON/OFF 토글 | 완료 |
+| 설정/통계 | [설정]/[통계] 탭 전환, 설정 5토글 + 통계(전체/스테이지별/캐릭터별), 스크롤 지원 | 완료 |
 
 ### 아트/비주얼
 
