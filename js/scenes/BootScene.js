@@ -1374,15 +1374,30 @@ export default class BootScene extends Phaser.Scene {
       gfx.generateTexture('effect_hivemind', 24, 24);
     }
 
-    // 6. perpetual_emp (emp_blast 진화) — 보라 이중 링
+    // 6. perpetual_emp (emp_blast 진화) — 부채꼴 충격파 (시안+보라 V자 형태)
     if (!this.textures.exists('effect_perpetual_emp')) {
       gfx.clear();
-      gfx.lineStyle(3, 0xBB44FF, 0.8);
-      gfx.strokeCircle(32, 32, 30);
-      gfx.lineStyle(2, 0xEE88FF, 0.5);
-      gfx.strokeCircle(32, 32, 20);
-      gfx.fillStyle(0xBB44FF, 0.15);
-      gfx.fillCircle(32, 32, 30);
+      // 외곽 보라 글로우 부채꼴
+      gfx.fillStyle(0xBB44FF, 0.2);
+      gfx.beginPath();
+      gfx.moveTo(32, 32);
+      gfx.arc(32, 32, 30, -Math.PI / 3, Math.PI / 3, false);
+      gfx.closePath();
+      gfx.fillPath();
+      // 시안 코어 부채꼴
+      gfx.fillStyle(0x00FFFF, 0.5);
+      gfx.beginPath();
+      gfx.moveTo(32, 32);
+      gfx.arc(32, 32, 22, -Math.PI / 4, Math.PI / 4, false);
+      gfx.closePath();
+      gfx.fillPath();
+      // 흰색 코어 라인
+      gfx.fillStyle(0xFFFFFF, 0.6);
+      gfx.beginPath();
+      gfx.moveTo(32, 32);
+      gfx.arc(32, 32, 14, -Math.PI / 6, Math.PI / 6, false);
+      gfx.closePath();
+      gfx.fillPath();
       gfx.generateTexture('effect_perpetual_emp', 64, 64);
     }
 
@@ -1407,46 +1422,62 @@ export default class BootScene extends Phaser.Scene {
       gfx.generateTexture('effect_phantom_strike', 48, 48);
     }
 
-    // 8. bioplasma (nano_swarm 진화) — 형광 산성 녹색 구름
+    // 8. bioplasma (nano_swarm 진화) — 직사각형 독 웅덩이 (산성 녹색 글로우)
     if (!this.textures.exists('effect_bioplasma')) {
       gfx.clear();
-      gfx.fillStyle(0xAAFF00, 0.5);
-      gfx.fillCircle(24, 24, 22);
-      gfx.fillStyle(0xDDFF33, 0.6);
-      gfx.fillCircle(18, 18, 10);
-      gfx.fillStyle(0xDDFF33, 0.6);
-      gfx.fillCircle(30, 28, 8);
-      gfx.fillStyle(0xFFFFFF, 0.4);
-      gfx.fillCircle(24, 20, 5);
-      gfx.generateTexture('effect_bioplasma', 48, 48);
+      // 외곽 녹색 글로우
+      gfx.fillStyle(0xAAFF00, 0.25);
+      gfx.fillRoundedRect(0, 2, 48, 20, 6);
+      // 중간 산성 녹색
+      gfx.fillStyle(0xAAFF00, 0.6);
+      gfx.fillRoundedRect(4, 5, 40, 14, 4);
+      // 내부 불규칙 패턴 (독 버블)
+      gfx.fillStyle(0xDDFF33, 0.7);
+      gfx.fillCircle(14, 12, 5);
+      gfx.fillCircle(28, 10, 4);
+      gfx.fillCircle(38, 13, 3);
+      // 하이라이트
+      gfx.fillStyle(0xFFFFFF, 0.3);
+      gfx.fillCircle(16, 10, 2);
+      gfx.fillCircle(30, 9, 2);
+      gfx.generateTexture('effect_bioplasma', 48, 24);
     }
 
-    // 9. event_horizon (vortex_cannon 진화) — 블랙홀 (중심 어둡고 가장자리 보라)
+    // 9. event_horizon (vortex_cannon 진화) — 직선 균열 (보라+흰색 글로우)
     if (!this.textures.exists('effect_event_horizon')) {
       gfx.clear();
-      gfx.fillStyle(0x6600AA, 0.6);
-      gfx.fillCircle(24, 24, 22);
-      gfx.fillStyle(0x220044, 0.9);
-      gfx.fillCircle(24, 24, 14);
-      gfx.fillStyle(0x000000, 1.0);
-      gfx.fillCircle(24, 24, 7);
-      gfx.lineStyle(1, 0xBB66FF, 0.7);
-      gfx.strokeCircle(24, 24, 22);
-      gfx.generateTexture('effect_event_horizon', 48, 48);
+      // 외곽 보라 글로우
+      gfx.fillStyle(0x6600AA, 0.3);
+      gfx.fillRect(2, 0, 12, 96);
+      // 중간 보라 코어
+      gfx.fillStyle(0x9933FF, 0.6);
+      gfx.fillRect(4, 4, 8, 88);
+      // 흰색 코어 라인
+      gfx.fillStyle(0xFFFFFF, 0.8);
+      gfx.fillRect(6, 8, 4, 80);
+      // 상하단 글로우 포인트
+      gfx.fillStyle(0xBB66FF, 0.7);
+      gfx.fillCircle(8, 4, 4);
+      gfx.fillCircle(8, 92, 4);
+      gfx.generateTexture('effect_event_horizon', 16, 96);
     }
 
-    // 10. death_blossom (reaper_field 진화) — 진홍/블랙 꽃잎 형태
+    // 10. death_blossom (reaper_field 진화) — 크레센트 낫날 (부메랑용)
     if (!this.textures.exists('effect_death_blossom')) {
       gfx.clear();
-      gfx.fillStyle(0x660022, 0.9);
-      // 4개 꽃잎 (십자 방향)
-      gfx.fillEllipse(16, 6, 10, 16);
-      gfx.fillEllipse(16, 26, 10, 16);
-      gfx.fillEllipse(6, 16, 16, 10);
-      gfx.fillEllipse(26, 16, 16, 10);
-      gfx.fillStyle(0xFF0044, 0.7);
-      gfx.fillCircle(16, 16, 5);
-      gfx.generateTexture('effect_death_blossom', 32, 32);
+      // 외곽 진홍 글로우
+      gfx.fillStyle(0x660022, 0.4);
+      gfx.fillEllipse(16, 10, 28, 14);
+      // 메인 낫날 (크레센트 형태)
+      gfx.fillStyle(0xFF0044, 0.9);
+      gfx.fillEllipse(16, 12, 24, 10);
+      // 내부 코어 하이라이트
+      gfx.fillStyle(0xFF4466, 0.7);
+      gfx.fillEllipse(16, 14, 16, 6);
+      // 흰색 날 엣지
+      gfx.fillStyle(0xFFFFFF, 0.5);
+      gfx.fillRect(4, 8, 24, 2);
+      gfx.generateTexture('effect_death_blossom', 32, 24);
     }
   }
 }
