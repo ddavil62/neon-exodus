@@ -117,6 +117,11 @@ export default class GameScene extends Phaser.Scene {
 
     /** 난이도 모드 데이터 */
     this.difficultyMode = DIFFICULTY_MODES[this.difficulty] || DIFFICULTY_MODES.normal;
+
+    /** 런 시작 시점에 스테이지 무기가 이미 해금되어 있었는지 스냅샷 */
+    this._stageWeaponAlreadyUnlocked = this.stageData?.unlockWeaponId
+      ? SaveManager.isWeaponUnlocked(this.stageData.unlockWeaponId)
+      : true;
   }
 
   /**
@@ -675,7 +680,7 @@ export default class GameScene extends Phaser.Scene {
 
     // _cleanup() 전에 결과 데이터를 스냅샷 (destroy 후 접근 불가 방지)
     // 스테이지 클리어 시 해금된 무기 ID (엔들리스 진입 = 보스 처치 = 클리어)
-    const unlockWeaponId = (this.isEndlessMode && this.stageData)
+    const unlockWeaponId = (this.isEndlessMode && this.stageData && !this._stageWeaponAlreadyUnlocked)
       ? this.stageData.unlockWeaponId
       : null;
 
@@ -2929,7 +2934,7 @@ export default class GameScene extends Phaser.Scene {
       SoundSystem.stopBgm();
 
       // 스테이지 클리어 시 해금된 무기 ID (엔들리스 진입 = 보스 처치 = 클리어)
-      const quitUnlockWeaponId = (this.isEndlessMode && this.stageData)
+      const quitUnlockWeaponId = (this.isEndlessMode && this.stageData && !this._stageWeaponAlreadyUnlocked)
         ? this.stageData.unlockWeaponId
         : null;
 
