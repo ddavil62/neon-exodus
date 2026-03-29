@@ -17,11 +17,14 @@ import { STAGES, STAGE_ORDER } from '../data/stages.js';
 /** 탭 헤더 Y 좌표 */
 const TAB_Y = 110;
 
+/** 탭 간 좌우 간격 (중앙 기준 ±) */
+const TAB_GAP = 80;
+
 /** 활성 탭 밑줄 두께 */
 const UNDERLINE_THICKNESS = 3;
 
 /** 통계 콘텐츠 시작 Y (마스크 영역 상단) */
-const STATS_START_Y = 160;
+const STATS_START_Y = 155;
 
 /** 통계 콘텐츠 마스크 하단 여유 */
 const STATS_BOTTOM_MARGIN = 20;
@@ -92,9 +95,8 @@ export default class SettingsScene extends Phaser.Scene {
    * @private
    */
   _createTabHeader(centerX) {
-    const tabGap = 80;
-    const settingsX = centerX - tabGap;
-    const statsX = centerX + tabGap;
+    const settingsX = centerX - TAB_GAP;
+    const statsX = centerX + TAB_GAP;
 
     // 설정 탭 텍스트
     this._tabSettingsText = this.add.text(settingsX, TAB_Y, t('settings.tabSettings'), {
@@ -155,7 +157,6 @@ export default class SettingsScene extends Phaser.Scene {
     this._activeTab = tab;
 
     const isSettings = tab === 'settings';
-    const tabGap = 80;
     const centerX = GAME_WIDTH / 2;
 
     // 탭 텍스트 색상 갱신
@@ -164,9 +165,9 @@ export default class SettingsScene extends Phaser.Scene {
 
     // 밑줄 갱신
     if (isSettings) {
-      this._drawTabUnderline(centerX - tabGap, this._tabSettingsText.width);
+      this._drawTabUnderline(centerX - TAB_GAP, this._tabSettingsText.width);
     } else {
-      this._drawTabUnderline(centerX + tabGap, this._tabStatsText.width);
+      this._drawTabUnderline(centerX + TAB_GAP, this._tabStatsText.width);
     }
 
     // 설정 그룹 표시/숨기기
@@ -185,29 +186,29 @@ export default class SettingsScene extends Phaser.Scene {
    * @private
    */
   _createSettingsContent() {
-    this._createToggleRow(220, t('settings.bgm'), () => SoundSystem.isBgmEnabled(), (val) => {
+    this._createToggleRow(170, t('settings.bgm'), () => SoundSystem.isBgmEnabled(), (val) => {
       SoundSystem.setBgmEnabled(val);
       SaveManager.setSetting('bgmEnabled', val);
     });
 
-    this._createToggleRow(310, t('settings.sfx'), () => SoundSystem.isSfxEnabled(), (val) => {
+    this._createToggleRow(240, t('settings.sfx'), () => SoundSystem.isSfxEnabled(), (val) => {
       SoundSystem.setSfxEnabled(val);
       SaveManager.setSetting('sfxEnabled', val);
     });
 
-    this._createToggleRow(400, t('settings.haptic'), () => isHapticEnabled(), (val) => {
+    this._createToggleRow(310, t('settings.haptic'), () => isHapticEnabled(), (val) => {
       setHapticEnabled(val);
       SaveManager.setSetting('hapticEnabled', val);
     });
 
     // 자동 레벨업 토글
-    this._createToggleRow(490, t('settings.autoLevelUp'),
+    this._createToggleRow(380, t('settings.autoLevelUp'),
       () => !!SaveManager.getSetting('autoLevelUp'),
       (val) => { SaveManager.setSetting('autoLevelUp', val); }
     );
 
     // 궁극기 버튼 위치 (좌/우)
-    this._createSideToggleRow(580);
+    this._createSideToggleRow(450);
   }
 
   // ── 통계 탭 콘텐츠 ──
@@ -239,7 +240,7 @@ export default class SettingsScene extends Phaser.Scene {
     const data = SaveManager.getData();
     const hasAnyData = stats.totalRuns > 0;
 
-    let curY = STATS_START_Y + 10;
+    let curY = STATS_START_Y + 20;
     const leftX = 30;
     const rightX = GAME_WIDTH - 30;
 
@@ -286,7 +287,7 @@ export default class SettingsScene extends Phaser.Scene {
     // ── 구분선 ──
     curY += 5;
     const sep1 = this.add.graphics();
-    sep1.lineStyle(1, 0x2A2A4E, 0.6);
+    sep1.lineStyle(1, 0x3A3A6E, 1.0);
     sep1.lineBetween(leftX, curY, rightX, curY);
     this._statsContainer.add(sep1);
     curY += 15;
@@ -304,7 +305,8 @@ export default class SettingsScene extends Phaser.Scene {
       const stageData = STAGES[stageId];
       if (!stageData) return;
 
-      const stageName = t(stageData.nameKey);
+      const fullStageName = t(stageData.nameKey);
+      const stageName = fullStageName.length > 12 ? fullStageName.substring(0, 11) + '…' : fullStageName;
       const nameText = this.add.text(leftX + 10, curY, stageName, {
         fontSize: '14px',
         fontFamily: 'Galmuri11, monospace',
@@ -331,7 +333,7 @@ export default class SettingsScene extends Phaser.Scene {
     // ── 구분선 ──
     curY += 5;
     const sep2 = this.add.graphics();
-    sep2.lineStyle(1, 0x2A2A4E, 0.6);
+    sep2.lineStyle(1, 0x3A3A6E, 1.0);
     sep2.lineBetween(leftX, curY, rightX, curY);
     this._statsContainer.add(sep2);
     curY += 15;
@@ -523,7 +525,7 @@ export default class SettingsScene extends Phaser.Scene {
    * @private
    */
   _createBackArrow(x, y) {
-    const size = 36;
+    const size = 44;
     const text = this.add.text(x, y, '\u2190', {
       fontSize: '20px',
       fontFamily: 'Galmuri11, monospace',
