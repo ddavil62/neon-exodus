@@ -290,7 +290,7 @@ export default class SettingsScene extends Phaser.Scene {
     );
 
     // ── 하단 영역: 버전 텍스트 ──
-    const versionText = this.add.text(centerX, 510, 'v0.1.0', {
+    const versionText = this.add.text(centerX, 538, 'v0.1.0', {
       fontSize: '11px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textSecondary,
@@ -298,7 +298,7 @@ export default class SettingsScene extends Phaser.Scene {
     this._settingsGroup.push(versionText);
 
     // ── 하단 영역: 데이터 초기화 버튼 ──
-    this._createResetButton(centerX, 548);
+    this._createResetButton(centerX, 584);
   }
 
   // ── 섹션 카드 패널 ──
@@ -324,7 +324,7 @@ export default class SettingsScene extends Phaser.Scene {
 
     // 섹션 제목
     const titleText = this.add.text(x + 12, y + 14, title, {
-      fontSize: '12px',
+      fontSize: '14px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.neonCyan,
     }).setOrigin(0, 0.5);
@@ -471,8 +471,8 @@ export default class SettingsScene extends Phaser.Scene {
     // 현재 값
     const currentSide = SaveManager.getSetting('ultBtnSide') || 'left';
 
-    // 좌측 캡슐 버튼
-    const leftBtnX = rightX - 100;
+    // 좌측 캡슐 버튼 (우측 캡슐과 10px 간격 확보)
+    const leftBtnX = rightX - 130;
     const leftBtnGfx = this.add.graphics();
     const rightBtnGfx = this.add.graphics();
 
@@ -480,14 +480,14 @@ export default class SettingsScene extends Phaser.Scene {
     const sideState = { side: currentSide };
 
     // 좌측 버튼 텍스트
-    const leftBtnText = this.add.text(leftBtnX + 24, y, t('settings.ultLeft'), {
+    const leftBtnText = this.add.text(leftBtnX + 30, y, t('settings.ultLeft'), {
       fontSize: '12px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
     }).setOrigin(0.5);
 
     // 우측 버튼 텍스트
-    const rightBtnText = this.add.text(rightX - 24, y, t('settings.ultRight'), {
+    const rightBtnText = this.add.text(rightX - 30, y, t('settings.ultRight'), {
       fontSize: '12px',
       fontFamily: 'Galmuri11, monospace',
       color: UI_COLORS.textPrimary,
@@ -497,25 +497,25 @@ export default class SettingsScene extends Phaser.Scene {
     const drawButtons = () => {
       const isLeft = sideState.side === 'left';
 
-      // 좌측 캡슐
+      // 좌측 캡슐 (60x32, 터치 편의 확대)
       leftBtnGfx.clear();
       leftBtnGfx.fillStyle(isLeft ? 0x00AAAA : 0x1A1A2E, isLeft ? 0.8 : 0.5);
-      leftBtnGfx.fillRoundedRect(leftBtnX, y - 12, 48, 24, 12);
+      leftBtnGfx.fillRoundedRect(leftBtnX, y - 16, 60, 32, 16);
       leftBtnGfx.lineStyle(1, isLeft ? 0x00FFFF : 0x2A2A4E, isLeft ? 0.8 : 0.4);
-      leftBtnGfx.strokeRoundedRect(leftBtnX, y - 12, 48, 24, 12);
+      leftBtnGfx.strokeRoundedRect(leftBtnX, y - 16, 60, 32, 16);
 
-      // 우측 캡슐
+      // 우측 캡슐 (60x32)
       rightBtnGfx.clear();
       rightBtnGfx.fillStyle(!isLeft ? 0x00AAAA : 0x1A1A2E, !isLeft ? 0.8 : 0.5);
-      rightBtnGfx.fillRoundedRect(rightX - 48, y - 12, 48, 24, 12);
+      rightBtnGfx.fillRoundedRect(rightX - 60, y - 16, 60, 32, 16);
       rightBtnGfx.lineStyle(1, !isLeft ? 0x00FFFF : 0x2A2A4E, !isLeft ? 0.8 : 0.4);
-      rightBtnGfx.strokeRoundedRect(rightX - 48, y - 12, 48, 24, 12);
+      rightBtnGfx.strokeRoundedRect(rightX - 60, y - 16, 60, 32, 16);
     };
 
     drawButtons();
 
     // 좌측 캡슐 터치 영역
-    const leftZone = this.add.zone(leftBtnX + 24, y, 48, 24)
+    const leftZone = this.add.zone(leftBtnX + 30, y, 60, 44)
       .setInteractive({ useHandCursor: true });
     leftZone.on('pointerdown', () => {
       if (sideState.side === 'left') return;
@@ -525,7 +525,7 @@ export default class SettingsScene extends Phaser.Scene {
     });
 
     // 우측 캡슐 터치 영역
-    const rightZone = this.add.zone(rightX - 24, y, 48, 24)
+    const rightZone = this.add.zone(rightX - 30, y, 60, 44)
       .setInteractive({ useHandCursor: true });
     rightZone.on('pointerdown', () => {
       if (sideState.side === 'right') return;
@@ -558,35 +558,35 @@ export default class SettingsScene extends Phaser.Scene {
     const btnText = this.add.text(centerX, y, t('settings.resetData'), {
       fontSize: '13px',
       fontFamily: 'Galmuri11, monospace',
-      color: '#FF3333',
+      color: UI_COLORS.hpRed,
     }).setOrigin(0.5);
 
     /** 기본 상태 렌더링 */
     const drawNormal = () => {
       btnGfx.clear();
-      btnGfx.lineStyle(1, 0xFF3333, 0.8);
+      btnGfx.lineStyle(1, COLORS.HP_RED, 0.8);
       btnGfx.strokeRoundedRect(centerX - btnW / 2, y - btnH / 2, btnW, btnH, btnH / 2);
       btnText.setText(t('settings.resetData'));
-      btnText.setColor('#FF3333');
+      btnText.setColor(UI_COLORS.hpRed);
       this._resetConfirmStep = false;
     };
 
     /** 확인 상태 렌더링 (빨간 배경) */
     const drawConfirm = () => {
       btnGfx.clear();
-      btnGfx.fillStyle(0xFF3333, 0.8);
+      btnGfx.fillStyle(COLORS.HP_RED, 0.8);
       btnGfx.fillRoundedRect(centerX - btnW / 2, y - btnH / 2, btnW, btnH, btnH / 2);
-      btnGfx.lineStyle(1, 0xFF3333, 1);
+      btnGfx.lineStyle(1, COLORS.HP_RED, 1);
       btnGfx.strokeRoundedRect(centerX - btnW / 2, y - btnH / 2, btnW, btnH, btnH / 2);
       btnText.setText(t('settings.resetConfirm'));
-      btnText.setColor('#FFFFFF');
+      btnText.setColor(UI_COLORS.textPrimary);
       this._resetConfirmStep = true;
     };
 
     drawNormal();
 
     // 터치 영역
-    const zone = this.add.zone(centerX, y, btnW, btnH)
+    const zone = this.add.zone(centerX, y, btnW, 44)
       .setInteractive({ useHandCursor: true });
 
     zone.on('pointerdown', () => {

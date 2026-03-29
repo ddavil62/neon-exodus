@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-03-30 -- SettingsScene 전면 UI 리뉴얼
+
+### 변경
+- `js/scenes/SettingsScene.js`: 설정 탭 전면 재작성
+  - 배경 도트 그리드: 20px 간격, 색상 0x112233, alpha 0.15 + 수평 구분선 2개
+  - 3개 섹션 카드 (사운드/게임플레이/시스템): 320px 너비, 0x1A1A2E 배경 alpha 0.85, 0x2A2A4E 보더, radius 10
+  - 슬라이드 토글 스위치: 44x22 트랙 + 16px 썸, ON=0x00AAAA 트랙+0x00FFFF 글로우, OFF=0x333344, 150ms Power2 tween
+  - 아이콘 심볼: BGM(♪), SFX(♫), 햅틱(~), 자동 레벨업(>>), 궁극기(◈) -- 14px neonCyan
+  - 궁극기 좌/우 캡슐 버튼: 활성 상태 시안 배경+보더
+  - 하단 버전 텍스트: "v0.1.0", 11px, textSecondary
+  - 2단계 확인 데이터 초기화 버튼: 200x32px, 빨간 보더(0xFF3333), 1탭=확인 모드(빨간 배경, 3초 타임아웃), 2탭=SaveManager.resetAll()+MenuScene 전환
+  - 통계 탭 코드 완전 보존
+- `js/i18n.js`: ko/en 6개 신규 키 추가
+  - settings.sectionSound, settings.sectionGameplay, settings.sectionSystem, settings.version, settings.resetData, settings.resetConfirm
+
+### 스펙 대비 변경
+- `SaveManager.resetAllData()` 신규 메서드 대신 기존 `resetAll()` 사용 (중복 메서드 방지)
+- 초기화 버튼 크기: 스펙 상세 설계 240x36px → 본문 기준 200x32px로 채택
+- Y 좌표 미세 조정: 버전 텍스트 Y=538, 초기화 버튼 Y=584 (스펙: Y=510, Y=540~580)
+
+### 알려진 이슈 (LOW)
+- 초기화 확인 모드가 탭 전환 시 리셋되지 않음 (3초 타이머 자동 복구로 기능 문제 없음)
+- 토글 150ms tween 중 재클릭 시 tween 중첩 (시각적 깜빡임만, 상태 로직 정상)
+- shutdown() 메서드 미구현 (_resetTimer/리스너 명시적 정리 없음, Phaser lifecycle상 실질 문제 없음)
+
+### 참고
+- 스펙: `.claude/specs/2026-03-30-neon-exodus-settings-redesign-spec.md`
+- 리포트: `.claude/specs/2026-03-30-neon-exodus-settings-redesign-report.md`
+- QA: `.claude/specs/2026-03-30-neon-exodus-settings-redesign-qa.md` (PASS, 34/34 테스트 통과)
+- 목적 정의: `.claude/specs/2026-03-30-neon-exodus-settings-redesign-purpose.md`
+
 ## 2026-03-29 -- 진화 무기 4종 이펙트 리디자인
 
 ### 변경
