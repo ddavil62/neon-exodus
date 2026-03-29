@@ -842,6 +842,20 @@ const TRANSLATIONS = {
     'settings.on': 'ON',
     'settings.off': 'OFF',
     'settings.autoLevelUp': '자동 레벨업',
+    'settings.tabSettings': '설정',
+    'settings.tabStats': '통계',
+
+    // ── 통계 ──
+    'stats.totalRuns': '총 런 수',
+    'stats.totalClears': '총 클리어',
+    'stats.totalKills': '총 처치 수',
+    'stats.longestSurvival': '최장 생존',
+    'stats.maxLevel': '최고 레벨',
+    'stats.maxKillsInRun': '최다 킬 런',
+    'stats.totalBossKills': '보스 처치',
+    'stats.stageClears': '스테이지 클리어',
+    'stats.characterClears': '캐릭터별 클리어',
+    'stats.noData': '아직 기록이 없습니다',
 
     // ── 엔들리스 모드 ──
     'game.endlessMode': 'ENDLESS MODE!',
@@ -2023,6 +2037,20 @@ const TRANSLATIONS = {
     'settings.on': 'ON',
     'settings.off': 'OFF',
     'settings.autoLevelUp': 'Auto Level Up',
+    'settings.tabSettings': 'Settings',
+    'settings.tabStats': 'Stats',
+
+    // ── Stats ──
+    'stats.totalRuns': 'Total Runs',
+    'stats.totalClears': 'Total Clears',
+    'stats.totalKills': 'Total Kills',
+    'stats.longestSurvival': 'Longest Survival',
+    'stats.maxLevel': 'Max Level',
+    'stats.maxKillsInRun': 'Best Kill Run',
+    'stats.totalBossKills': 'Boss Kills',
+    'stats.stageClears': 'Stage Clears',
+    'stats.characterClears': 'Character Clears',
+    'stats.noData': 'No data yet',
 
     // ── Endless Mode ──
     'game.endlessMode': 'ENDLESS MODE!',
