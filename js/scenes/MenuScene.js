@@ -111,13 +111,31 @@ export default class MenuScene extends Phaser.Scene {
       },
     });
 
-    // ── 드론 칩 버튼 (해금 시만 표시) ──
+    // ── 드론 칩 버튼 (해금 시만 표시) — primary 프레임으로 통일 ──
     if (droneChipUnlocked) {
-      this._createDroneChipButton(centerX, 432);
+      this._createButton(centerX, 432, t('menu.droneChip'), {
+        width: 310, height: 48, fontSize: '15px',
+        frameType: 'primary',
+        callback: () => { this._fadeToScene('DroneChipScene'); },
+      });
     }
 
-    // ── 상점 버튼 (항상 표시, 드론 칩 미해금 시 비활성) ──
-    this._createShopButton(centerX, droneChipUnlocked ? 480 : 480, droneChipUnlocked);
+    // ── 상점 버튼 (항상 표시, 드론 칩 미해금 시 비활성) — primary 프레임으로 통일 ──
+    if (droneChipUnlocked) {
+      this._createButton(centerX, 480, t('menu.shop'), {
+        width: 310, height: 48, fontSize: '15px',
+        frameType: 'primary',
+        callback: () => { this._fadeToScene('ShopScene'); },
+      });
+    } else {
+      const shopBtn = this._createButton(centerX, 480, t('menu.shop'), {
+        width: 310, height: 48, fontSize: '15px',
+        frameType: 'primary', disabled: true,
+      });
+      // 비활성 상태에서도 탭 시 잠금 토스트 표시
+      const shopZone = this.add.zone(centerX, 480, 310, 48).setInteractive({ useHandCursor: true });
+      shopZone.on('pointerdown', () => { this._showLockedToast(t('shop.locked')); });
+    }
 
     // ── 보조 버튼 행 (도감 + Auto Hunt + 설정) ──
     const autoHuntUnlocked = IAPManager.isAutoHuntUnlocked();
@@ -336,126 +354,6 @@ export default class MenuScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * 드론 칩 버튼을 생성한다 (시안+마젠타 그라데이션 테두리).
-   * @param {number} x - 중심 X
-   * @param {number} y - 중심 Y
-   * @private
-   */
-  _createDroneChipButton(x, y) {
-    const width = 310;
-    const height = 48;
-    const radius = 8;
-
-    const bg = this.add.graphics();
-
-    // 시안+마젠타 글로우
-    bg.fillStyle(COLORS.NEON_CYAN, 0.1);
-    bg.fillRoundedRect(x - width / 2 - 2, y - height / 2 - 2, width + 4, height + 4, radius + 2);
-
-    // 배경
-    bg.fillStyle(UI_COLORS.btnPrimary, 0.9);
-    bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, radius);
-
-    // 시안 테두리
-    bg.lineStyle(1, COLORS.NEON_CYAN, 0.6);
-    bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, radius);
-
-    // 마젠타 내부 테두리 (2px 안쪽)
-    bg.lineStyle(1, COLORS.NEON_MAGENTA, 0.3);
-    bg.strokeRoundedRect(x - width / 2 + 2, y - height / 2 + 2, width - 4, height - 4, radius - 1);
-
-    const label = t('menu.droneChip');
-    const text = this.add.text(x, y, label, {
-      fontSize: '15px',
-      fontFamily: 'Galmuri11, monospace',
-      color: UI_COLORS.neonCyan,
-      stroke: UI_COLORS.neonMagenta,
-      strokeThickness: 1,
-    }).setOrigin(0.5);
-
-    const zone = this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true });
-
-    zone.on('pointerover', () => { text.setAlpha(0.8); });
-    zone.on('pointerout', () => { text.setAlpha(1); });
-    let pressed = false;
-    zone.on('pointerdown', () => { pressed = true; text.setAlpha(0.6); });
-    zone.on('pointerup', () => {
-      text.setAlpha(1);
-      if (pressed) this._fadeToScene('DroneChipScene');
-      pressed = false;
-    });
-    zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
-  }
-
-  /**
-   * 상점 버튼을 생성한다 (오렌지/골드 그라데이션 테두리).
-   * 드론 칩 미해금 시 비활성 상태로 표시하고 탭 시 토스트를 표시한다.
-   * @param {number} x - 중심 X
-   * @param {number} y - 중심 Y
-   * @param {boolean} enabled - 드론 칩 해금 여부
-   * @private
-   */
-  _createShopButton(x, y, enabled) {
-    const width = 310;
-    const height = 48;
-    const radius = 8;
-
-    const bg = this.add.graphics();
-
-    if (enabled) {
-      // 오렌지 글로우
-      bg.fillStyle(COLORS.NEON_ORANGE, 0.1);
-      bg.fillRoundedRect(x - width / 2 - 2, y - height / 2 - 2, width + 4, height + 4, radius + 2);
-
-      // 배경
-      bg.fillStyle(UI_COLORS.btnPrimary, 0.9);
-      bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, radius);
-
-      // 오렌지 테두리
-      bg.lineStyle(1, COLORS.NEON_ORANGE, 0.6);
-      bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, radius);
-
-      // 골드 내부 테두리 (2px 안쪽)
-      bg.lineStyle(1, 0xFFD700, 0.3);
-      bg.strokeRoundedRect(x - width / 2 + 2, y - height / 2 + 2, width - 4, height - 4, radius - 1);
-    } else {
-      // 비활성 — grayed out
-      bg.fillStyle(UI_COLORS.btnDisabled, 0.5);
-      bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, radius);
-
-      bg.lineStyle(1, COLORS.DARK_GRAY, 0.4);
-      bg.strokeRoundedRect(x - width / 2, y - height / 2, width, height, radius);
-    }
-
-    const text = this.add.text(x, y, t('menu.shop'), {
-      fontSize: '15px',
-      fontFamily: 'Galmuri11, monospace',
-      color: enabled ? UI_COLORS.neonOrange : UI_COLORS.textSecondary,
-      stroke: enabled ? '#000000' : undefined,
-      strokeThickness: enabled ? 1 : 0,
-    }).setOrigin(0.5);
-
-    const zone = this.add.zone(x, y, width, height).setInteractive({ useHandCursor: true });
-
-    if (enabled) {
-      zone.on('pointerover', () => { text.setAlpha(0.8); });
-      zone.on('pointerout', () => { text.setAlpha(1); });
-      let pressed = false;
-      zone.on('pointerdown', () => { pressed = true; text.setAlpha(0.6); });
-      zone.on('pointerup', () => {
-        text.setAlpha(1);
-        if (pressed) this._fadeToScene('ShopScene');
-        pressed = false;
-      });
-      zone.on('pointerout', () => { pressed = false; text.setAlpha(1); });
-    } else {
-      // 비활성 탭 시 토스트 표시
-      zone.on('pointerdown', () => {
-        this._showLockedToast(t('shop.locked'));
-      });
-    }
-  }
 
   /**
    * 잠금 콘텐츠 안내 토스트를 표시한다.
