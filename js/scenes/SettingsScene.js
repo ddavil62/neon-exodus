@@ -5,7 +5,7 @@
  * 변경 즉시 반영되며 SaveManager를 통해 영구 저장된다.
  */
 
-import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS } from '../config.js';
+import { GAME_WIDTH, GAME_HEIGHT, COLORS, UI_COLORS, DEV_MODE } from '../config.js';
 import { t } from '../i18n.js';
 import { SaveManager } from '../managers/SaveManager.js';
 import SoundSystem from '../systems/SoundSystem.js';
@@ -296,6 +296,9 @@ export default class SettingsScene extends Phaser.Scene {
       color: UI_COLORS.textSecondary,
     }).setOrigin(0.5);
     this._settingsGroup.push(versionText);
+
+    // 디버그 패널 진입 5연타 감지 등록
+    this._registerVersionTapListener(versionText);
 
     // ── 하단 영역: 데이터 초기화 버튼 ──
     this._createResetButton(centerX, 584);
@@ -821,6 +824,50 @@ export default class SettingsScene extends Phaser.Scene {
     this.cameras.main.fadeOut(200, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start(sceneName, data);
+    });
+  }
+
+  // ── 디버그 패널 진입 ──
+
+  /**
+   * DEV_MODE가 true일 때, 버전 텍스트 2초 이내 5회 연타를 감지하여 DebugPanelScene으로 전환한다.
+   * @param {Phaser.GameObjects.Text} textObj - 버전 텍스트 오브젝트
+   * @private
+   */
+  _registerVersionTapListener(textObj) {
+    if (!DEV_MODE) return; // DEV_MODE=false이면 리스너 자체를 등록하지 않는다
+
+    /** @type {number[]} 연타 타임스탬프 배열 */
+    this._versionTapTimes = [];
+    /** @type {number} 연타 감지 시간 윈도우 (ms) */
+    const TAP_WINDOW = 2000;
+    /** @type {number} 필요 연타 횟수 */
+    const TAP_COUNT = 5;
+
+    // 터치 영역 확장: 텍스트 주변 44x44 최소 영역 보장
+    const hitZone = this.add.zone(
+      textObj.x,
+      textObj.y,
+      Math.max(textObj.width + 20, 100),
+      44
+    ).setInteractive({ useHandCursor: false });
+
+    // 설정 탭 전환 시 함께 show/hide되도록 _settingsGroup에 등록
+    this._settingsGroup.push(hitZone);
+
+    hitZone.on('pointerdown', () => {
+      const now = this.time.now;
+      this._versionTapTimes.push(now);
+      // 윈도우 밖의 기록 제거
+      this._versionTapTimes = this._versionTapTimes.filter(ts => now - ts <= TAP_WINDOW);
+      if (this._versionTapTimes.length >= TAP_COUNT) {
+        this._versionTapTimes = [];
+        this._transitioning = true;
+        this.cameras.main.fadeOut(200, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('DebugPanelScene');
+        });
+      }
     });
   }
 

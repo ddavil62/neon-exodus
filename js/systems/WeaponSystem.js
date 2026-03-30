@@ -357,6 +357,13 @@ export default class WeaponSystem {
   update(time, delta) {
     if (!this.player || !this.player.active) return;
 
+    // ── 디버그 모드: 쿨다운 없음 훅 ──
+    if (window.__DEBUG?.noCooldown) {
+      this.weapons.forEach(w => { w.cooldownTimer = 0; });
+      // 데스 블룸 쿨다운도 초기화
+      this._blossomData.forEach(state => { if (state.cooldownTimer !== undefined) state.cooldownTimer = 0; });
+    }
+
     // 활성 투사체 업데이트
     this.projectilePool.forEach((proj) => {
       proj.update(time, delta);

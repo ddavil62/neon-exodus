@@ -174,6 +174,9 @@ export const SAVE_KEY = 'neon-exodus-save';
 /** 세이브 데이터 버전 */
 export const SAVE_DATA_VERSION = 17;
 
+/** 개발 모드 여부. true이면 SettingsScene 5연타로 디버그 패널 진입 가능. 릴리즈 시 false로 변경한다 */
+export const DEV_MODE = true;
+
 /** 엔들리스 모드 스케일링 간격 (ms). 60초마다 적 HP/데미지 +10% */
 export const ENDLESS_SCALE_INTERVAL = 60000;
 

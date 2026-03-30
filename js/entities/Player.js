@@ -392,6 +392,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
+   * 현재 공격력 배율을 반환한다. 디버그 atkX10 플래그 적용.
+   * @returns {number} 유효 데미지 배율
+   */
+  get effectiveDamageMultiplier() {
+    const base = this.damageMultiplier || 1.0;
+    return window.__DEBUG?.atkX10 ? base * 10 : base;
+  }
+
+  /**
    * 유효 공격력 배수를 반환한다.
    * 저체력 보너스(버서커 고유 패시브)를 포함한다.
    * @returns {number} 유효 공격력 배수
@@ -404,9 +413,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       mult += this.lowHpAttackBonus;
     }
 
-    // 데미지 앰프 패시브 배율 적용
-    if (this.damageMultiplier && this.damageMultiplier > 1) {
-      mult *= this.damageMultiplier;
+    // 데미지 앰프 패시브 배율 적용 (디버그 atkX10 포함)
+    const effDmg = this.effectiveDamageMultiplier;
+    if (effDmg > 1) {
+      mult *= effDmg;
     }
 
     return mult;

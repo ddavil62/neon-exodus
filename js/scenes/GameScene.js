@@ -442,6 +442,11 @@ export default class GameScene extends Phaser.Scene {
 
     if (this.isPaused || this.isGameOver) return;
 
+    // ── 디버그 모드 갓모드 훅 ──
+    if (window.__DEBUG?.godMode && this.player) {
+      this.player.invincible = true;
+    }
+
     // 레벨업 복귀 후 조이스틱 포인터 재연결 (1프레임 지연으로 stale 입력 방지)
     if (this._joystickResumeCheck && this.joystick) {
       this._joystickResumeCheck = false;
@@ -507,6 +512,11 @@ export default class GameScene extends Phaser.Scene {
     if (this._ultCooldownRemaining > 0 && !this._ultActive) {
       this._ultCooldownRemaining -= deltaSec;
       if (this._ultCooldownRemaining < 0) this._ultCooldownRemaining = 0;
+    }
+
+    // ── 디버그 모드 궁극기 쿨다운 없음 훅 ──
+    if (window.__DEBUG?.noCooldown) {
+      this._ultCooldownRemaining = 0;
     }
 
     // 자동사냥 궁극기 자동 발동 — HP 50% 이하 + 쿨다운 완료 시
