@@ -3656,12 +3656,10 @@ export default class GameScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     });
 
-    // ── 3. 이펙트 이미지 오버레이 ──
+    // ── 3. 이펙트 이미지 오버레이 (화면 중앙 고정) ──
     if (this.textures.exists(effectKey)) {
-      const px = this.player.sprite ? this.player.sprite.x : GAME_WIDTH / 2;
-      const py = this.player.sprite ? this.player.sprite.y : GAME_HEIGHT / 2;
-
-      const effectImg = this.add.image(px, py, effectKey)
+      const effectImg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, effectKey)
+        .setScrollFactor(0)
         .setDepth(450)
         .setScale(0.1)
         .setAlpha(0.9);
