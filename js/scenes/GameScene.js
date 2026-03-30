@@ -3545,8 +3545,17 @@ export default class GameScene extends Phaser.Scene {
 
     switch (this.characterId) {
       case 'agent': {
-        // 전술 폭격: 화면 전체 적에게 ATK x mult 데미지 + stunDur초 스턴
-        const damage = (this.player.atk || 10) * this.player.getEffectiveAttackMultiplier() * rData.mult;
+        // 전술 폭격: 화면 전체 적에게 (장착 무기 최대 데미지) × 배율 × mult 데미지 + stunDur초 스턴
+        // ※ this.player.atk는 존재하지 않으므로, 장착 무기 중 최대 단발 데미지를 기준으로 산출
+        let baseAtk = 10;
+        if (this.weaponSystem && this.weaponSystem.weapons.length > 0) {
+          for (const w of this.weaponSystem.weapons) {
+            const s = this.weaponSystem.getWeaponStats(w);
+            const d = s.damage || s.tickDamage || 0;
+            if (d > baseAtk) baseAtk = d;
+          }
+        }
+        const damage = baseAtk * this.player.getEffectiveAttackMultiplier() * rData.mult;
         if (this.waveSystem && this.waveSystem.enemies) {
           this.waveSystem.enemies.getChildren().forEach(enemy => {
             if (enemy && enemy.active) {
